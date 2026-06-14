@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
-import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera } from 'lucide-react';
+import { useRealtimePresentation, useRealtimeSetlist, Presentation } from '@/utils/sync';
+import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
 
 function ProjectorContent() {
   const searchParams = useSearchParams();
@@ -41,7 +41,7 @@ function ProjectorContent() {
 
   // Resolve slides, active slide, and settings based on routing mode
   let activeSlide: any = null;
-  let fontSettings = { fontFamily: 'sans-serif', margin: 8, background: '#0f172a' };
+  let fontSettings: Presentation['settings'] = { fontSize: 48, fontFamily: 'sans-serif', margin: 8, background: '#0f172a', blankMode: 'none' };
 
   if (setlistId) {
     if (setlist) {
@@ -212,6 +212,20 @@ function ProjectorContent() {
         fontFamily: fontSettings.fontFamily || 'sans-serif',
       }}
     >
+      {/* Blackout Overlay */}
+      {fontSettings.blankMode === 'black' && (
+        <div className="absolute inset-0 bg-black z-50 pointer-events-none transition-opacity duration-300" />
+      )}
+
+      {/* Logo Overlay */}
+      {fontSettings.blankMode === 'logo' && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none animate-fade-in">
+          <div className="flex flex-col items-center justify-center p-8 rounded-full bg-slate-950/45 border border-white/5 backdrop-blur-md shadow-2xl">
+            <Sparkles className="h-16 w-16 text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.3)] animate-pulse" />
+          </div>
+        </div>
+      )}
+
       {/* Background Image Layer */}
       {activeSlide?.media_type === 'image' && activeSlide.media_url && (
         <img
@@ -326,6 +340,10 @@ function ProjectorContent() {
               hasMediaBg 
                 ? 'backdrop-blur-md bg-slate-950/45 border border-white/5 rounded-3xl p-10 max-w-4xl mx-auto shadow-[0_0_50px_rgba(0,0,0,0.5)]'
                 : ''
+            } ${
+              fontSettings.blankMode === 'clear' || fontSettings.blankMode === 'logo'
+                ? 'opacity-0 scale-95 pointer-events-none'
+                : 'opacity-100 scale-100'
             }`}
           >
             {/* Primary Language Layer */}

@@ -19,6 +19,7 @@ export interface Presentation {
     background: string;
     margin: number;
     fontFamily: string;
+    blankMode?: 'none' | 'black' | 'clear' | 'logo';
   };
 }
 
@@ -592,6 +593,10 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  const setBlankMode = (blankMode: 'none' | 'black' | 'clear' | 'logo') => {
+    updateSettings({ blankMode });
+  };
+
   return {
     isDemoMode,
     presentation,
@@ -602,6 +607,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideContent,
     setLiveSlide,
     updateSettings,
+    setBlankMode,
   };
 }
 
@@ -622,6 +628,7 @@ export interface Setlist {
   title: string;
   settings: {
     active_slide_id?: string | null;
+    blankMode?: 'none' | 'black' | 'clear' | 'logo';
   };
   items: SetlistItem[];
   created_at?: string;
@@ -1160,6 +1167,35 @@ export function useRealtimeSetlist(setlistId: string) {
     }
   };
 
+  const setBlankMode = (blankMode: 'none' | 'black' | 'clear' | 'logo') => {
+    if (!setlist) return;
+
+    const updatedSettings = { ...setlist.settings, blankMode };
+    const updatedSetlist = { ...setlist, settings: updatedSettings };
+    setSetlist(updatedSetlist);
+
+    if (isDemoMode) {
+      const stored = localStorage.getItem('holyproj_all_setlists');
+      if (stored) {
+        const list = JSON.parse(stored) as Setlist[];
+        const updatedList = list.map((s) => (s.id === setlistId ? updatedSetlist : s));
+        localStorage.setItem('holyproj_all_setlists', JSON.stringify(updatedList));
+      }
+      localBcRef.current?.postMessage({
+        type: 'STATE_UPDATE',
+        data: { setlist: updatedSetlist },
+      });
+    } else {
+      supabase
+        .from('setlists')
+        .update({ settings: updatedSettings })
+        .eq('id', setlistId)
+        .then(({ error }) => {
+          if (error) console.error('Error updating blank mode:', error);
+        });
+    }
+  };
+
   return {
     isDemoMode,
     setlist,
@@ -1171,6 +1207,7 @@ export function useRealtimeSetlist(setlistId: string) {
     addPresentationToSetlist,
     removePresentationFromSetlist,
     reorderSetlistItems,
+    setBlankMode,
     refresh: fetchSetlistDetails
   };
 }

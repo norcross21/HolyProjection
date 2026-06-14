@@ -23,7 +23,8 @@ import {
   LayoutGrid,
   ChevronRight,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 
 function SetlistContent() {
@@ -42,7 +43,8 @@ function SetlistContent() {
     setLiveSlide,
     addPresentationToSetlist,
     removePresentationFromSetlist,
-    reorderSetlistItems
+    reorderSetlistItems,
+    setBlankMode
   } = useRealtimeSetlist(setlistId);
 
   // Portal hook to list existing presentations
@@ -170,7 +172,25 @@ function SetlistContent() {
             className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-indigo-300 transition-all active:scale-[0.98]"
           >
             <Tv className="h-4 w-4" />
-            <span>Launch Setlist Projector</span>
+            <span>Projector</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+
+          <button
+            onClick={() => window.open(`/projector/stage?setlist=${setlistId}`, '_blank')}
+            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-yellow-400 transition-all active:scale-[0.98]"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span>Stage Monitor</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+
+          <button
+            onClick={() => window.open(`/dashboard/remote?setlist=${setlistId}`, '_blank')}
+            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-violet-400 transition-all active:scale-[0.98]"
+          >
+            <Smartphone className="h-4 w-4" />
+            <span>Mobile Remote</span>
             <ExternalLink className="h-3 w-3" />
           </button>
 
@@ -407,6 +427,46 @@ function SetlistContent() {
               ) : (
                 <div className="text-[10px] text-slate-600">Screen is currently empty</div>
               )}
+            </div>
+          </section>
+
+          {/* Quick Screen Overlays */}
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="h-4 w-4 text-violet-400" />
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Quick Screen Overlays</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setBlankMode(setlist.settings?.blankMode === 'black' ? 'none' : 'black')}
+                className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
+                  setlist.settings?.blankMode === 'black'
+                    ? 'bg-red-950/40 border-red-500/50 text-red-400'
+                    : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                }`}
+              >
+                ⚫ Blackout
+              </button>
+              <button
+                onClick={() => setBlankMode(setlist.settings?.blankMode === 'clear' ? 'none' : 'clear')}
+                className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
+                  setlist.settings?.blankMode === 'clear'
+                    ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400'
+                    : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                }`}
+              >
+                🔍 Clear Text
+              </button>
+              <button
+                onClick={() => setBlankMode(setlist.settings?.blankMode === 'logo' ? 'none' : 'logo')}
+                className={`rounded-xl py-2 px-2 text-[10px] font-bold border col-span-2 transition-all ${
+                  setlist.settings?.blankMode === 'logo'
+                    ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400'
+                    : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                }`}
+              >
+                ✨ Show Logo Placeholder
+              </button>
             </div>
           </section>
 

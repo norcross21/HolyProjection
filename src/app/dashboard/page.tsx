@@ -23,7 +23,8 @@ import {
   LayoutGrid,
   BookOpen,
   FileText,
-  Upload
+  Upload,
+  Smartphone
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -50,6 +51,7 @@ function DashboardContent() {
     updateSlideContent,
     setLiveSlide,
     updateSettings,
+    setBlankMode,
   } = useRealtimePresentation(presId || '');
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
@@ -577,7 +579,25 @@ function DashboardContent() {
             className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-indigo-300 transition-all active:scale-[0.98]"
           >
             <Tv className="h-4 w-4" />
-            <span>Launch Live Projector</span>
+            <span>Projector</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+
+          <button
+            onClick={() => window.open(`/projector/stage?pres=${presId}`, '_blank')}
+            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-yellow-400 transition-all active:scale-[0.98]"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span>Stage Monitor</span>
+            <ExternalLink className="h-3 w-3" />
+          </button>
+
+          <button
+            onClick={() => window.open(`/dashboard/remote?pres=${presId}`, '_blank')}
+            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-violet-400 transition-all active:scale-[0.98]"
+          >
+            <Smartphone className="h-4 w-4" />
+            <span>Mobile Remote</span>
             <ExternalLink className="h-3 w-3" />
           </button>
 
@@ -658,6 +678,43 @@ function DashboardContent() {
                   onChange={(e) => updateSettings({ margin: Number(e.target.value) })}
                   className="w-full accent-violet-600 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer"
                 />
+              </div>
+
+              {/* Quick Screen Overlays */}
+              <div className="border-t border-slate-900 pt-4 mt-4 space-y-2.5">
+                <span className="block text-xs text-slate-400 font-medium">Quick Screen Overlays</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black')}
+                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
+                      presentation.settings.blankMode === 'black'
+                        ? 'bg-red-950/40 border-red-500/50 text-red-400'
+                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    ⚫ Blackout
+                  </button>
+                  <button
+                    onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')}
+                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
+                      presentation.settings.blankMode === 'clear'
+                        ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400'
+                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    🔍 Clear Text
+                  </button>
+                  <button
+                    onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')}
+                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border col-span-2 transition-all ${
+                      presentation.settings.blankMode === 'logo'
+                        ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400'
+                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    ✨ Show Logo Placeholder
+                  </button>
+                </div>
               </div>
             </div>
           </section>
