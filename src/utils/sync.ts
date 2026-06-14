@@ -241,6 +241,7 @@ export function useRealtimePresentation(presentationId: string) {
 
   const channelRef = useRef<any>(null);
   const localBcRef = useRef<BroadcastChannel | null>(null);
+  const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
 
   // Load profile and run synchronization
   useEffect(() => {
@@ -324,6 +325,8 @@ export function useRealtimePresentation(presentationId: string) {
               if (prev.some((u) => u.id === data.id)) return prev;
               return [...prev, data];
             });
+          } else if (type === 'PRAYER_REQUEST') {
+            setPrayerRequests((prev) => [data, ...prev]);
           }
         };
 
@@ -470,6 +473,14 @@ export function useRealtimePresentation(presentationId: string) {
               onlineAt: new Date().toISOString(),
             });
           }
+        })
+        .on('broadcast', { event: 'prayer_request' }, ({ payload }) => {
+          if (payload) {
+            setPrayerRequests((prev) => {
+              if (prev.some((r) => r.id === payload.id)) return prev;
+              return [payload, ...prev];
+            });
+          }
         });
 
       activeProjChannel.subscribe();
@@ -597,6 +608,30 @@ export function useRealtimePresentation(presentationId: string) {
     updateSettings({ blankMode });
   };
 
+  const sendPrayerRequest = (name: string, text: string) => {
+    const payload = { id: `${Date.now()}-${Math.random()}`, name, text, timestamp: new Date().toISOString() };
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'PRAYER_REQUEST',
+        data: payload
+      });
+      setPrayerRequests((prev) => [payload, ...prev]);
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'prayer_request',
+          payload
+        });
+      }
+    }
+  };
+
+  const clearPrayerRequests = () => {
+    setPrayerRequests([]);
+  };
+
   return {
     isDemoMode,
     presentation,
@@ -608,6 +643,9 @@ export function useRealtimePresentation(presentationId: string) {
     setLiveSlide,
     updateSettings,
     setBlankMode,
+    sendPrayerRequest,
+    clearPrayerRequests,
+    prayerRequests,
   };
 }
 
@@ -746,6 +784,8 @@ export function useRealtimeSetlist(setlistId: string) {
   const [loading, setLoading] = useState(true);
 
   const localBcRef = useRef<BroadcastChannel | null>(null);
+  const channelRef = useRef<any>(null);
+  const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
 
   const fetchSetlistDetails = async () => {
     if (!setlistId) return;
@@ -891,6 +931,8 @@ export function useRealtimeSetlist(setlistId: string) {
               if (prev.some((u) => u.id === data.id)) return prev;
               return [...prev, data];
             });
+          } else if (type === 'PRAYER_REQUEST') {
+            setPrayerRequests((prev) => [data, ...prev]);
           }
         };
 
@@ -976,9 +1018,18 @@ export function useRealtimeSetlist(setlistId: string) {
               onlineAt: new Date().toISOString(),
             });
           }
+        })
+        .on('broadcast', { event: 'prayer_request' }, ({ payload }) => {
+          if (payload) {
+            setPrayerRequests((prev) => {
+              if (prev.some((r) => r.id === payload.id)) return prev;
+              return [payload, ...prev];
+            });
+          }
         });
 
       setlistChannel.subscribe();
+      channelRef.current = { setlistChannel, presenceChannel };
 
       return () => {
         supabase.removeChannel(setlistChannel);
@@ -1196,6 +1247,30 @@ export function useRealtimeSetlist(setlistId: string) {
     }
   };
 
+  const sendPrayerRequest = (name: string, text: string) => {
+    const payload = { id: `${Date.now()}-${Math.random()}`, name, text, timestamp: new Date().toISOString() };
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'PRAYER_REQUEST',
+        data: payload
+      });
+      setPrayerRequests((prev) => [payload, ...prev]);
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'prayer_request',
+          payload
+        });
+      }
+    }
+  };
+
+  const clearPrayerRequests = () => {
+    setPrayerRequests([]);
+  };
+
   return {
     isDemoMode,
     setlist,
@@ -1208,6 +1283,9 @@ export function useRealtimeSetlist(setlistId: string) {
     removePresentationFromSetlist,
     reorderSetlistItems,
     setBlankMode,
+    sendPrayerRequest,
+    clearPrayerRequests,
+    prayerRequests,
     refresh: fetchSetlistDetails
   };
 }

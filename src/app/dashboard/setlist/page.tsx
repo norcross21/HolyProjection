@@ -24,7 +24,9 @@ import {
   ChevronRight,
   ExternalLink,
   Sparkles,
-  Smartphone
+  Smartphone,
+  MessageSquare,
+  X
 } from 'lucide-react';
 
 function SetlistContent() {
@@ -44,8 +46,12 @@ function SetlistContent() {
     addPresentationToSetlist,
     removePresentationFromSetlist,
     reorderSetlistItems,
-    setBlankMode
+    setBlankMode,
+    prayerRequests,
+    clearPrayerRequests,
   } = useRealtimeSetlist(setlistId);
+
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Portal hook to list existing presentations
   const {
@@ -192,6 +198,14 @@ function SetlistContent() {
             <Smartphone className="h-4 w-4" />
             <span>Mobile Remote</span>
             <ExternalLink className="h-3 w-3" />
+          </button>
+
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-tr from-pink-600/20 to-violet-600/20 border border-pink-500/30 hover:bg-pink-600/10 px-4 py-2 text-xs font-bold text-pink-300 transition-all active:scale-[0.98]"
+          >
+            <Users className="h-4 w-4 text-pink-400" />
+            <span>Share Follower Link</span>
           </button>
 
           <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
@@ -501,9 +515,104 @@ function SetlistContent() {
             </div>
           </section>
 
-        </aside>
+          {/* Live Congregation Requests card */}
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex-1 flex flex-col overflow-hidden min-h-[220px]">
+            <div className="flex items-center gap-2 mb-4 justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-pink-400" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Congregation Feed</h2>
+              </div>
+              {prayerRequests.length > 0 && (
+                <button
+                  onClick={clearPrayerRequests}
+                  className="text-[9px] font-bold text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  Clear Feed
+                </button>
+              )}
+            </div>
 
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {prayerRequests.map((req) => (
+                <div 
+                  key={req.id} 
+                  className="p-3 rounded-xl bg-slate-950/50 border border-pink-950/20 hover:border-pink-900/30 transition-all text-xs"
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-extrabold text-pink-400 truncate">{req.name}</span>
+                    <span className="text-[9px] text-slate-550">
+                      {new Date(req.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-slate-350 leading-normal font-medium whitespace-pre-line">{req.text}</p>
+                </div>
+              ))}
+              {prayerRequests.length === 0 && (
+                <p className="text-[10px] text-slate-650 text-center py-8">No live messages or prayer requests yet.</p>
+              )}
+            </div>
+          </section>
+
+        </aside>
       </div>
+
+      {/* Share Follower Link Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl relative ring-1 ring-white/10">
+            <button
+              onClick={() => setIsShareModalOpen(false)}
+              className="absolute top-4 right-4 rounded-full p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-600/10 border border-pink-500/20 text-pink-400 shadow-md">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-white">Share Congregation Link</h3>
+                <p className="text-slate-400 text-xs mt-1">Let members follow the setlist in real-time on their phones.</p>
+              </div>
+
+              {/* QR Code */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-inner">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=7c3aed&data=${encodeURIComponent(
+                    typeof window !== 'undefined' ? `${window.location.origin}/follow?setlist=${setlistId}` : ''
+                  )}`} 
+                  alt="Scan to follow" 
+                  className="h-48 w-48 object-contain" 
+                />
+              </div>
+
+              {/* Follower link input wrapper */}
+              <div className="w-full space-y-2 text-left">
+                <span className="block text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Follower Web Link</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={typeof window !== 'undefined' ? `${window.location.origin}/follow?setlist=${setlistId}` : ''}
+                    className="flex-1 rounded-xl border border-slate-855 bg-slate-900/60 py-2.5 px-3.5 text-xs text-indigo-300 font-medium focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const link = typeof window !== 'undefined' ? `${window.location.origin}/follow?setlist=${setlistId}` : '';
+                      navigator.clipboard.writeText(link);
+                      alert('Congregation follower link copied to clipboard!');
+                    }}
+                    className="rounded-xl bg-violet-600 hover:bg-violet-500 px-4 text-xs font-bold text-white transition-colors"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
