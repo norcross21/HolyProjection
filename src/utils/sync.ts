@@ -20,6 +20,12 @@ export interface Presentation {
     margin: number;
     fontFamily: string;
     blankMode?: 'none' | 'black' | 'clear' | 'logo';
+    textAlign?: 'left' | 'center' | 'right';
+    verticalAlign?: 'top' | 'center' | 'bottom';
+    textTransform?: 'none' | 'uppercase';
+    textShadow?: 'none' | 'subtle' | 'strong';
+    textOutline?: 'none' | 'subtle' | 'strong';
+    slideTransition?: 'none' | 'fade' | 'slide' | 'zoom';
   };
 }
 
@@ -39,6 +45,12 @@ export const DEFAULT_PRESENTATION: Presentation = {
     background: '#0f172a', // Tailwind slate-900
     margin: 8,
     fontFamily: 'Inter',
+    textAlign: 'center',
+    verticalAlign: 'center',
+    textTransform: 'none',
+    textShadow: 'none',
+    textOutline: 'none',
+    slideTransition: 'none',
   },
   slides: [
     {

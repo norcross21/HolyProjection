@@ -31,6 +31,10 @@ function ProjectorContent() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [statusVisible, setStatusVisible] = useState(true);
 
+  // Transition & Slide rendering states
+  const [transitionState, setTransitionState] = useState<'idle' | 'exiting' | 'entering'>('idle');
+  const [slideToShow, setSlideToShow] = useState<any>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const primaryTextRef = useRef<HTMLDivElement>(null);
   const translationTextRef = useRef<HTMLDivElement>(null);
@@ -66,9 +70,75 @@ function ProjectorContent() {
     else if (langParam === 'bilingual') setDisplayMode('bilingual');
   }, [langParam]);
 
-  // 2. Handle WebRTC Live Camera Stream lifecycle
+  // 2. Load Google Fonts dynamically
   useEffect(() => {
-    const isCameraActive = activeSlide?.media_type === 'camera';
+    const linkId = 'google-fonts-projector';
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Outfit:wght@450;700;900&family=Lora:ital,wght@0,600;0,700;1,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  // 3. Handle stateful slide transitions and live updates
+  useEffect(() => {
+    if (!activeSlide) {
+      setSlideToShow(null);
+      setTransitionState('idle');
+      return;
+    }
+
+    if (!slideToShow) {
+      setSlideToShow(activeSlide);
+      setTransitionState('idle');
+      return;
+    }
+
+    const transition = fontSettings.slideTransition || 'none';
+
+    // Live edit updates (same slide ID, content/media edited)
+    if (activeSlide.id === slideToShow.id) {
+      if (
+        activeSlide.content !== slideToShow.content ||
+        activeSlide.translation !== slideToShow.translation ||
+        activeSlide.media_type !== slideToShow.media_type ||
+        activeSlide.media_url !== slideToShow.media_url
+      ) {
+        setSlideToShow(activeSlide);
+      }
+      return;
+    }
+
+    // Active slide changed
+    if (transition === 'none') {
+      setSlideToShow(activeSlide);
+      setTransitionState('idle');
+    } else {
+      setTransitionState('exiting');
+      const exitTimer = setTimeout(() => {
+        setSlideToShow(activeSlide);
+        setTransitionState('entering');
+        const enterTimer = setTimeout(() => {
+          setTransitionState('idle');
+        }, 50);
+        return () => clearTimeout(enterTimer);
+      }, 300);
+      return () => clearTimeout(exitTimer);
+    }
+  }, [
+    activeSlide?.id,
+    activeSlide?.content,
+    activeSlide?.translation,
+    activeSlide?.media_type,
+    activeSlide?.media_url,
+    fontSettings.slideTransition
+  ]);
+
+  // 4. Handle WebRTC Live Camera Stream lifecycle based on currently showing slide
+  useEffect(() => {
+    const isCameraActive = slideToShow?.media_type === 'camera';
 
     if (isCameraActive) {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
@@ -98,12 +168,95 @@ function ProjectorContent() {
         streamRef.current = null;
       }
     };
-  }, [activeSlide?.media_type]);
+  }, [slideToShow?.media_type]);
+
+  // Alignment styling helper functions
+  const getVerticalAlignClass = () => {
+    const val = fontSettings.verticalAlign || 'center';
+    if (val === 'top') return 'justify-start';
+    if (val === 'bottom') return 'justify-end';
+    return 'justify-center';
+  };
+
+  const getHorizontalAlignClass = () => {
+    const val = fontSettings.textAlign || 'center';
+    if (val === 'left') return 'items-start text-left';
+    if (val === 'right') return 'items-end text-right';
+    return 'items-center text-center';
+  };
+
+  const getDividerAlignClass = () => {
+    const val = fontSettings.textAlign || 'center';
+    if (val === 'left') return 'self-start mr-auto w-1/4';
+    if (val === 'right') return 'self-end ml-auto w-1/4';
+    return 'self-center mx-auto w-1/4';
+  };
+
+  const getTextAlignClass = () => {
+    const val = fontSettings.textAlign || 'center';
+    if (val === 'left') return 'text-left';
+    if (val === 'right') return 'text-right';
+    return 'text-center';
+  };
+
+  // Text decoration styling (stroke + shadow + capitalization)
+  const getTextStyle = () => {
+    const style: React.CSSProperties = {};
+    
+    // Text transform
+    if (fontSettings.textTransform === 'uppercase') {
+      style.textTransform = 'uppercase';
+    }
+    
+    // Text outline
+    const outline = fontSettings.textOutline || 'none';
+    if (outline === 'subtle') {
+      style.WebkitTextStroke = '1px rgba(0, 0, 0, 0.85)';
+    } else if (outline === 'strong') {
+      style.WebkitTextStroke = '2.5px rgba(0, 0, 0, 0.95)';
+    }
+    
+    // Text shadow
+    const shadow = fontSettings.textShadow || 'none';
+    if (shadow === 'subtle') {
+      style.textShadow = '1px 1px 3px rgba(0, 0, 0, 0.85)';
+    } else if (shadow === 'strong') {
+      style.textShadow = '3px 3px 8px rgba(0, 0, 0, 0.95), 0 0 15px rgba(0, 0, 0, 0.8)';
+    }
+    
+    return style;
+  };
+
+  // Transition animations class calculation
+  const getTransitionClasses = () => {
+    const transition = fontSettings.slideTransition || 'none';
+    if (transition === 'none') return '';
+
+    if (transition === 'fade') {
+      if (transitionState === 'exiting') return 'opacity-0 scale-100 transition-all duration-300 ease-in-out';
+      if (transitionState === 'entering') return 'opacity-0 scale-100';
+      return 'opacity-100 scale-100 transition-all duration-300 ease-in-out';
+    }
+
+    if (transition === 'slide') {
+      if (transitionState === 'exiting') return 'opacity-0 -translate-x-12 transition-all duration-300 ease-in-out';
+      if (transitionState === 'entering') return 'opacity-0 translate-x-12';
+      return 'opacity-100 translate-x-0 transition-all duration-300 ease-in-out';
+    }
+
+    if (transition === 'zoom') {
+      if (transitionState === 'exiting') return 'opacity-0 scale-90 transition-all duration-300 ease-in-out';
+      if (transitionState === 'entering') return 'opacity-0 scale-110';
+      return 'opacity-100 scale-100 transition-all duration-300 ease-in-out';
+    }
+
+    return '';
+  };
 
   // Auto-sizing text function
   const adjustFontSizes = () => {
     const container = containerRef.current;
-    if (!container || !activeSlide) return;
+    if (!container || !slideToShow) return;
 
     // Adjust margins
     const marginScale = fontSettings.margin * 32;
@@ -138,14 +291,14 @@ function ProjectorContent() {
     };
 
     if (displayMode === 'primary') {
-      findOptimalSize(primaryTextRef.current, activeSlide.content, availableHeight, availableWidth);
+      findOptimalSize(primaryTextRef.current, slideToShow.content, availableHeight, availableWidth);
     } else if (displayMode === 'translation') {
-      findOptimalSize(translationTextRef.current, activeSlide.translation || '', availableHeight, availableWidth);
+      findOptimalSize(translationTextRef.current, slideToShow.translation || '', availableHeight, availableWidth);
     } else if (displayMode === 'bilingual') {
       // Split vertical height between primary and translation
       const halfHeight = (availableHeight / 2) - 40;
-      findOptimalSize(primaryTextRef.current, activeSlide.content, halfHeight, availableWidth);
-      findOptimalSize(translationTextRef.current, activeSlide.translation || '', halfHeight, availableWidth);
+      findOptimalSize(primaryTextRef.current, slideToShow.content, halfHeight, availableWidth);
+      findOptimalSize(translationTextRef.current, slideToShow.translation || '', halfHeight, availableWidth);
     }
   };
 
@@ -165,7 +318,7 @@ function ProjectorContent() {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [activeSlide, displayMode, fontSettings]);
+  }, [slideToShow, displayMode, fontSettings]);
 
   // Hide connection status badge after 4 seconds
   useEffect(() => {
@@ -200,9 +353,9 @@ function ProjectorContent() {
   }, []);
 
   const hasMediaBg = 
-    activeSlide?.media_type === 'video' || 
-    activeSlide?.media_type === 'camera' || 
-    activeSlide?.media_type === 'image';
+    slideToShow?.media_type === 'video' || 
+    slideToShow?.media_type === 'camera' || 
+    slideToShow?.media_type === 'image';
 
   return (
     <main
@@ -227,20 +380,20 @@ function ProjectorContent() {
       )}
 
       {/* Background Image Layer */}
-      {activeSlide?.media_type === 'image' && activeSlide.media_url && (
+      {slideToShow?.media_type === 'image' && slideToShow.media_url && (
         <img
-          key={activeSlide.media_url}
-          src={activeSlide.media_url}
+          key={slideToShow.media_url}
+          src={slideToShow.media_url}
           alt="Slide background"
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300"
         />
       )}
 
       {/* 1. Background Video Layer */}
-      {activeSlide?.media_type === 'video' && activeSlide.media_url && (
+      {slideToShow?.media_type === 'video' && slideToShow.media_url && (
         <video
-          key={activeSlide.media_url}
-          src={activeSlide.media_url}
+          key={slideToShow.media_url}
+          src={slideToShow.media_url}
           autoPlay
           loop
           muted
@@ -256,7 +409,7 @@ function ProjectorContent() {
         playsInline
         muted
         className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300 ${
-          activeSlide?.media_type === 'camera' ? 'opacity-100' : 'opacity-0'
+          slideToShow?.media_type === 'camera' ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
@@ -327,48 +480,50 @@ function ProjectorContent() {
       {/* Main Projection Canvas */}
       <div
         ref={containerRef}
-        className="flex h-full w-full flex-col justify-center text-center select-none z-10"
+        className={`flex h-full w-full flex-col select-none z-10 ${getVerticalAlignClass()} ${getHorizontalAlignClass()}`}
         style={{
           padding: `${fontSettings.margin * 1.5}rem`,
         }}
       >
-        {!activeSlide ? (
+        {!slideToShow ? (
           <div className="text-slate-500 text-lg">No slides loaded. Go to the dashboard to project.</div>
         ) : (
           <div 
-            className={`flex flex-col justify-center items-center gap-8 w-full transition-all duration-300 ${
+            className={`flex flex-col gap-8 w-full ${getVerticalAlignClass()} ${getHorizontalAlignClass()} ${getTransitionClasses()} ${
               hasMediaBg 
-                ? 'backdrop-blur-md bg-slate-950/45 border border-white/5 rounded-3xl p-10 max-w-4xl mx-auto shadow-[0_0_50px_rgba(0,0,0,0.5)]'
+                ? 'backdrop-blur-md bg-slate-950/45 border border-white/5 rounded-3xl p-10 max-w-4xl shadow-[0_0_50px_rgba(0,0,0,0.5)]'
                 : ''
             } ${
               fontSettings.blankMode === 'clear' || fontSettings.blankMode === 'logo'
                 ? 'opacity-0 scale-95 pointer-events-none'
-                : 'opacity-100 scale-100'
+                : ''
             }`}
           >
             {/* Primary Language Layer */}
             {(displayMode === 'primary' || displayMode === 'bilingual') && (
               <div
                 ref={primaryTextRef}
-                className="text-white font-bold leading-snug whitespace-pre-line tracking-tight transition-all duration-150 ease-out drop-shadow-md text-center max-w-full"
+                style={getTextStyle()}
+                className={`text-white font-bold leading-snug whitespace-pre-line tracking-tight transition-all duration-150 ease-out max-w-full ${getTextAlignClass()}`}
               >
-                {activeSlide.content}
+                {slideToShow.content}
               </div>
             )}
 
             {/* Language Divider for Bilingual display */}
-            {displayMode === 'bilingual' && activeSlide.translation && (
-              <div className="w-1/4 border-t border-white/20 my-1 animate-fade-in" />
+            {displayMode === 'bilingual' && slideToShow.translation && (
+              <div className={`border-t border-white/20 my-1 animate-fade-in ${getDividerAlignClass()}`} />
             )}
 
             {/* Translation Layer (Arabic / Right-to-Left styling) */}
-            {(displayMode === 'translation' || displayMode === 'bilingual') && activeSlide.translation && (
+            {(displayMode === 'translation' || displayMode === 'bilingual') && slideToShow.translation && (
               <div
                 ref={translationTextRef}
                 dir="rtl"
-                className="text-indigo-200 font-extrabold leading-normal whitespace-pre-line transition-all duration-150 ease-out drop-shadow-md text-center max-w-full font-serif"
+                style={getTextStyle()}
+                className={`text-indigo-200 font-extrabold leading-normal whitespace-pre-line transition-all duration-150 ease-out max-w-full ${getTextAlignClass()}`}
               >
-                {activeSlide.translation}
+                {slideToShow.translation}
               </div>
             )}
           </div>

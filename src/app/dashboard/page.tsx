@@ -66,6 +66,36 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleTranslateSlide = async () => {
+    if (!selectedSlide || !selectedSlide.content.trim()) return;
+    setIsTranslating(true);
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: selectedSlide.content, targetLang: 'Arabic' }),
+      });
+      const data = await response.json();
+      if (data.success && data.translation) {
+        updateSlideContent(
+          selectedSlide.id,
+          selectedSlide.content,
+          data.translation,
+          selectedSlide.media_type,
+          selectedSlide.media_url
+        );
+      } else {
+        alert(data.error || 'Failed to translate lyrics.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Translation failed. Please try again.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   // Hook for Listing & Creating Setlists
   const {
@@ -93,6 +123,17 @@ function DashboardContent() {
     };
     checkSession();
   }, [router]);
+
+  useEffect(() => {
+    const linkId = 'google-fonts-dashboard';
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Outfit:wght@450;700;900&family=Lora:ital,wght@0,600;0,700;1,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
 
   if (!isClient || !currentUser) {
     return (
@@ -672,9 +713,127 @@ function DashboardContent() {
                   className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
                 >
                   <option value="Inter">Inter (Sans)</option>
+                  <option value="Montserrat">Montserrat (Modern Sans)</option>
+                  <option value="Outfit">Outfit (Geometric Sans)</option>
+                  <option value="Lora">Lora (Worship Serif)</option>
+                  <option value="Playfair Display">Playfair Display (Serif)</option>
                   <option value="Georgia">Georgia (Serif)</option>
                   <option value="system-ui">System Default</option>
                   <option value="Courier New">Monospace</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Text Alignment</label>
+                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
+                  {(['left', 'center', 'right'] as const).map((align) => (
+                    <button
+                      key={align}
+                      type="button"
+                      onClick={() => updateSettings({ textAlign: align })}
+                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
+                        (presentation.settings.textAlign || 'center') === align
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {align}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Vertical Alignment</label>
+                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
+                  {(['top', 'center', 'bottom'] as const).map((valign) => (
+                    <button
+                      key={valign}
+                      type="button"
+                      onClick={() => updateSettings({ verticalAlign: valign })}
+                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
+                        (presentation.settings.verticalAlign || 'center') === valign
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {valign}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Text Capitalization</label>
+                <div className="grid grid-cols-2 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-855">
+                  {(['none', 'uppercase'] as const).map((transform) => (
+                    <button
+                      key={transform}
+                      type="button"
+                      onClick={() => updateSettings({ textTransform: transform })}
+                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold transition-all ${
+                        (presentation.settings.textTransform || 'none') === transform
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {transform === 'none' ? 'Normal' : 'ALL CAPS'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Text Shadow</label>
+                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
+                  {(['none', 'subtle', 'strong'] as const).map((shadow) => (
+                    <button
+                      key={shadow}
+                      type="button"
+                      onClick={() => updateSettings({ textShadow: shadow })}
+                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
+                        (presentation.settings.textShadow || 'none') === shadow
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {shadow}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Text Outline</label>
+                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
+                  {(['none', 'subtle', 'strong'] as const).map((outline) => (
+                    <button
+                      key={outline}
+                      type="button"
+                      onClick={() => updateSettings({ textOutline: outline })}
+                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
+                        (presentation.settings.textOutline || 'none') === outline
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {outline}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Slide Transition</label>
+                <select
+                  value={presentation.settings.slideTransition || 'none'}
+                  onChange={(e) => updateSettings({ slideTransition: e.target.value as any })}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
+                >
+                  <option value="none">None (Instant)</option>
+                  <option value="fade">Fade (Crossfade)</option>
+                  <option value="slide">Slide (Push Left)</option>
+                  <option value="zoom">Scale Zoom</option>
                 </select>
               </div>
 
@@ -903,6 +1062,27 @@ function DashboardContent() {
                     placeholder="Enter slide content..."
                     className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-sans"
                   />
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    disabled={isTranslating || !selectedSlide.content.trim()}
+                    onClick={handleTranslateSlide}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/20 to-indigo-600/20 hover:from-violet-600/40 hover:to-indigo-600/40 border border-violet-500/30 hover:border-violet-500/50 py-2.5 px-4 text-xs font-bold text-violet-300 hover:text-white shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
+                        <span>Translating with AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 text-violet-400 animate-pulse" />
+                        <span>AI Translate to Arabic</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="flex-1 flex flex-col">
