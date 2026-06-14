@@ -19,7 +19,8 @@ import {
   ArrowLeft,
   ChevronRight,
   Languages,
-  LayoutGrid
+  LayoutGrid,
+  BookOpen
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -166,13 +167,23 @@ function DashboardContent() {
               <p className="text-slate-400 text-sm mt-1">Select a presentation to edit, collaborate, and project live.</p>
             </div>
             
-            <button
-              onClick={() => router.push('/dashboard/import')}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-600/10 border border-violet-500/20 hover:bg-violet-600/20 px-4 py-2.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98] self-start sm:self-auto"
-            >
-              <Sparkles className="h-4 w-4 text-violet-400" />
-              <span>AI Bulk Importer</span>
-            </button>
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <button
+                onClick={() => router.push('/dashboard/liturgy')}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-600/20 px-4 py-2.5 text-xs font-bold text-indigo-300 transition-all active:scale-[0.98]"
+              >
+                <BookOpen className="h-4 w-4 text-indigo-400" />
+                <span>Liturgy Importer</span>
+              </button>
+
+              <button
+                onClick={() => router.push('/dashboard/import')}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-600/10 border border-violet-500/20 hover:bg-violet-600/20 px-4 py-2.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98]"
+              >
+                <Sparkles className="h-4 w-4 text-violet-400" />
+                <span>AI Bulk Importer</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
