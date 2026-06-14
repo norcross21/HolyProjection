@@ -158,11 +158,21 @@ function DashboardContent() {
         </header>
 
         <main className="flex-1 max-w-5xl w-full mx-auto p-6 md:py-12 flex flex-col gap-8 z-10">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-              Worship Presentations
-            </h2>
-            <p className="text-slate-400 text-sm mt-1">Select a presentation to edit, collaborate, and project live.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                Worship Presentations
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">Select a presentation to edit, collaborate, and project live.</p>
+            </div>
+            
+            <button
+              onClick={() => router.push('/dashboard/import')}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-600/10 border border-violet-500/20 hover:bg-violet-600/20 px-4 py-2.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98] self-start sm:self-auto"
+            >
+              <Sparkles className="h-4 w-4 text-violet-400" />
+              <span>AI Bulk Importer</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
