@@ -14,7 +14,8 @@ import {
   Check, 
   Send, 
   X,
-  HeartHandshake
+  HeartHandshake,
+  AlertTriangle
 } from 'lucide-react';
 
 function FollowContent() {
@@ -27,6 +28,7 @@ function FollowContent() {
     presentation: singlePres,
     activeSlideId: activePresSlideId,
     sendPrayerRequest: sendPresPrayer,
+    activeAlert: presActiveAlert,
   } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
 
   // Load setlist hook
@@ -34,7 +36,10 @@ function FollowContent() {
     setlist,
     activeSlideId: activeSetlistSlideId,
     sendPrayerRequest: sendSetlistPrayer,
+    activeAlert: setlistActiveAlert,
   } = useRealtimeSetlist(setlistId || '');
+
+  const activeAlert = setlistId ? setlistActiveAlert : presActiveAlert;
 
   const [isClient, setIsClient] = useState(false);
   const [langMode, setLangMode] = useState<'bilingual' | 'primary' | 'translation'>('bilingual');
@@ -170,6 +175,37 @@ function FollowContent() {
       {/* Primary Display Area */}
       <main className="flex-1 px-4 py-6 flex flex-col justify-center max-w-lg w-full mx-auto gap-6 z-10">
         
+        {/* Active Live Alert Overlay */}
+        {activeAlert && (
+          <div className={`w-full rounded-2xl border p-4 flex items-start gap-3 shadow-md transition-all duration-355 ${
+            activeAlert.type === 'nursery'
+              ? isLightTheme
+                ? 'bg-amber-50 border-amber-250 text-amber-900 shadow-amber-100/30'
+                : 'bg-amber-950/45 border-amber-500/35 text-amber-250 shadow-amber-950/20'
+              : activeAlert.type === 'warning'
+                ? isLightTheme
+                  ? 'bg-red-50 border-red-250 text-red-900 shadow-red-100/30'
+                  : 'bg-red-950/45 border-red-500/35 text-red-250 shadow-red-950/20'
+                : isLightTheme
+                  ? 'bg-slate-100 border-slate-200 text-slate-800 shadow-slate-100/30'
+                  : 'bg-slate-900/60 border-slate-800/80 text-slate-200 shadow-slate-950/25'
+          }`}>
+            <AlertTriangle className={`h-5 w-5 shrink-0 ${
+              activeAlert.type === 'nursery'
+                ? 'text-amber-550 animate-pulse'
+                : activeAlert.type === 'warning'
+                  ? 'text-red-550 animate-bounce'
+                  : isLightTheme ? 'text-slate-500' : 'text-slate-400'
+            }`} />
+            <div className="flex-1 overflow-hidden">
+              <span className="text-[9px] uppercase font-black tracking-widest block opacity-70 font-sans">
+                {activeAlert.type === 'nursery' ? 'Nursery Call' : activeAlert.type === 'warning' ? 'Urgent Alert' : 'Live Notice'}
+              </span>
+              <p className="font-extrabold text-xs leading-relaxed mt-0.5">{activeAlert.message}</p>
+            </div>
+          </div>
+        )}
+
         {/* Language Tabs Selector */}
         <div className={`flex items-center gap-1 p-1 rounded-xl border transition-colors ${
           isLightTheme ? 'border-slate-200 bg-slate-100' : 'border-slate-900 bg-slate-900/40'

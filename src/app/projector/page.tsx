@@ -16,15 +16,18 @@ function ProjectorContent() {
     isDemoMode: isPresDemo,
     presentation: singlePres,
     activeSlideId: activePresSlideId,
+    activeAlert: presActiveAlert,
   } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
 
   const {
     isDemoMode: isSetlistDemo,
     setlist,
     activeSlideId: activeSetlistSlideId,
+    activeAlert: setlistActiveAlert,
   } = useRealtimeSetlist(setlistId || '');
 
   const isDemoMode = setlistId ? isSetlistDemo : isPresDemo;
+  const activeAlert = setlistId ? setlistActiveAlert : presActiveAlert;
 
   // Layout parameters
   const [displayMode, setDisplayMode] = useState<'primary' | 'translation' | 'bilingual'>('bilingual');
@@ -365,6 +368,71 @@ function ProjectorContent() {
         fontFamily: fontSettings.fontFamily || 'sans-serif',
       }}
     >
+      {/* CSS Marquee Animation Keyframes */}
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-100%, 0, 0); }
+        }
+        .animate-marquee {
+          animation: marquee 16s linear infinite;
+        }
+      `}</style>
+
+      {/* Live Alert Overlay Banner */}
+      {activeAlert && (
+        <div 
+          className={`absolute left-8 right-8 z-[60] transition-all duration-500 ease-in-out ${
+            activeAlert.position === 'top' ? 'top-8' : 'bottom-8'
+          }`}
+        >
+          <div 
+            className={`flex items-center gap-4 rounded-2xl border px-6 py-4 backdrop-blur-lg shadow-2xl ${
+              activeAlert.type === 'nursery'
+                ? 'bg-amber-950/70 border-amber-500/40 text-amber-200 shadow-[0_0_25px_rgba(245,158,11,0.25)]'
+                : activeAlert.type === 'warning'
+                  ? 'bg-red-950/70 border-red-500/40 text-red-200 shadow-[0_0_25px_rgba(239,68,68,0.25)]'
+                  : 'bg-slate-950/70 border-slate-800 text-slate-200 shadow-[0_0_25px_rgba(0,0,0,0.5)]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 shrink-0 font-sans">
+              <AlertTriangle 
+                className={`h-5 w-5 ${
+                  activeAlert.type === 'nursery'
+                    ? 'text-amber-400 animate-pulse'
+                    : activeAlert.type === 'warning'
+                      ? 'text-red-400 animate-bounce'
+                      : 'text-slate-400'
+                }`} 
+              />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {activeAlert.type === 'nursery' 
+                  ? 'Nursery Call' 
+                  : activeAlert.type === 'warning' 
+                    ? 'Urgent Alert' 
+                    : 'Announcement'}
+              </span>
+            </div>
+            
+            <div className="h-5 w-px bg-white/10 shrink-0" />
+            
+            <div className="flex-1 overflow-hidden relative">
+              {activeAlert.type === 'general' && activeAlert.message.length > 50 ? (
+                <div className="w-full overflow-hidden whitespace-nowrap">
+                  <div className="inline-block animate-marquee pl-[100%] font-bold text-sm tracking-wide">
+                    {activeAlert.message}
+                  </div>
+                </div>
+              ) : (
+                <p className="font-extrabold text-sm tracking-wide leading-relaxed">
+                  {activeAlert.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Blackout Overlay */}
       {fontSettings.blankMode === 'black' && (
         <div className="absolute inset-0 bg-black z-50 pointer-events-none transition-opacity duration-300" />

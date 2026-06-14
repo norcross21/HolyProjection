@@ -36,6 +36,14 @@ export interface PresenceUser {
   onlineAt: string;
 }
 
+export interface LiveAlert {
+  id: string;
+  message: string;
+  type: 'general' | 'nursery' | 'warning';
+  position: 'top' | 'bottom';
+  timestamp: string;
+}
+
 // Initial Mock/Default Presentation Data
 export const DEFAULT_PRESENTATION: Presentation = {
   id: 'demo-presentation-1',
@@ -254,6 +262,7 @@ export function useRealtimePresentation(presentationId: string) {
   const channelRef = useRef<any>(null);
   const localBcRef = useRef<BroadcastChannel | null>(null);
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
+  const [activeAlert, setActiveAlert] = useState<LiveAlert | null>(null);
 
   // Load profile and run synchronization
   useEffect(() => {
@@ -339,6 +348,8 @@ export function useRealtimePresentation(presentationId: string) {
             });
           } else if (type === 'PRAYER_REQUEST') {
             setPrayerRequests((prev) => [data, ...prev]);
+          } else if (type === 'LIVE_ALERT') {
+            setActiveAlert(data.activeAlert);
           }
         };
 
@@ -493,6 +504,11 @@ export function useRealtimePresentation(presentationId: string) {
               return [payload, ...prev];
             });
           }
+        })
+        .on('broadcast', { event: 'live_alert' }, ({ payload }) => {
+          if (payload) {
+            setActiveAlert(payload.activeAlert);
+          }
         });
 
       activeProjChannel.subscribe();
@@ -644,6 +660,54 @@ export function useRealtimePresentation(presentationId: string) {
     setPrayerRequests([]);
   };
 
+  const sendAlert = (message: string, type: LiveAlert['type'] = 'general', position: LiveAlert['position'] = 'bottom') => {
+    const payload: LiveAlert = {
+      id: `${Date.now()}-${Math.random()}`,
+      message,
+      type,
+      position,
+      timestamp: new Date().toISOString()
+    };
+
+    setActiveAlert(payload);
+
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'LIVE_ALERT',
+        data: { activeAlert: payload }
+      });
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'live_alert',
+          payload: { activeAlert: payload }
+        });
+      }
+    }
+  };
+
+  const clearAlert = () => {
+    setActiveAlert(null);
+
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'LIVE_ALERT',
+        data: { activeAlert: null }
+      });
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'live_alert',
+          payload: { activeAlert: null }
+        });
+      }
+    }
+  };
+
   return {
     isDemoMode,
     presentation,
@@ -658,6 +722,9 @@ export function useRealtimePresentation(presentationId: string) {
     sendPrayerRequest,
     clearPrayerRequests,
     prayerRequests,
+    sendAlert,
+    clearAlert,
+    activeAlert,
   };
 }
 
@@ -798,6 +865,7 @@ export function useRealtimeSetlist(setlistId: string) {
   const localBcRef = useRef<BroadcastChannel | null>(null);
   const channelRef = useRef<any>(null);
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
+  const [activeAlert, setActiveAlert] = useState<LiveAlert | null>(null);
 
   const fetchSetlistDetails = async () => {
     if (!setlistId) return;
@@ -945,6 +1013,8 @@ export function useRealtimeSetlist(setlistId: string) {
             });
           } else if (type === 'PRAYER_REQUEST') {
             setPrayerRequests((prev) => [data, ...prev]);
+          } else if (type === 'LIVE_ALERT') {
+            setActiveAlert(data.activeAlert);
           }
         };
 
@@ -1037,6 +1107,11 @@ export function useRealtimeSetlist(setlistId: string) {
               if (prev.some((r) => r.id === payload.id)) return prev;
               return [payload, ...prev];
             });
+          }
+        })
+        .on('broadcast', { event: 'live_alert' }, ({ payload }) => {
+          if (payload) {
+            setActiveAlert(payload.activeAlert);
           }
         });
 
@@ -1283,6 +1358,54 @@ export function useRealtimeSetlist(setlistId: string) {
     setPrayerRequests([]);
   };
 
+  const sendAlert = (message: string, type: LiveAlert['type'] = 'general', position: LiveAlert['position'] = 'bottom') => {
+    const payload: LiveAlert = {
+      id: `${Date.now()}-${Math.random()}`,
+      message,
+      type,
+      position,
+      timestamp: new Date().toISOString()
+    };
+
+    setActiveAlert(payload);
+
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'LIVE_ALERT',
+        data: { activeAlert: payload }
+      });
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'live_alert',
+          payload: { activeAlert: payload }
+        });
+      }
+    }
+  };
+
+  const clearAlert = () => {
+    setActiveAlert(null);
+
+    if (isDemoMode) {
+      localBcRef.current?.postMessage({
+        type: 'LIVE_ALERT',
+        data: { activeAlert: null }
+      });
+    } else {
+      const channel = channelRef.current?.presenceChannel;
+      if (channel) {
+        channel.send({
+          type: 'broadcast',
+          event: 'live_alert',
+          payload: { activeAlert: null }
+        });
+      }
+    }
+  };
+
   return {
     isDemoMode,
     setlist,
@@ -1298,6 +1421,9 @@ export function useRealtimeSetlist(setlistId: string) {
     sendPrayerRequest,
     clearPrayerRequests,
     prayerRequests,
+    sendAlert,
+    clearAlert,
+    activeAlert,
     refresh: fetchSetlistDetails
   };
 }

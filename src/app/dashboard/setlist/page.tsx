@@ -49,9 +49,18 @@ function SetlistContent() {
     setBlankMode,
     prayerRequests,
     clearPrayerRequests,
+    sendAlert,
+    clearAlert,
+    activeAlert,
   } = useRealtimeSetlist(setlistId);
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Live Alert States
+  const [alertText, setAlertText] = useState('');
+  const [alertType, setAlertType] = useState<'general' | 'nursery' | 'warning'>('general');
+  const [alertPosition, setAlertPosition] = useState<'top' | 'bottom'>('bottom');
+  const [nurseryNumber, setNurseryNumber] = useState('');
 
   // Portal hook to list existing presentations
   const {
@@ -320,6 +329,129 @@ function SetlistContent() {
                     <Plus className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:scale-110 transition-all" />
                   </div>
                 ))
+              )}
+            </div>
+          </section>
+
+          {/* Live Alerts Section */}
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-4 justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live View Alerts</h2>
+              </div>
+              {activeAlert && (
+                <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {/* Nursery quick preset call */}
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Quick Nursery Call</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. #304"
+                    value={nurseryNumber}
+                    onChange={(e) => setNurseryNumber(e.target.value)}
+                    className="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={!nurseryNumber.trim()}
+                    onClick={() => {
+                      const msg = `Nursery Alert: Child ${nurseryNumber.trim().startsWith('#') ? '' : '#'}${nurseryNumber.trim()}`;
+                      sendAlert(msg, 'nursery', 'top');
+                      setNurseryNumber('');
+                    }}
+                    className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-350 px-3.5 text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    Call
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom alert banner */}
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Custom Alert Message</label>
+                <textarea
+                  placeholder="e.g. Please move vehicle with plate XYZ-123..."
+                  value={alertText}
+                  onChange={(e) => setAlertText(e.target.value)}
+                  className="w-full h-16 rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Alert Type</label>
+                  <select
+                    value={alertType}
+                    onChange={(e) => setAlertType(e.target.value as any)}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
+                  >
+                    <option value="general">General (Slate)</option>
+                    <option value="nursery">Nursery (Amber)</option>
+                    <option value="warning">Warning (Red)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Position</label>
+                  <select
+                    value={alertPosition}
+                    onChange={(e) => setAlertPosition(e.target.value as any)}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
+                  >
+                    <option value="top">Top Screen</option>
+                    <option value="bottom">Bottom Screen</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 border-t border-slate-900/80 pt-3 mt-1">
+                {activeAlert && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAlert();
+                      setAlertText('');
+                    }}
+                    className="flex-1 rounded-xl border border-red-500/20 hover:border-red-500/30 bg-red-950/20 text-red-400 py-2 text-xs font-bold transition-all active:scale-[0.98]"
+                  >
+                    Clear Alert
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={!alertText.trim()}
+                  onClick={() => {
+                    sendAlert(alertText, alertType, alertPosition);
+                    setAlertText('');
+                  }}
+                  className="flex-[2] rounded-xl bg-violet-600 hover:bg-violet-500 text-white py-2 text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none shadow-md shadow-violet-600/10"
+                >
+                  Broadcast Alert
+                </button>
+              </div>
+
+              {activeAlert && (
+                <div className={`mt-2 rounded-xl p-3 text-[10px] flex flex-col gap-1 border border-dashed ${
+                  activeAlert.type === 'nursery' 
+                    ? 'bg-amber-500/5 border-amber-500/30 text-amber-400' 
+                    : activeAlert.type === 'warning'
+                      ? 'bg-red-500/5 border-red-500/30 text-red-400'
+                      : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                }`}>
+                  <div className="flex justify-between items-center font-extrabold uppercase tracking-wide">
+                    <span>Active Alert ({activeAlert.type})</span>
+                    <span className="text-[8px] opacity-70">
+                      {new Date(activeAlert.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="font-medium mt-0.5 leading-normal">{activeAlert.message}</p>
+                </div>
               )}
             </div>
           </section>

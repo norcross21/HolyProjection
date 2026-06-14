@@ -14,17 +14,20 @@ function StageDisplayContent() {
   const {
     isDemoMode: isPresDemo,
     presentation: singlePres,
-    activeSlideId: activePresSlideId
+    activeSlideId: activePresSlideId,
+    activeAlert: presActiveAlert,
   } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
 
   // Load setlist hook
   const {
     isDemoMode: isSetlistDemo,
     setlist,
-    activeSlideId: activeSetlistSlideId
+    activeSlideId: activeSetlistSlideId,
+    activeAlert: setlistActiveAlert,
   } = useRealtimeSetlist(setlistId || '');
 
   const isDemoMode = setlistId ? isSetlistDemo : isPresDemo;
+  const activeAlert = setlistId ? setlistActiveAlert : presActiveAlert;
 
   const [time, setTime] = useState('');
 
@@ -102,6 +105,27 @@ function StageDisplayContent() {
           </div>
         </div>
       </header>
+
+      {/* Active Live Alert Overlay for Stage */}
+      {activeAlert && (
+        <div className={`mt-4 px-6 py-4 rounded-xl border flex items-center gap-3.5 ${
+          activeAlert.type === 'nursery'
+            ? 'bg-amber-950/60 border-amber-500/65 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
+            : activeAlert.type === 'warning'
+              ? 'bg-red-950/60 border-red-500/65 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+              : 'bg-slate-900 border-slate-800 text-slate-300'
+        }`}>
+          <AlertTriangle className={`h-6 w-6 shrink-0 ${
+            activeAlert.type === 'nursery' ? 'text-amber-400 animate-pulse' : activeAlert.type === 'warning' ? 'text-red-400 animate-bounce' : 'text-slate-450'
+          }`} />
+          <div>
+            <span className="text-[9px] uppercase font-black tracking-widest block opacity-75">
+              Live Overlay Alert ({activeAlert.type})
+            </span>
+            <p className="font-extrabold text-sm leading-tight mt-0.5">{activeAlert.message}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Areas */}
       <div className="flex-1 flex flex-col justify-evenly py-6">
