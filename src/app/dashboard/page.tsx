@@ -516,7 +516,13 @@ function DashboardContent() {
                   <label className="block text-xs text-slate-400 mb-1.5 font-medium">English Lyrics (Primary)</label>
                   <textarea
                     value={selectedSlide.content}
-                    onChange={(e) => updateSlideContent(selectedSlide.id, e.target.value, selectedSlide.translation)}
+                    onChange={(e) => updateSlideContent(
+                      selectedSlide.id, 
+                      e.target.value, 
+                      selectedSlide.translation,
+                      selectedSlide.media_type,
+                      selectedSlide.media_url
+                    )}
                     placeholder="Enter slide content..."
                     className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-sans"
                   />
@@ -530,10 +536,67 @@ function DashboardContent() {
                   <textarea
                     dir="rtl"
                     value={selectedSlide.translation || ''}
-                    onChange={(e) => updateSlideContent(selectedSlide.id, selectedSlide.content, e.target.value)}
+                    onChange={(e) => updateSlideContent(
+                      selectedSlide.id, 
+                      selectedSlide.content, 
+                      e.target.value,
+                      selectedSlide.media_type,
+                      selectedSlide.media_url
+                    )}
                     placeholder="أدخل الترجمة هنا..."
                     className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-serif"
                   />
+                </div>
+
+                {/* Background Media Settings */}
+                <div className="border-t border-slate-900 pt-4 space-y-3">
+                  <label className="block text-xs text-slate-400 font-medium">Slide Media Background</label>
+                  <select
+                    value={selectedSlide.media_type || 'none'}
+                    onChange={(e) => updateSlideContent(
+                      selectedSlide.id, 
+                      selectedSlide.content, 
+                      selectedSlide.translation, 
+                      e.target.value as any, 
+                      selectedSlide.media_url
+                    )}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
+                  >
+                    <option value="none">Color Theme (Default)</option>
+                    <option value="video">Abstract Video Loop</option>
+                    <option value="camera">Live Camera Overlay (WebRTC)</option>
+                  </select>
+
+                  {selectedSlide.media_type === 'video' && (
+                    <div className="space-y-2 animate-fade-in">
+                      <input
+                        type="text"
+                        placeholder="Paste MP4 Video Loop URL"
+                        value={selectedSlide.media_url || ''}
+                        onChange={(e) => updateSlideContent(
+                          selectedSlide.id, 
+                          selectedSlide.content, 
+                          selectedSlide.translation, 
+                          'video', 
+                          e.target.value
+                        )}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-650 focus:border-violet-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateSlideContent(
+                          selectedSlide.id, 
+                          selectedSlide.content, 
+                          selectedSlide.translation, 
+                          'video', 
+                          'https://assets.mixkit.co/videos/preview/mixkit-nebula-in-outer-space-40348-large.mp4'
+                        )}
+                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        ⚡ Load Demo Space Nebular Loop
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-2 rounded-xl bg-slate-950/40 border border-slate-800 p-3 text-[10px] text-slate-500 flex items-start gap-2">

@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation } from '@/utils/sync';
-import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera } from 'lucide-react';
 
 function ProjectorContent() {
   const searchParams = useSearchParams();
   const presId = searchParams.get('pres') || 'demo-presentation-1';
+  const langParam = searchParams.get('lang'); // 'primary' | 'translation' | 'bilingual'
   
   // Custom sync hook
   const {
@@ -25,16 +26,63 @@ function ProjectorContent() {
   const primaryTextRef = useRef<HTMLDivElement>(null);
   const translationTextRef = useRef<HTMLDivElement>(null);
 
+  // WebRTC camera video reference
+  const cameraVideoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   // Active slide details
   const activeSlide = presentation.slides.find((s) => s.id === activeSlideId) || presentation.slides[0];
+
+  // 1. Handle language query parameter routing
+  useEffect(() => {
+    if (langParam === 'primary') setDisplayMode('primary');
+    else if (langParam === 'translation') setDisplayMode('translation');
+    else if (langParam === 'bilingual') setDisplayMode('bilingual');
+  }, [langParam]);
+
+  // 2. Handle WebRTC Live Camera Stream lifecycle
+  useEffect(() => {
+    const isCameraActive = activeSlide?.media_type === 'camera';
+
+    if (isCameraActive) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        .then((stream) => {
+          streamRef.current = stream;
+          if (cameraVideoRef.current) {
+            cameraVideoRef.current.srcObject = stream;
+            cameraVideoRef.current.play().catch((err) => {
+              console.error("Camera play failed:", err);
+            });
+          }
+        })
+        .catch((err) => {
+          console.error("WebRTC camera stream access blocked:", err);
+        });
+    } else {
+      // Stop webcam stream tracks if active to free user resources
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    }
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, [activeSlide?.media_type]);
 
   // Auto-sizing text function
   const adjustFontSizes = () => {
     const container = containerRef.current;
     if (!container || !activeSlide) return;
 
-    const availableWidth = container.clientWidth - (presentation.settings.margin * 32); // Convert margin scale
-    const availableHeight = container.clientHeight - (presentation.settings.margin * 32);
+    // Adjust margins
+    const marginScale = presentation.settings.margin * 32;
+    const availableWidth = container.clientWidth - marginScale;
+    const availableHeight = container.clientHeight - marginScale;
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
@@ -69,7 +117,7 @@ function ProjectorContent() {
       findOptimalSize(translationTextRef.current, activeSlide.translation || '', availableHeight, availableWidth);
     } else if (displayMode === 'bilingual') {
       // Split vertical height between primary and translation
-      const halfHeight = (availableHeight / 2) - 20;
+      const halfHeight = (availableHeight / 2) - 40;
       findOptimalSize(primaryTextRef.current, activeSlide.content, halfHeight, availableWidth);
       findOptimalSize(translationTextRef.current, activeSlide.translation || '', halfHeight, availableWidth);
     }
@@ -125,6 +173,8 @@ function ProjectorContent() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  const hasMediaBg = activeSlide?.media_type === 'video' || activeSlide?.media_type === 'camera';
+
   return (
     <main
       className="relative flex h-screen w-screen flex-col items-center justify-center overflow-hidden transition-all duration-300"
@@ -133,6 +183,30 @@ function ProjectorContent() {
         fontFamily: presentation.settings.fontFamily || 'sans-serif',
       }}
     >
+      {/* 1. Background Video Layer */}
+      {activeSlide?.media_type === 'video' && activeSlide.media_url && (
+        <video
+          key={activeSlide.media_url}
+          src={activeSlide.media_url}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] saturate-[0.8]"
+        />
+      )}
+
+      {/* 2. WebRTC Live Camera Stream Layer */}
+      <video
+        ref={cameraVideoRef}
+        autoPlay
+        playsInline
+        muted
+        className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300 ${
+          activeSlide?.media_type === 'camera' ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
       {/* Floating Status Notification Overlay */}
       {statusVisible && (
         <div className="absolute top-6 left-6 z-50 flex items-center gap-2 rounded-xl bg-slate-900/80 border border-slate-700/50 px-4 py-2 text-xs font-medium text-slate-200 shadow-xl backdrop-blur-md animate-fade-in">
@@ -150,55 +224,57 @@ function ProjectorContent() {
         </div>
       )}
 
-      {/* Floating Control Toolbar (Hidden in true fullscreen display or faded on mouse idle) */}
-      <div className="absolute bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-full bg-slate-900/70 border border-slate-800 px-5 py-3 shadow-2xl backdrop-blur-md opacity-30 hover:opacity-100 transition-opacity duration-300">
-        <div className="flex items-center gap-1.5 border-r border-slate-800 pr-3">
-          <Tv className="h-4 w-4 text-violet-400" />
-          <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Projector Screen</span>
-        </div>
+      {/* Floating Control Toolbar (Hidden if query parameter forces a specific language) */}
+      {!langParam && (
+        <div className="absolute bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-full bg-slate-900/70 border border-slate-800 px-5 py-3 shadow-2xl backdrop-blur-md opacity-30 hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center gap-1.5 border-r border-slate-800 pr-3">
+            <Tv className="h-4 w-4 text-violet-400" />
+            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Projector Screen</span>
+          </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setDisplayMode('primary')}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-              displayMode === 'primary' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            English Only
-          </button>
-          <button
-            onClick={() => setDisplayMode('translation')}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-              displayMode === 'translation' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Arabic Only
-          </button>
-          <button
-            onClick={() => setDisplayMode('bilingual')}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-              displayMode === 'bilingual' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Bilingual
-          </button>
-        </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setDisplayMode('primary')}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                displayMode === 'primary' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              English Only
+            </button>
+            <button
+              onClick={() => setDisplayMode('translation')}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                displayMode === 'translation' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Arabic Only
+            </button>
+            <button
+              onClick={() => setDisplayMode('bilingual')}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                displayMode === 'bilingual' ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/30' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Bilingual
+            </button>
+          </div>
 
-        <div className="flex items-center gap-2 border-l border-slate-800 pl-3">
-          <button
-            onClick={toggleFullscreen}
-            title="Toggle Fullscreen"
-            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
-          >
-            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-2 border-l border-slate-800 pl-3">
+            <button
+              onClick={toggleFullscreen}
+              title="Toggle Fullscreen"
+              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Projection Canvas */}
       <div
         ref={containerRef}
-        className="flex h-full w-full flex-col justify-center text-center select-none"
+        className="flex h-full w-full flex-col justify-center text-center select-none z-10"
         style={{
           padding: `${presentation.settings.margin * 1.5}rem`,
         }}
@@ -206,7 +282,13 @@ function ProjectorContent() {
         {!activeSlide ? (
           <div className="text-slate-500 text-lg">No slides loaded. Go to the dashboard to project.</div>
         ) : (
-          <div className="flex h-full w-full flex-col justify-center items-center gap-8">
+          <div 
+            className={`flex flex-col justify-center items-center gap-8 w-full transition-all duration-300 ${
+              hasMediaBg 
+                ? 'backdrop-blur-md bg-slate-950/45 border border-white/5 rounded-3xl p-10 max-w-4xl mx-auto shadow-[0_0_50px_rgba(0,0,0,0.5)]'
+                : ''
+            }`}
+          >
             {/* Primary Language Layer */}
             {(displayMode === 'primary' || displayMode === 'bilingual') && (
               <div

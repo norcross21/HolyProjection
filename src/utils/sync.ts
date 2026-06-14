@@ -473,9 +473,15 @@ export function useRealtimePresentation(presentationId: string) {
   }, [presentationId]);
 
   // Sync edits
-  const updateSlideContent = (slideId: string, content: string, translation?: string) => {
+  const updateSlideContent = (
+    slideId: string, 
+    content: string, 
+    translation?: string, 
+    media_type?: Slide['media_type'], 
+    media_url?: string
+  ) => {
     const updatedSlides = presentation.slides.map((s) => {
-      if (s.id === slideId) return { ...s, content, translation };
+      if (s.id === slideId) return { ...s, content, translation, media_type, media_url };
       return s;
     });
 
@@ -501,7 +507,13 @@ export function useRealtimePresentation(presentationId: string) {
     } else {
       supabase
         .from('slides')
-        .update({ content, translation, updated_at: new Date().toISOString() })
+        .update({ 
+          content, 
+          translation, 
+          media_type, 
+          media_url, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', slideId)
         .then(({ error }) => {
           if (error) console.error('Error updating slide:', error);
