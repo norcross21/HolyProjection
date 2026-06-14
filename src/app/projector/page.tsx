@@ -2,20 +2,29 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera } from 'lucide-react';
 
 function ProjectorContent() {
   const searchParams = useSearchParams();
-  const presId = searchParams.get('pres') || 'demo-presentation-1';
+  const presId = searchParams.get('pres');
+  const setlistId = searchParams.get('setlist');
   const langParam = searchParams.get('lang'); // 'primary' | 'translation' | 'bilingual'
   
-  // Custom sync hook
+  // Custom sync hooks (called unconditionally)
   const {
-    isDemoMode,
-    presentation,
-    activeSlideId,
-  } = useRealtimePresentation(presId);
+    isDemoMode: isPresDemo,
+    presentation: singlePres,
+    activeSlideId: activePresSlideId,
+  } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
+
+  const {
+    isDemoMode: isSetlistDemo,
+    setlist,
+    activeSlideId: activeSetlistSlideId,
+  } = useRealtimeSetlist(setlistId || '');
+
+  const isDemoMode = setlistId ? isSetlistDemo : isPresDemo;
 
   // Layout parameters
   const [displayMode, setDisplayMode] = useState<'primary' | 'translation' | 'bilingual'>('bilingual');
@@ -30,8 +39,25 @@ function ProjectorContent() {
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Active slide details
-  const activeSlide = presentation.slides.find((s) => s.id === activeSlideId) || presentation.slides[0];
+  // Resolve slides, active slide, and settings based on routing mode
+  let activeSlide: any = null;
+  let fontSettings = { fontFamily: 'sans-serif', margin: 8, background: '#0f172a' };
+
+  if (setlistId) {
+    if (setlist) {
+      const allSlides = setlist.items.flatMap((item) => {
+        const pres = item.presentation;
+        return pres?.slides || [];
+      });
+      activeSlide = allSlides.find((s) => s.id === activeSetlistSlideId) || allSlides[0];
+      if (setlist.items.length > 0 && setlist.items[0].presentation) {
+        fontSettings = setlist.items[0].presentation.settings;
+      }
+    }
+  } else {
+    activeSlide = singlePres.slides.find((s) => s.id === activePresSlideId) || singlePres.slides[0];
+    fontSettings = singlePres.settings;
+  }
 
   // 1. Handle language query parameter routing
   useEffect(() => {
@@ -80,7 +106,7 @@ function ProjectorContent() {
     if (!container || !activeSlide) return;
 
     // Adjust margins
-    const marginScale = presentation.settings.margin * 32;
+    const marginScale = fontSettings.margin * 32;
     const availableWidth = container.clientWidth - marginScale;
     const availableHeight = container.clientHeight - marginScale;
 
@@ -139,7 +165,7 @@ function ProjectorContent() {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [activeSlide, displayMode, presentation.settings]);
+  }, [activeSlide, displayMode, fontSettings]);
 
   // Hide connection status badge after 4 seconds
   useEffect(() => {
@@ -182,8 +208,8 @@ function ProjectorContent() {
     <main
       className="relative flex h-screen w-screen flex-col items-center justify-center overflow-hidden transition-all duration-300"
       style={{
-        backgroundColor: presentation.settings.background || '#0f172a',
-        fontFamily: presentation.settings.fontFamily || 'sans-serif',
+        backgroundColor: fontSettings.background || '#0f172a',
+        fontFamily: fontSettings.fontFamily || 'sans-serif',
       }}
     >
       {/* Background Image Layer */}
@@ -289,7 +315,7 @@ function ProjectorContent() {
         ref={containerRef}
         className="flex h-full w-full flex-col justify-center text-center select-none z-10"
         style={{
-          padding: `${presentation.settings.margin * 1.5}rem`,
+          padding: `${fontSettings.margin * 1.5}rem`,
         }}
       >
         {!activeSlide ? (
