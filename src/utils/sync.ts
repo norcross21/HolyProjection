@@ -6,7 +6,7 @@ export interface Slide {
   order_index: number;
   content: string;
   translation?: string;
-  media_type?: 'none' | 'color' | 'video' | 'camera';
+  media_type?: 'none' | 'color' | 'video' | 'camera' | 'image';
   media_url?: string;
 }
 
@@ -128,7 +128,7 @@ export function usePresentationsPortal() {
     setLoading(false);
   };
 
-  const createNewPresentation = async (title: string) => {
+  const createNewPresentation = async (title: string, customSlides?: { content: string; translation?: string }[]) => {
     if (!IS_SUPABASE_CONFIGURED) {
       // Demo Mode
       const newPres: Presentation = {
@@ -140,14 +140,21 @@ export function usePresentationsPortal() {
           margin: 8,
           fontFamily: 'Inter',
         },
-        slides: [
-          {
-            id: `slide-${Date.now()}-1`,
-            order_index: 0,
-            content: 'Amazing grace! How sweet the sound...',
-            translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
-          }
-        ]
+        slides: customSlides
+          ? customSlides.map((s, idx) => ({
+              id: `slide-${Date.now()}-${idx}`,
+              order_index: idx,
+              content: s.content,
+              translation: s.translation,
+            }))
+          : [
+              {
+                id: `slide-${Date.now()}-1`,
+                order_index: 0,
+                content: 'Amazing grace! How sweet the sound...',
+                translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
+              }
+            ]
       };
 
       const updated = [newPres, ...presentations];
@@ -178,15 +185,26 @@ export function usePresentationsPortal() {
 
       if (presErr) throw presErr;
 
-      // Create initial slide
+      // Create slides
+      const slidesToInsert = customSlides
+        ? customSlides.map((s, idx) => ({
+            presentation_id: presData.id,
+            order_index: idx,
+            content: s.content,
+            translation: s.translation || null,
+          }))
+        : [
+            {
+              presentation_id: presData.id,
+              order_index: 0,
+              content: 'Amazing grace! How sweet the sound...',
+              translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
+            }
+          ];
+
       const { error: slideErr } = await supabase
         .from('slides')
-        .insert({
-          presentation_id: presData.id,
-          order_index: 0,
-          content: 'Amazing grace! How sweet the sound...',
-          translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
-        });
+        .insert(slidesToInsert);
 
       if (slideErr) throw slideErr;
 

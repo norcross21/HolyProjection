@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal } from '@/utils/sync';
 import { supabase } from '@/utils/supabase';
+import MediaLibrary from '@/components/MediaLibrary';
 import { 
   Sparkles, 
   Tv, 
@@ -20,7 +21,9 @@ import {
   ChevronRight,
   Languages,
   LayoutGrid,
-  BookOpen
+  BookOpen,
+  FileText,
+  Upload
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -53,6 +56,7 @@ function DashboardContent() {
   const [newPresTitle, setNewPresTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isLegacyDragging, setIsLegacyDragging] = useState(false);
 
   // Set default selected slide when presentation loads
   useEffect(() => {
@@ -98,6 +102,83 @@ function DashboardContent() {
     if (newId) {
       router.push(`/dashboard?pres=${newId}`);
     }
+  };
+
+  const importFile = async (file: File) => {
+    setIsCreating(true);
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const title = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        
+        let slides: { content: string; translation?: string }[] = [];
+        
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed)) {
+            slides = parsed.map(s => ({
+              content: s.content || s.text || '',
+              translation: s.translation || s.arabic || ''
+            }));
+          } else if (parsed.slides && Array.isArray(parsed.slides)) {
+            slides = parsed.slides.map((s: any) => ({
+              content: s.content || s.text || '',
+              translation: s.translation || s.arabic || ''
+            }));
+          }
+        } else {
+          // Plain text .txt files
+          const chunks = text.split(/\n\s*\n/);
+          slides = chunks.map(chunk => ({
+            content: chunk.trim(),
+            translation: ''
+          })).filter(s => s.content.length > 0);
+        }
+        
+        if (slides.length === 0) {
+          alert('Could not parse any slides from this file.');
+          setIsCreating(false);
+          return;
+        }
+        
+        const newId = await createNewPresentation(title, slides);
+        if (newId) {
+          router.push(`/dashboard?pres=${newId}`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse file. Make sure it is a clean text file or valid JSON.');
+      } finally {
+        setIsCreating(false);
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+
+  const handleLegacyFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    importFile(files[0]);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsLegacyDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsLegacyDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsLegacyDragging(false);
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    importFile(files[0]);
   };
 
   const openProjectorWindow = () => {
@@ -188,41 +269,88 @@ function DashboardContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             
-            {/* Create Presentation Form Card */}
-            <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <Plus className="h-5 w-5 text-violet-400" />
-                <h3 className="font-bold text-white text-base">New Presentation</h3>
-              </div>
-              
-              <form onSubmit={handleCreatePres} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                    Title / Song Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Amazing Grace"
-                    value={newPresTitle}
-                    onChange={(e) => setNewPresTitle(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 px-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
-                  />
+            {/* Left Column: Create & Import */}
+            <div className="md:col-span-1 flex flex-col gap-6">
+              {/* Create Presentation Form Card */}
+              <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Plus className="h-5 w-5 text-violet-400" />
+                  <h3 className="font-bold text-white text-base">New Presentation</h3>
+                </div>
+                
+                <form onSubmit={handleCreatePres} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Title / Song Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Amazing Grace"
+                      value={newPresTitle}
+                      onChange={(e) => setNewPresTitle(e.target.value)}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 px-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {isCreating ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <span>Create Presentation</span>
+                    )}
+                  </button>
+                </form>
+              </section>
+
+              {/* Legacy Presentation Importer Card */}
+              <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Upload className="h-5 w-5 text-indigo-400" />
+                  <h3 className="font-bold text-white text-base">Legacy Importer</h3>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('legacy-file-input')?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 ${
+                    isLegacyDragging
+                      ? 'border-violet-500 bg-violet-950/15 shadow-md shadow-violet-500/10'
+                      : 'border-slate-800 hover:border-violet-500/40 bg-slate-950/40 hover:bg-slate-950/60'
+                  }`}
                 >
+                  <input
+                    type="file"
+                    id="legacy-file-input"
+                    onChange={handleLegacyFileImport}
+                    accept=".txt,.json"
+                    className="hidden"
+                  />
                   {isCreating ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+                      <span className="text-[10px] text-slate-400">Importing presentation...</span>
+                    </div>
                   ) : (
-                    <span>Create Presentation</span>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <FileText className={`h-8 w-8 transition-colors ${isLegacyDragging ? 'text-violet-400' : 'text-slate-500'}`} />
+                      <span className="text-xs font-bold text-slate-350">
+                        {isLegacyDragging ? 'Drop it here!' : 'Import .TXT or .JSON file'}
+                      </span>
+                      <span className="text-[9px] text-slate-500 max-w-[180px] mx-auto">
+                        Drag and drop or click to browse. TXT songs are split by double-newlines.
+                      </span>
+                    </div>
                   )}
-                </button>
-              </form>
-            </section>
+                </div>
+              </section>
+            </div>
 
             {/* Presentations list */}
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -574,9 +702,25 @@ function DashboardContent() {
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
                   >
                     <option value="none">Color Theme (Default)</option>
+                    <option value="image">Custom Background Image</option>
                     <option value="video">Abstract Video Loop</option>
                     <option value="camera">Live Camera Overlay (WebRTC)</option>
                   </select>
+
+                  {selectedSlide.media_type === 'image' && (
+                    <div className="animate-fade-in pt-1">
+                      <MediaLibrary
+                        currentUrl={selectedSlide.media_url}
+                        onSelectImage={(url) => updateSlideContent(
+                          selectedSlide.id,
+                          selectedSlide.content,
+                          selectedSlide.translation,
+                          'image',
+                          url
+                        )}
+                      />
+                    </div>
+                  )}
 
                   {selectedSlide.media_type === 'video' && (
                     <div className="space-y-2 animate-fade-in">

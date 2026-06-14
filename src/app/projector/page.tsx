@@ -173,7 +173,10 @@ function ProjectorContent() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const hasMediaBg = activeSlide?.media_type === 'video' || activeSlide?.media_type === 'camera';
+  const hasMediaBg = 
+    activeSlide?.media_type === 'video' || 
+    activeSlide?.media_type === 'camera' || 
+    activeSlide?.media_type === 'image';
 
   return (
     <main
@@ -183,6 +186,16 @@ function ProjectorContent() {
         fontFamily: presentation.settings.fontFamily || 'sans-serif',
       }}
     >
+      {/* Background Image Layer */}
+      {activeSlide?.media_type === 'image' && activeSlide.media_url && (
+        <img
+          key={activeSlide.media_url}
+          src={activeSlide.media_url}
+          alt="Slide background"
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300"
+        />
+      )}
+
       {/* 1. Background Video Layer */}
       {activeSlide?.media_type === 'video' && activeSlide.media_url && (
         <video
