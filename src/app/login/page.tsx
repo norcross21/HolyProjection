@@ -3,52 +3,103 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
-import { Sparkles, ArrowRight, User, Mail, ShieldAlert, MonitorPlay } from 'lucide-react';
+import { Sparkles, ArrowRight, User, Mail, ShieldAlert, MonitorPlay, KeyRound } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(true);
 
+  // Check if Supabase URL is configured
   useEffect(() => {
-    // Check if Supabase URL is configured
     const configured =
       Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
       Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co';
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
     setIsDemo(!configured);
-  }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
+    if (configured) {
+      // If already logged in, redirect to dashboard
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          router.push('/dashboard');
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          router.push('/dashboard');
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    } else {
+      // Check localstorage mock session
+      const savedUser = localStorage.getItem('holyproj_user');
+      if (savedUser) {
+        router.push('/dashboard');
+      }
+    }
+  }, [router]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
 
     if (isDemo) {
-      // Demo authentication: save mock session in local storage
+      // Demo Mode simulation
       const user = {
         email: email || 'demo@church.org',
-        displayName: displayName || 'Pastor Demo',
+        displayName: displayName || 'Presenter',
       };
       localStorage.setItem('holyproj_user', JSON.stringify(user));
+      setSuccessMsg(isSignUp ? 'Demo account created locally!' : 'Signed in successfully!');
       setTimeout(() => {
         router.push('/dashboard');
       }, 800);
     } else {
-      // Supabase Authentication
+      // Supabase Authentication Mode
       try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        router.push('/dashboard');
+        if (isSignUp) {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                displayName: displayName || email.split('@')[0],
+              },
+            },
+          });
+          if (error) throw error;
+
+          if (data.user && data.session === null) {
+            setSuccessMsg('Sign-up successful! Please check your email to confirm your account.');
+            setIsLoading(false);
+          } else {
+            setSuccessMsg('Account created successfully! Redirecting...');
+            setTimeout(() => router.push('/dashboard'), 1000);
+          }
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw error;
+          router.push('/dashboard');
+        }
       } catch (err: any) {
-        setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+        setErrorMsg(err.message || 'Authentication failed. Please check your details.');
         setIsLoading(false);
       }
     }
@@ -65,7 +116,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-950 font-sans text-slate-100">
-      {/* Decorative background glow spheres */}
+      {/* Background glow spheres */}
       <div className="absolute top-[-20%] left-[-20%] h-[70vw] w-[70vw] rounded-full bg-violet-900/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] h-[70vw] w-[70vw] rounded-full bg-indigo-900/15 blur-[120px] pointer-events-none" />
 
@@ -74,7 +125,7 @@ export default function LoginPage() {
         {/* Logo Header */}
         <div className="flex flex-col items-center mb-8 text-center animate-fade-in">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-lg shadow-indigo-500/25 mb-4 ring-1 ring-white/10">
-            <Sparkles className="h-7 w-7 text-white animate-pulse" />
+            <Sparkles className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
             HolyProjection
@@ -97,16 +148,26 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form Card */}
+        {/* Auth Form Card */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/5 animate-slide-up">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <h2 className="text-lg font-bold text-white mb-6">
+            {isSignUp ? 'Create your presenter account' : 'Sign in to dashboard'}
+          </h2>
+
+          <form onSubmit={handleAuth} className="space-y-5">
             {errorMsg && (
-              <div className="rounded-lg bg-red-950/40 border border-red-500/30 p-3 text-xs text-red-400">
+              <div className="rounded-xl bg-red-950/40 border border-red-500/30 p-3.5 text-xs text-red-400">
                 {errorMsg}
               </div>
             )}
+            
+            {successMsg && (
+              <div className="rounded-xl bg-emerald-950/40 border border-emerald-500/30 p-3.5 text-xs text-emerald-400">
+                {successMsg}
+              </div>
+            )}
 
-            {isDemo && (
+            {(isSignUp || isDemo) && (
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
                   Display Name
@@ -116,7 +177,7 @@ export default function LoginPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Enter your name"
+                    placeholder="e.g. Pastor Stephen"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
@@ -142,19 +203,22 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {!isDemo && (
+            {(!isDemo) && (
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
                   Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 px-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
-                />
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                  />
+                </div>
               </div>
             )}
 
@@ -167,12 +231,28 @@ export default function LoginPage() {
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
-                  <span>{isDemo ? 'Join Workspace' : 'Sign In'}</span>
+                  <span>{isSignUp ? 'Create Presenter Account' : 'Sign In'}</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
           </form>
+
+          {/* Toggle between Login and Signup */}
+          {!isDemo && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-all"
+              >
+                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              </button>
+            </div>
+          )}
 
           {isDemo && (
             <div className="mt-6 flex flex-col items-center">

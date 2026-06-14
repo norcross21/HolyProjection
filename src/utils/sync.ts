@@ -22,24 +22,11 @@ export interface Presentation {
   };
 }
 
-export interface SyncState {
-  activePresentationId: string | null;
-  activeSlideId: string | null;
-  slides: Slide[];
-  settings: {
-    fontSize: number;
-    background: string;
-    margin: number;
-    fontFamily: string;
-  };
-}
-
 export interface PresenceUser {
   id: string;
   email: string;
   displayName: string;
   onlineAt: string;
-  cursor?: string; // e.g. 'dashboard' or 'projector'
 }
 
 // Initial Mock/Default Presentation Data
@@ -86,96 +73,267 @@ const IS_SUPABASE_CONFIGURED =
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
 
-export function useRealtimePresentation(presentationId: string = 'demo-presentation-1') {
+// Hook for loading and creating presentations (Portal View)
+export function usePresentationsPortal() {
+  const [presentations, setPresentations] = useState<Presentation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
+
+  const fetchPresentations = async () => {
+    setLoading(true);
+    if (!IS_SUPABASE_CONFIGURED) {
+      // Demo Mode
+      const stored = localStorage.getItem('holyproj_all_pres');
+      if (stored) {
+        setPresentations(JSON.parse(stored));
+      } else {
+        const initial = [DEFAULT_PRESENTATION];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(initial));
+        setPresentations(initial);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Supabase Mode
+    try {
+      const { data, error } = await supabase
+        .from('presentations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const loaded: Presentation[] = [];
+        for (const pres of data) {
+          const { data: slides } = await supabase
+            .from('slides')
+            .select('*')
+            .eq('presentation_id', pres.id)
+            .order('order_index', { ascending: true });
+          
+          loaded.push({
+            id: pres.id,
+            title: pres.title,
+            settings: pres.settings,
+            slides: slides || [],
+          });
+        }
+        setPresentations(loaded);
+      }
+    } catch (err) {
+      console.error('Error fetching presentations:', err);
+    }
+    setLoading(false);
+  };
+
+  const createNewPresentation = async (title: string) => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      // Demo Mode
+      const newPres: Presentation = {
+        id: `demo-presentation-${Date.now()}`,
+        title,
+        settings: {
+          fontSize: 48,
+          background: '#0f172a',
+          margin: 8,
+          fontFamily: 'Inter',
+        },
+        slides: [
+          {
+            id: `slide-${Date.now()}-1`,
+            order_index: 0,
+            content: 'Amazing grace! How sweet the sound...',
+            translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
+          }
+        ]
+      };
+
+      const updated = [newPres, ...presentations];
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(updated));
+      setPresentations(updated);
+      return newPres.id;
+    }
+
+    // Supabase Mode
+    try {
+      const { data: userSession } = await supabase.auth.getSession();
+      const userId = userSession?.session?.user?.id || null;
+
+      const { data: presData, error: presErr } = await supabase
+        .from('presentations')
+        .insert({
+          title,
+          created_by: userId,
+          settings: {
+            fontSize: 48,
+            background: '#0f172a',
+            margin: 8,
+            fontFamily: 'Inter',
+          }
+        })
+        .select()
+        .single();
+
+      if (presErr) throw presErr;
+
+      // Create initial slide
+      const { error: slideErr } = await supabase
+        .from('slides')
+        .insert({
+          presentation_id: presData.id,
+          order_index: 0,
+          content: 'Amazing grace! How sweet the sound...',
+          translation: 'يا للنعمة المذهلة! ما أحلى الصوت...',
+        });
+
+      if (slideErr) throw slideErr;
+
+      fetchPresentations();
+      return presData.id;
+    } catch (err) {
+      console.error('Error creating presentation:', err);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    fetchPresentations();
+  }, []);
+
+  return {
+    presentations,
+    loading,
+    isDemoMode,
+    refresh: fetchPresentations,
+    createNewPresentation,
+  };
+}
+
+// Hook for a single presentation realtime dashboard / projector sync
+export function useRealtimePresentation(presentationId: string) {
   const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
   const [presentation, setPresentation] = useState<Presentation>(DEFAULT_PRESENTATION);
-  const [activeSlideId, setActiveSlideId] = useState<string | null>('slide-1');
+  const [activeSlideId, setActiveSlideId] = useState<string | null>(null);
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
   const [currentUser, setCurrentUser] = useState<{ email: string; displayName: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const channelRef = useRef<any>(null);
   const localBcRef = useRef<BroadcastChannel | null>(null);
 
-  // Load initial profile/session
+  // Load profile and run synchronization
   useEffect(() => {
-    // Generate simple local user identity
-    const savedUser = localStorage.getItem('holyproj_user');
-    let user = savedUser ? JSON.parse(savedUser) : null;
-    if (!user) {
-      const randId = Math.floor(Math.random() * 1000);
-      user = {
-        email: `collaborator${randId}@church.org`,
-        displayName: `Collaborator ${randId}`,
-      };
-      localStorage.setItem('holyproj_user', JSON.stringify(user));
-    }
-    setCurrentUser(user);
+    if (!presentationId) return;
+    setLoading(true);
 
-    if (!IS_SUPABASE_CONFIGURED) {
-      // Setup BroadcastChannel for multi-tab demo sync
-      const bc = new BroadcastChannel('holyprojection_sync');
-      localBcRef.current = bc;
+    const initSessionAndSync = async () => {
+      let email = 'collaborator@church.org';
+      let displayName = 'Presenter';
 
-      // Load initial state from localStorage
-      const cachedPres = localStorage.getItem(`holyproj_pres_${presentationId}`);
-      if (cachedPres) {
-        setPresentation(JSON.parse(cachedPres));
-      }
-      const cachedActive = localStorage.getItem(`holyproj_active_${presentationId}`);
-      if (cachedActive) {
-        setActiveSlideId(cachedActive);
-      }
-
-      // Handle incoming messages
-      bc.onmessage = (event) => {
-        const { type, data } = event.data;
-        if (type === 'STATE_UPDATE') {
-          if (data.presentation) setPresentation(data.presentation);
-          if (data.activeSlideId !== undefined) setActiveSlideId(data.activeSlideId);
-        } else if (type === 'PING_PRESENCE') {
-          // Respond to pings with our user info
-          bc.postMessage({
-            type: 'PONG_PRESENCE',
-            data: {
-              id: user.email,
-              email: user.email,
-              displayName: user.displayName,
-              onlineAt: new Date().toISOString(),
-            },
-          });
-        } else if (type === 'PONG_PRESENCE') {
-          setPresenceUsers((prev) => {
-            if (prev.some((u) => u.id === data.id)) return prev;
-            return [...prev, data];
-          });
+      if (IS_SUPABASE_CONFIGURED) {
+        // Fetch active Supabase user session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          email = session.user.email || email;
+          // Look up display name from user_metadata or default to display
+          displayName = session.user.user_metadata?.displayName || session.user.email?.split('@')[0] || displayName;
+        } else {
+          // Bypassed local user
+          const savedUser = localStorage.getItem('holyproj_user');
+          if (savedUser) {
+            const parsed = JSON.parse(savedUser);
+            email = parsed.email;
+            displayName = parsed.displayName;
+          }
         }
-      };
+      } else {
+        // Localstorage mock user
+        const savedUser = localStorage.getItem('holyproj_user');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          email = parsed.email;
+          displayName = parsed.displayName;
+        }
+      }
 
-      // Broadcast entry ping
-      bc.postMessage({ type: 'PING_PRESENCE' });
-      // Add ourselves to presence immediately
-      setPresenceUsers([{
-        id: user.email,
-        email: user.email,
-        displayName: user.displayName + ' (You)',
-        onlineAt: new Date().toISOString(),
-      }]);
+      const userDetails = { email, displayName };
+      setCurrentUser(userDetails);
 
-      return () => {
-        bc.close();
-      };
-    } else {
-      // --- Supabase Realtime Integration ---
-      // Fetch initial presentation data from Supabase
-      const fetchInitial = async () => {
+      // --- Offline Demo Sync Setup ---
+      if (!IS_SUPABASE_CONFIGURED) {
+        const bc = new BroadcastChannel(`holyprojection_sync_${presentationId}`);
+        localBcRef.current = bc;
+
+        // Load presentation from list
+        const storedPresList = localStorage.getItem('holyproj_all_pres');
+        let currentPres = DEFAULT_PRESENTATION;
+        if (storedPresList) {
+          const list = JSON.parse(storedPresList) as Presentation[];
+          const found = list.find((p) => p.id === presentationId);
+          if (found) currentPres = found;
+        }
+        setPresentation(currentPres);
+
+        // Load active slide
+        const cachedActive = localStorage.getItem(`holyproj_active_${presentationId}`);
+        if (cachedActive) {
+          setActiveSlideId(cachedActive);
+        } else if (currentPres.slides.length > 0) {
+          setActiveSlideId(currentPres.slides[0].id);
+        }
+
+        // Listener for messages
+        bc.onmessage = (event) => {
+          const { type, data } = event.data;
+          if (type === 'STATE_UPDATE') {
+            if (data.presentation) setPresentation(data.presentation);
+            if (data.activeSlideId !== undefined) setActiveSlideId(data.activeSlideId);
+          } else if (type === 'PING_PRESENCE') {
+            bc.postMessage({
+              type: 'PONG_PRESENCE',
+              data: {
+                id: userDetails.email,
+                email: userDetails.email,
+                displayName: userDetails.displayName,
+                onlineAt: new Date().toISOString(),
+              },
+            });
+          } else if (type === 'PONG_PRESENCE') {
+            setPresenceUsers((prev) => {
+              if (prev.some((u) => u.id === data.id)) return prev;
+              return [...prev, data];
+            });
+          }
+        };
+
+        bc.postMessage({ type: 'PING_PRESENCE' });
+        setPresenceUsers([{
+          id: userDetails.email,
+          email: userDetails.email,
+          displayName: userDetails.displayName + ' (You)',
+          onlineAt: new Date().toISOString(),
+        }]);
+
+        setLoading(false);
+        return () => {
+          bc.close();
+        };
+      }
+
+      // --- Supabase Live Cloud Sync Setup ---
+      try {
+        // 1. Fetch initial presentation
         const { data: presData, error: presError } = await supabase
           .from('presentations')
           .select('*')
           .eq('id', presentationId)
           .single();
 
+        if (presError) throw presError;
+
         if (presData) {
-          // Fetch slides
           const { data: slidesData } = await supabase
             .from('slides')
             .select('*')
@@ -188,23 +346,26 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
             settings: presData.settings,
             slides: slidesData || [],
           });
+
+          // 2. Fetch active projection
+          const { data: activeData } = await supabase
+            .from('active_projection')
+            .select('active_slide_id')
+            .eq('presentation_id', presentationId)
+            .single();
+
+          if (activeData) {
+            setActiveSlideId(activeData.active_slide_id);
+          } else if (slidesData && slidesData.length > 0) {
+            setActiveSlideId(slidesData[0].id);
+          }
         }
+      } catch (err) {
+        console.error('Error loading presentation sync:', err);
+      }
+      setLoading(false);
 
-        // Fetch active projection
-        const { data: activeData } = await supabase
-          .from('active_projection')
-          .select('active_slide_id')
-          .eq('presentation_id', presentationId)
-          .single();
-
-        if (activeData) {
-          setActiveSlideId(activeData.active_slide_id);
-        }
-      };
-
-      fetchInitial();
-
-      // Subscribe to changes in active_projection, slides, presentations
+      // Subscribe to DB changes
       const activeProjChannel = supabase
         .channel(`presentation-${presentationId}`)
         .on(
@@ -230,7 +391,6 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
             filter: `presentation_id=eq.${presentationId}`,
           },
           () => {
-            // Re-fetch slides on change
             supabase
               .from('slides')
               .select('*')
@@ -264,11 +424,7 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
 
       // Presence Sync setup
       const presenceChannel = supabase.channel(`presence-${presentationId}`, {
-        config: {
-          presence: {
-            key: user.email,
-          },
-        },
+        config: { presence: { key: userDetails.email } },
       });
 
       presenceChannel
@@ -291,29 +447,35 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             await presenceChannel.track({
-              displayName: user.displayName,
+              displayName: userDetails.displayName,
               onlineAt: new Date().toISOString(),
             });
           }
         });
 
       activeProjChannel.subscribe();
-
       channelRef.current = { activeProjChannel, presenceChannel };
 
       return () => {
         supabase.removeChannel(activeProjChannel);
         supabase.removeChannel(presenceChannel);
       };
-    }
+    };
+
+    let cleanupFn: any = null;
+    initSessionAndSync().then(fn => {
+      cleanupFn = fn;
+    });
+
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, [presentationId]);
 
-  // Sync state update function
+  // Sync edits
   const updateSlideContent = (slideId: string, content: string, translation?: string) => {
     const updatedSlides = presentation.slides.map((s) => {
-      if (s.id === slideId) {
-        return { ...s, content, translation };
-      }
+      if (s.id === slideId) return { ...s, content, translation };
       return s;
     });
 
@@ -321,7 +483,17 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
     setPresentation(updatedPresentation);
 
     if (isDemoMode) {
+      // Save locally
       localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      
+      // Update portal list cache
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        const updatedList = list.map((p) => (p.id === presentationId ? updatedPresentation : p));
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(updatedList));
+      }
+
       localBcRef.current?.postMessage({
         type: 'STATE_UPDATE',
         data: { presentation: updatedPresentation },
@@ -337,7 +509,7 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
     }
   };
 
-  // Sync slide change
+  // Sync live slide selection
   const setLiveSlide = (slideId: string | null) => {
     setActiveSlideId(slideId);
 
@@ -366,6 +538,15 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
 
     if (isDemoMode) {
       localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      
+      // Update portal list cache
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        const updatedList = list.map((p) => (p.id === presentationId ? updatedPresentation : p));
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(updatedList));
+      }
+
       localBcRef.current?.postMessage({
         type: 'STATE_UPDATE',
         data: { presentation: updatedPresentation },
@@ -387,6 +568,7 @@ export function useRealtimePresentation(presentationId: string = 'demo-presentat
     activeSlideId,
     presenceUsers,
     currentUser,
+    loading,
     updateSlideContent,
     setLiveSlide,
     updateSettings,
