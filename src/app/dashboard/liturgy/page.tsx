@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
+import { resolveAuth } from '@/utils/auth';
 import { ArrowLeft, Sparkles, BookOpen, Calendar, CheckCircle2, ChevronRight, FileText } from 'lucide-react';
 
 interface Verse {
@@ -64,12 +65,11 @@ export default function LiturgyPage() {
   useEffect(() => {
     setIsClient(true);
     const checkAuth = async () => {
-      const user = localStorage.getItem('holyproj_user');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !user) {
+      const identity = await resolveAuth();
+      if (!identity) {
         router.push('/login');
       } else {
-        setCurrentUser(session?.user || (user ? JSON.parse(user) : null));
+        setCurrentUser(identity);
       }
     };
     checkAuth();

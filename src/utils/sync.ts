@@ -369,12 +369,14 @@ export function useRealtimePresentation(presentationId: string) {
 
       // --- Supabase Live Cloud Sync Setup ---
       try {
-        // 1. Fetch initial presentation
+        // 1. Fetch initial presentation. maybeSingle() returns null (instead of
+        // throwing) when the id doesn't exist — e.g. a projector opened with no
+        // presentation selected — so we keep the default slide without console noise.
         const { data: presData, error: presError } = await supabase
           .from('presentations')
           .select('*')
           .eq('id', presentationId)
-          .single();
+          .maybeSingle();
 
         if (presError) throw presError;
 
@@ -405,8 +407,8 @@ export function useRealtimePresentation(presentationId: string) {
             setActiveSlideId(slidesData[0].id);
           }
         }
-      } catch (err) {
-        console.error('Error loading presentation sync:', err);
+      } catch (err: any) {
+        console.error('Error loading presentation sync:', err?.message || err);
       }
       setLoading(false);
 

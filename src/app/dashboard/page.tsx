@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } from '@/utils/sync';
-import { supabase } from '@/utils/supabase';
+import { resolveAuth, signOut } from '@/utils/auth';
 import MediaLibrary from '@/components/MediaLibrary';
 import { 
   Sparkles, 
@@ -122,11 +122,10 @@ function DashboardContent() {
 
   useEffect(() => {
     setIsClient(true);
-    // Redirect to login if user identity is not set
-    const user = localStorage.getItem('holyproj_user');
+    // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !user) {
+      const identity = await resolveAuth();
+      if (!identity) {
         router.push('/login');
       }
     };
@@ -153,8 +152,7 @@ function DashboardContent() {
   }
 
   const handleLogout = async () => {
-    localStorage.removeItem('holyproj_user');
-    await supabase.auth.signOut();
+    await signOut();
     router.push('/login');
   };
 

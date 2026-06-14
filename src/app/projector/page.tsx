@@ -17,7 +17,7 @@ function ProjectorContent() {
     presentation: singlePres,
     activeSlideId: activePresSlideId,
     activeAlert: presActiveAlert,
-  } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
+  } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   const {
     isDemoMode: isSetlistDemo,

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimeSetlist, usePresentationsPortal } from '@/utils/sync';
-import { supabase } from '@/utils/supabase';
+import { resolveAuth, signOut } from '@/utils/auth';
 import { 
   ArrowLeft, 
   Tv, 
@@ -73,11 +73,10 @@ function SetlistContent() {
 
   useEffect(() => {
     setIsClient(true);
-    // Redirect if not logged in
-    const user = localStorage.getItem('holyproj_user');
+    // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !user) {
+      const identity = await resolveAuth();
+      if (!identity) {
         router.push('/login');
       }
     };
@@ -93,8 +92,7 @@ function SetlistContent() {
   }
 
   const handleLogout = async () => {
-    localStorage.removeItem('holyproj_user');
-    await supabase.auth.signOut();
+    await signOut();
     router.push('/login');
   };
 

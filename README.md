@@ -1,37 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HolyProjection
 
-## Getting Started
+A modern, dual-view church presentation engine built for instant, real-time
+collaboration. Drive live projector screens, plan service setlists, and fix typos
+on the fly — with changes propagating to every connected screen in real time.
 
-First, run the development server:
+Built with **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**,
+**Supabase** (auth + realtime) and the **Google Gemini API** (AI translation).
+
+## Features
+
+- **Presenter Dashboard** — manage presentations, edit slides live, control settings (fonts, alignment, transitions, overlays).
+- **Projector & Stage screens** — full-screen output (`/projector`) and a confidence monitor (`/projector/stage`).
+- **Service Setlist planner** — order multiple songs/readings into a single service flow.
+- **Congregation follow mode** (`/follow`) — members follow lyrics live on their phones via a shared link / QR code.
+- **Mobile remote** — advance slides from a phone.
+- **Bilingual slides** with **AI translation to Arabic** (Google Gemini, with a rule-based offline fallback).
+- **Live alerts & nursery calls** broadcast to the projector.
+- **Realtime presence** — see which presenters are online and collaborate concurrently.
+
+## Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Landing page |
+| `/login` | Presenter sign-in (Supabase Auth) |
+| `/dashboard` | Presenter portal & live control board |
+| `/dashboard/liturgy` | Liturgy importer |
+| `/dashboard/setlist` | Service setlist planner |
+| `/dashboard/import` | AI bulk importer |
+| `/dashboard/remote` | Mobile remote controller |
+| `/projector` | Live projector output |
+| `/projector/stage` | Stage / confidence monitor |
+| `/follow` | Congregation live-follow screen |
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` (see `.env.example`):
 
-## Learn More
+```bash
+# Required — Supabase project (Settings → API)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-To learn more about Next.js, take a look at the following resources:
+# Optional — enables AI translation/import. Without it, a rule-based demo
+# translator is used instead. Get a key at https://aistudio.google.com/apikey
+GEMINI_API_KEY=your-gemini-key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> Without Supabase configured, the app runs in an **offline demo mode** that stores
+> data in `localStorage` and syncs across browser tabs via `BroadcastChannel`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database
 
-## Deploy on Vercel
+The app expects these Supabase tables: `presentations`, `slides`, `setlists`,
+`setlist_items`, `active_projection`. **Row Level Security must be enabled** on all
+of them. The public anon key allows read access (needed by the projector/follow
+screens) and write access is restricted to authenticated presenters.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# HolyProjection
+Deployed on [Vercel](https://vercel.com). Pushing to `main` triggers a production
+deploy. Set the environment variables above in **Vercel → Project → Settings →
+Environment Variables** for Production and Preview.
+
+```bash
+npm run build   # production build
+npm run lint    # lint
+```

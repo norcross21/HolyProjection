@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase';
+import { resolveAuth } from '@/utils/auth';
 import { ArrowLeft, Sparkles, AlertTriangle, FileText, CheckCircle2, ChevronRight, CornerDownLeft } from 'lucide-react';
 
 export default function ImportPage() {
@@ -17,14 +17,13 @@ export default function ImportPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Fetch profile and check auth session
+    // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkAuth = async () => {
-      const user = localStorage.getItem('holyproj_user');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !user) {
+      const identity = await resolveAuth();
+      if (!identity) {
         router.push('/login');
       } else {
-        setCurrentUser(session?.user || (user ? JSON.parse(user) : null));
+        setCurrentUser(identity);
       }
     };
     checkAuth();
