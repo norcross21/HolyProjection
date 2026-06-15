@@ -550,11 +550,16 @@ export function useRealtimePresentation(presentationId: string) {
     };
 
     let cleanupFn: any = null;
+    let cancelled = false;
     initSessionAndSync().then(fn => {
       cleanupFn = fn;
+      // If the effect was already torn down before setup finished, the channels
+      // it just created would otherwise leak — clean them up immediately.
+      if (cancelled && typeof fn === 'function') fn();
     });
 
     return () => {
+      cancelled = true;
       if (cleanupFn) cleanupFn();
     };
   }, [presentationId]);
@@ -1214,11 +1219,14 @@ export function useRealtimeSetlist(setlistId: string) {
     };
 
     let cleanupFn: any = null;
+    let cancelled = false;
     initSync().then((fn) => {
       cleanupFn = fn;
+      if (cancelled && typeof fn === 'function') fn();
     });
 
     return () => {
+      cancelled = true;
       if (cleanupFn) cleanupFn();
     };
   }, [setlistId]);
