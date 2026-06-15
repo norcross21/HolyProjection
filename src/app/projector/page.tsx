@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist, Presentation } from '@/utils/sync';
+import { dirFor } from '@/utils/languages';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
 
 function ProjectorContent() {
@@ -591,11 +592,11 @@ function ProjectorContent() {
               <div className={`border-t border-white/20 my-1 animate-fade-in ${getDividerAlignClass()}`} />
             )}
 
-            {/* Translation Layer (Arabic / Right-to-Left styling) */}
+            {/* Translation Layer (direction follows the chosen language) */}
             {(displayMode === 'translation' || displayMode === 'bilingual') && slideToShow.translation && (
               <div
                 ref={translationTextRef}
-                dir="rtl"
+                dir={dirFor(fontSettings.translationLang)}
                 style={getTextStyle()}
                 className={`text-indigo-200 font-extrabold leading-normal whitespace-pre-line transition-all duration-150 ease-out max-w-full ${getTextAlignClass()}`}
               >

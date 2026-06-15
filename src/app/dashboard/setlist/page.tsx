@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimeSetlist, usePresentationsPortal } from '@/utils/sync';
 import { resolveAuth, signOut } from '@/utils/auth';
+import { dirFor } from '@/utils/languages';
 import { 
   ArrowLeft, 
   Tv, 
@@ -526,7 +527,7 @@ function SetlistContent() {
                               {slide.content}
                             </div>
                             {slide.translation && (
-                              <div dir="rtl" className="text-xs font-bold text-indigo-300 whitespace-pre-line leading-relaxed border-l border-slate-900/80 pr-4 font-serif">
+                              <div dir={dirFor(pres.settings?.translationLang)} className="text-xs font-bold text-indigo-300 whitespace-pre-line leading-relaxed border-l border-slate-900/80 pr-4 font-serif">
                                 {slide.translation}
                               </div>
                             )}
@@ -565,7 +566,7 @@ function SetlistContent() {
                 <div className="w-full space-y-1">
                   <p className="text-[8px] font-bold text-white leading-normal truncate">{activeSlide.content.split('\n')[0]}</p>
                   {activeSlide.translation && (
-                    <p dir="rtl" className="text-[8px] font-bold text-indigo-300 leading-normal font-serif truncate">{activeSlide.translation.split('\n')[0]}</p>
+                    <p dir={dirFor(setlist.items[0]?.presentation?.settings?.translationLang)} className="text-[8px] font-bold text-indigo-300 leading-normal font-serif truncate">{activeSlide.translation.split('\n')[0]}</p>
                   )}
                 </div>
               ) : (

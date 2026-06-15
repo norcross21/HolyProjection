@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } from '@/utils/sync';
 import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
+import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import MediaLibrary from '@/components/MediaLibrary';
 import { 
   Sparkles, 
@@ -69,6 +70,8 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [screenTab, setScreenTab] = useState<'projector' | 'stage' | 'follow'>('follow');
+  const [copied, setCopied] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
 
   // Live Alert States
@@ -77,6 +80,8 @@ function DashboardContent() {
   const [alertPosition, setAlertPosition] = useState<'top' | 'bottom'>('bottom');
   const [nurseryNumber, setNurseryNumber] = useState('');
 
+  const translationLang = presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG;
+
   const handleTranslateSlide = async () => {
     if (!selectedSlide || !selectedSlide.content.trim()) return;
     setIsTranslating(true);
@@ -84,7 +89,7 @@ function DashboardContent() {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: selectedSlide.content, targetLang: 'Arabic' }),
+        body: JSON.stringify({ text: selectedSlide.content, targetLang: translationLang }),
       });
       const data = await response.json();
       if (data.success && data.translation) {
@@ -661,7 +666,7 @@ function DashboardContent() {
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-tr from-pink-600/20 to-violet-600/20 border border-pink-500/30 hover:bg-pink-600/10 px-4 py-2 text-xs font-bold text-pink-300 transition-all active:scale-[0.98]"
           >
             <Users className="h-4 w-4 text-pink-400" />
-            <span>Share Follower Link</span>
+            <span>Connect a Screen</span>
           </button>
 
           <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
@@ -730,6 +735,22 @@ function DashboardContent() {
                   <option value="system-ui">System Default</option>
                   <option value="Courier New">Monospace</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Translation Language</label>
+                <select
+                  value={translationLang}
+                  onChange={(e) => updateSettings({ translationLang: e.target.value })}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.name} value={lang.name}>
+                      {lang.name}{lang.rtl ? ' (RTL)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] text-slate-600">Used by the AI translator and shown on the projector / follower screens.</p>
               </div>
 
               <div>
@@ -1157,7 +1178,7 @@ function DashboardContent() {
                           {slide.content}
                         </div>
                         {slide.translation && (
-                          <div dir="rtl" className="text-sm font-bold text-indigo-300 whitespace-pre-line leading-relaxed border-l border-slate-900/80 pr-4 font-serif">
+                          <div dir={dirFor(translationLang)} className="text-sm font-bold text-indigo-300 whitespace-pre-line leading-relaxed border-l border-slate-900/80 pr-4 font-serif">
                             {slide.translation}
                           </div>
                         )}
@@ -1211,7 +1232,7 @@ function DashboardContent() {
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 text-violet-400 animate-pulse" />
-                        <span>AI Translate to Arabic</span>
+                        <span>AI Translate to {translationLang}</span>
                       </>
                     )}
                   </button>
@@ -1220,19 +1241,19 @@ function DashboardContent() {
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Languages className="h-3.5 w-3.5 text-indigo-400" />
-                    <label className="block text-xs text-slate-400 font-medium">Arabic Translation (Linked)</label>
+                    <label className="block text-xs text-slate-400 font-medium">{translationLang} Translation (Linked)</label>
                   </div>
                   <textarea
-                    dir="rtl"
+                    dir={dirFor(translationLang)}
                     value={selectedSlide.translation || ''}
                     onChange={(e) => updateSlideContent(
-                      selectedSlide.id, 
-                      selectedSlide.content, 
+                      selectedSlide.id,
+                      selectedSlide.content,
                       e.target.value,
                       selectedSlide.media_type,
                       selectedSlide.media_url
                     )}
-                    placeholder="أدخل الترجمة هنا..."
+                    placeholder="Enter translation here..."
                     className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-serif"
                   />
                 </div>
@@ -1320,63 +1341,102 @@ function DashboardContent() {
         </aside>
       </div>
 
-      {/* Share Follower Link Modal */}
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl relative ring-1 ring-white/10">
-            <button
-              onClick={() => setIsShareModalOpen(false)}
-              className="absolute top-4 right-4 rounded-full p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+      {/* Connect a Screen Modal */}
+      {isShareModalOpen && (() => {
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const screens = {
+          projector: { label: 'Projector', icon: Tv, desc: 'Full-screen output for the main projector or TV.', url: `${origin}/projector?pres=${presId}` },
+          stage: { label: 'Stage', icon: LayoutGrid, desc: 'Confidence monitor: current slide, next slide and clock.', url: `${origin}/projector/stage?pres=${presId}` },
+          follow: { label: 'Follower', icon: Users, desc: 'Congregation members follow the lyrics on their phones.', url: `${origin}/follow?pres=${presId}` },
+        } as const;
+        const active = screens[screenTab];
+        const ActiveIcon = active.icon;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in p-4">
+            <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl relative ring-1 ring-white/10 max-h-[92vh] overflow-y-auto">
+              <button
+                onClick={() => setIsShareModalOpen(false)}
+                className="absolute top-4 right-4 rounded-full p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
 
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-600/10 border border-pink-500/20 text-pink-400 shadow-md">
-                <Users className="h-6 w-6" />
+              <div className="text-center mb-5">
+                <h3 className="font-extrabold text-base text-white">Connect a Screen</h3>
+                <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto">
+                  Open the link (or scan the code) on any device on your network — an iPad, a smart TV browser, or a laptop plugged into the projector. It stays in sync live.
+                </p>
               </div>
-              <div>
-                <h3 className="font-extrabold text-base text-white">Share Congregation Link</h3>
-                <p className="text-slate-400 text-xs mt-1">Let members follow the lyrics in real-time on their phones.</p>
+
+              {/* Screen type tabs */}
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 mb-4">
+                {(['projector', 'stage', 'follow'] as const).map((k) => {
+                  const Icon = screens[k].icon;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => { setScreenTab(k); setCopied(false); }}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all ${
+                        screenTab === k ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {screens[k].label}
+                    </button>
+                  );
+                })}
               </div>
+
+              <p className="text-center text-xs text-slate-400 mb-4 flex items-center justify-center gap-1.5">
+                <ActiveIcon className="h-3.5 w-3.5 text-violet-400" />
+                {active.desc}
+              </p>
 
               {/* QR Code */}
-              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-inner">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=7c3aed&data=${encodeURIComponent(
-                    typeof window !== 'undefined' ? `${window.location.origin}/follow?pres=${presId}` : ''
-                  )}`} 
-                  alt="Scan to follow" 
-                  className="h-48 w-48 object-contain" 
-                />
-              </div>
-
-              {/* Follower link input wrapper */}
-              <div className="w-full space-y-2 text-left">
-                <span className="block text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Follower Web Link</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={typeof window !== 'undefined' ? `${window.location.origin}/follow?pres=${presId}` : ''}
-                    className="flex-1 rounded-xl border border-slate-850 bg-slate-900/60 py-2.5 px-3.5 text-xs text-indigo-300 font-medium focus:outline-none"
+              <div className="flex justify-center mb-4">
+                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-inner">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=7c3aed&data=${encodeURIComponent(active.url)}`}
+                    alt={`Scan to open ${active.label}`}
+                    className="h-44 w-44 object-contain"
                   />
-                  <button
-                    onClick={() => {
-                      const link = typeof window !== 'undefined' ? `${window.location.origin}/follow?pres=${presId}` : '';
-                      navigator.clipboard.writeText(link);
-                      alert('Congregation follower link copied to clipboard!');
-                    }}
-                    className="rounded-xl bg-violet-600 hover:bg-violet-500 px-4 text-xs font-bold text-white transition-colors"
-                  >
-                    Copy
-                  </button>
                 </div>
               </div>
+
+              {/* Link + copy */}
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  readOnly
+                  value={active.url}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 rounded-xl border border-slate-850 bg-slate-900/60 py-2.5 px-3.5 text-xs text-indigo-300 font-medium focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(active.url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 text-xs font-bold text-white transition-colors"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : null}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              {/* Open on this device */}
+              <button
+                onClick={() => window.open(active.url, '_blank')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 py-2.5 text-xs font-bold text-indigo-300 transition-all"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open on this device
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

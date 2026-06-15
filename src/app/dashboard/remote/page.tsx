@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
 import { resolveAuth } from '@/utils/auth';
+import { dirFor } from '@/utils/languages';
 import { 
   ArrowLeft, 
   Play, 
@@ -74,6 +75,7 @@ function RemoteContent() {
   let activeSlideId: string | null = null;
   let blankMode: 'none' | 'black' | 'clear' | 'logo' = 'none';
   let title = '';
+  let translationLang: string | undefined;
 
   if (setlistId) {
     if (setlist) {
@@ -84,10 +86,12 @@ function RemoteContent() {
       activeSlideId = activeSetlistSlideId;
       blankMode = setlist.settings?.blankMode || 'none';
       title = setlist.title;
+      translationLang = setlist.items[0]?.presentation?.settings?.translationLang;
     }
   } else {
     slides = singlePres.slides;
     activeSlideId = activePresSlideId;
+    translationLang = singlePres.settings?.translationLang;
     blankMode = singlePres.settings?.blankMode || 'none';
     title = singlePres.title;
   }
@@ -152,7 +156,7 @@ function RemoteContent() {
             <div className="space-y-4 text-center mt-2">
               <p className="text-lg font-bold text-white leading-relaxed whitespace-pre-line">{currentSlide.content}</p>
               {currentSlide.translation && (
-                <p dir="rtl" className="text-base font-bold text-indigo-300 leading-relaxed font-serif whitespace-pre-line border-t border-slate-900 pt-2">{currentSlide.translation}</p>
+                <p dir={dirFor(translationLang)} className="text-base font-bold text-indigo-300 leading-relaxed font-serif whitespace-pre-line border-t border-slate-900 pt-2">{currentSlide.translation}</p>
               )}
             </div>
           ) : (
@@ -167,7 +171,7 @@ function RemoteContent() {
             <div className="text-center mt-2.5">
               <p className="text-xs font-semibold text-slate-350 truncate">{nextSlide.content.split('\n')[0]}</p>
               {nextSlide.translation && (
-                <p dir="rtl" className="text-xs font-semibold text-indigo-400 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
+                <p dir={dirFor(translationLang)} className="text-xs font-semibold text-indigo-400 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
               )}
             </div>
           ) : (

@@ -26,6 +26,7 @@ export interface Presentation {
     textShadow?: 'none' | 'subtle' | 'strong';
     textOutline?: 'none' | 'subtle' | 'strong';
     slideTransition?: 'none' | 'fade' | 'slide' | 'zoom';
+    translationLang?: string;
   };
 }
 
@@ -59,6 +60,7 @@ export const DEFAULT_PRESENTATION: Presentation = {
     textShadow: 'none',
     textOutline: 'none',
     slideTransition: 'none',
+    translationLang: 'Arabic',
   },
   slides: [
     {

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
+import { dirFor } from '@/utils/languages';
 import { Clock, Tv, AlertTriangle, CheckCircle } from 'lucide-react';
 
 function StageDisplayContent() {
@@ -16,7 +17,7 @@ function StageDisplayContent() {
     presentation: singlePres,
     activeSlideId: activePresSlideId,
     activeAlert: presActiveAlert,
-  } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
+  } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   // Load setlist hook
   const {
@@ -45,6 +46,7 @@ function StageDisplayContent() {
   // Resolve slides queue, current slide, and next slide
   let currentSlide: any = null;
   let nextSlide: any = null;
+  let translationLang: string | undefined;
 
   if (setlistId) {
     if (setlist) {
@@ -57,6 +59,7 @@ function StageDisplayContent() {
       if (activeIdx >= 0 && activeIdx < allSlides.length - 1) {
         nextSlide = allSlides[activeIdx + 1];
       }
+      translationLang = setlist.items[0]?.presentation?.settings?.translationLang;
     }
   } else {
     const activeIdx = singlePres.slides.findIndex((s) => s.id === activePresSlideId);
@@ -64,6 +67,7 @@ function StageDisplayContent() {
     if (activeIdx >= 0 && activeIdx < singlePres.slides.length - 1) {
       nextSlide = singlePres.slides[activeIdx + 1];
     }
+    translationLang = singlePres.settings?.translationLang;
   }
 
   return (
@@ -139,7 +143,7 @@ function StageDisplayContent() {
                 {currentSlide.content}
               </div>
               {currentSlide.translation && (
-                <div dir="rtl" className="text-indigo-300 font-bold text-3xl md:text-5xl lg:text-6xl whitespace-pre-line leading-tight border-l border-slate-900 md:pl-8 font-serif">
+                <div dir={dirFor(translationLang)} className="text-indigo-300 font-bold text-3xl md:text-5xl lg:text-6xl whitespace-pre-line leading-tight border-l border-slate-900 md:pl-8 font-serif">
                   {currentSlide.translation}
                 </div>
               )}
@@ -160,7 +164,7 @@ function StageDisplayContent() {
                 {nextSlide.content}
               </div>
               {nextSlide.translation && (
-                <div dir="rtl" className="text-indigo-200 font-medium text-xl md:text-3xl lg:text-4xl whitespace-pre-line leading-normal border-l border-slate-900 md:pl-8 font-serif">
+                <div dir={dirFor(translationLang)} className="text-indigo-200 font-medium text-xl md:text-3xl lg:text-4xl whitespace-pre-line leading-normal border-l border-slate-900 md:pl-8 font-serif">
                   {nextSlide.translation}
                 </div>
               )}

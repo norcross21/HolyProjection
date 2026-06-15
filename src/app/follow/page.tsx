@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
+import { dirFor } from '@/utils/languages';
 import { 
   Sparkles, 
   Tv, 
@@ -29,7 +30,7 @@ function FollowContent() {
     activeSlideId: activePresSlideId,
     sendPrayerRequest: sendPresPrayer,
     activeAlert: presActiveAlert,
-  } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
+  } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   // Load setlist hook
   const {
@@ -70,6 +71,7 @@ function FollowContent() {
   let activeSlideId: string | null = null;
   let blankMode: 'none' | 'black' | 'clear' | 'logo' = 'none';
   let title = 'HolyProjection Live';
+  let translationLang: string | undefined;
 
   if (setlistId) {
     if (setlist) {
@@ -80,6 +82,7 @@ function FollowContent() {
       activeSlideId = activeSetlistSlideId;
       blankMode = setlist.settings?.blankMode || 'none';
       title = setlist.title;
+      translationLang = setlist.items[0]?.presentation?.settings?.translationLang;
     }
   } else {
     if (singlePres) {
@@ -87,6 +90,7 @@ function FollowContent() {
       activeSlideId = activePresSlideId;
       blankMode = singlePres.settings?.blankMode || 'none';
       title = singlePres.title;
+      translationLang = singlePres.settings?.translationLang;
     }
   }
 
@@ -266,8 +270,8 @@ function FollowContent() {
 
                   {/* Translation Lyrics content */}
                   {(langMode === 'bilingual' || langMode === 'translation') && currentSlide.translation && (
-                    <p 
-                      dir="rtl" 
+                    <p
+                      dir={dirFor(translationLang)}
                       className="font-extrabold leading-relaxed font-serif whitespace-pre-line text-indigo-400/95 transition-all duration-300"
                       style={{ fontSize: `${1.3 * textSize}rem` }}
                     >
@@ -293,7 +297,7 @@ function FollowContent() {
                 <p className="text-xs font-semibold truncate">{nextSlide.content.split('\n')[0]}</p>
               )}
               {langMode !== 'primary' && nextSlide.translation && (
-                <p dir="rtl" className="text-xs font-semibold text-indigo-400 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
+                <p dir={dirFor(translationLang)} className="text-xs font-semibold text-indigo-400 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
               )}
             </div>
           </section>
