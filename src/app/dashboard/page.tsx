@@ -633,7 +633,7 @@ function DashboardContent() {
       <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-violet-900/5 blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard')}
@@ -657,7 +657,7 @@ function DashboardContent() {
         </div>
 
         {/* Action controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {isDemoMode && (
             <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">
               <AlertTriangle className="h-3.5 w-3.5" />
@@ -717,10 +717,10 @@ function DashboardContent() {
       </header>
 
       {/* Main presentation dashboard workspace */}
-      <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden max-h-[calc(100vh-73px)]">
-        
+      <div className="flex-1 p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:overflow-hidden lg:max-h-[calc(100vh-73px)]">
+
         {/* Left Panel: Settings & Collaborators */}
-        <aside className="col-span-3 flex flex-col gap-6 overflow-y-auto pr-2">
+        <aside className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto lg:pr-2 order-2 lg:order-1">
           
           {/* Active Presentation Title */}
           <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
@@ -1156,7 +1156,7 @@ function DashboardContent() {
         </aside>
 
         {/* Center Panel: Slide Queue flow */}
-        <section className="col-span-6 flex flex-col gap-4 overflow-y-auto pr-2">
+        <section className="lg:col-span-6 flex flex-col gap-4 lg:overflow-y-auto lg:pr-2 order-1 lg:order-2">
           {presLoading ? (
             <div className="flex-1 flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -1257,7 +1257,7 @@ function DashboardContent() {
         </section>
 
         {/* Right Panel: Live Text Editor */}
-        <aside className="col-span-3 flex flex-col gap-6 overflow-y-auto">
+        <aside className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto order-3">
           {selectedSlide ? (
             <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex flex-col h-full">
               <div className="flex items-center gap-2 mb-4">
