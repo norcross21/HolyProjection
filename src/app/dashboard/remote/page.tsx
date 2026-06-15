@@ -32,7 +32,7 @@ function RemoteContent() {
     setLiveSlide: setPresLiveSlide,
     updateSettings: updatePresSettings,
     setBlankMode: setPresBlankMode
-  } = useRealtimePresentation(setlistId ? '' : (presId || 'demo-presentation-1'));
+  } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   // Load setlist hook
   const {
@@ -59,7 +59,9 @@ function RemoteContent() {
     checkSession();
   }, [router]);
 
-  if (!isClient || !setlist) {
+  // In setlist mode we wait for the setlist to load; in single-presentation mode
+  // singlePres always has a value, so only gate on the client being ready.
+  if (!isClient || (setlistId ? !setlist : false)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />

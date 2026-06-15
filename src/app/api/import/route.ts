@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import { createClient } from '@supabase/supabase-js';
 
-// Setup local Supabase client (using service role or anon key from env)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+interface ParsedSlide {
+  type?: string;
+  content: string;
+  translation?: string | null;
+}
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+interface ParsedSong {
+  title: string;
+  slides: ParsedSlide[];
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, userId } = await req.json() as { text: string; userId?: string };
+    const { text } = await req.json() as { text: string };
 
     if (!text || !text.trim()) {
       return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
     }
 
     const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    let parsedSongs: any[] = [];
+    let parsedSongs: ParsedSong[] = [];
 
     if (!geminiApiKey || geminiApiKey === 'your-gemini-key') {
       console.warn('GEMINI_API_KEY is missing! Using rule-based fallback parser.');
-      // Rule-based fallback parser for demo purposes
       parsedSongs = parseSongsMock(text);
     } else {
       // Call Gemini 2.5 Flash
@@ -73,88 +75,49 @@ ${text}
         }
       });
 
-      const jsonText = response.text || '[]';
-      parsedSongs = JSON.parse(jsonText);
-    }
+      // The model usually returns clean JSON, but guard against fences / truncation.
+      const jsonText = (response.text || '[]')
+        .trim()
+        .replace(/^```(?:json)?/i, '')
+        .replace(/```$/, '')
+        .trim();
 
-    // Save parsed songs to Supabase
-    const isSupabaseConfigured = supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://your-project-id.supabase.co';
-    const importedList: any[] = [];
-
-    if (!isSupabaseConfigured) {
-      // Demo Mode: Return parsed songs directly for client-side storage
-      return NextResponse.json({
-        success: true,
-        mode: 'demo',
-        data: parsedSongs
-      });
-    }
-
-    // Supabase Live Mode
-    for (const song of parsedSongs) {
-      // 1. Insert presentation
-      const { data: presData, error: presErr } = await supabase
-        .from('presentations')
-        .insert({
-          title: song.title,
-          created_by: userId || null,
-          settings: {
-            fontSize: 48,
-            background: '#0f172a',
-            margin: 8,
-            fontFamily: 'Inter'
-          }
-        })
-        .select()
-        .single();
-
-      if (presErr) {
-        console.error('Error inserting presentation:', presErr);
-        continue;
+      try {
+        parsedSongs = JSON.parse(jsonText);
+      } catch {
+        console.warn('Gemini returned non-JSON output; falling back to rule-based parser.');
+        parsedSongs = parseSongsMock(text);
       }
-
-      // 2. Insert slides
-      const slidesToInsert = song.slides.map((slide: any, index: number) => ({
-        presentation_id: presData.id,
-        order_index: index,
-        type: 'text',
-        content: slide.content,
-        translation: slide.translation || null,
-        settings: {}
-      }));
-
-      const { error: slideErr } = await supabase
-        .from('slides')
-        .insert(slidesToInsert);
-
-      if (slideErr) {
-        console.error('Error inserting slides:', slideErr);
-      }
-
-      importedList.push({
-        id: presData.id,
-        title: presData.title,
-        slidesCount: slidesToInsert.length
-      });
     }
 
-    return NextResponse.json({
-      success: true,
-      mode: 'supabase',
-      imported: importedList
-    });
+    // Normalize so the client can rely on the shape (slides is always an array).
+    const normalized: ParsedSong[] = (Array.isArray(parsedSongs) ? parsedSongs : []).map((song: any, i) => ({
+      title: (song?.title || `Imported Song #${i + 1}`).toString(),
+      slides: Array.isArray(song?.slides)
+        ? song.slides
+            .filter((s: any) => s && typeof s.content === 'string')
+            .map((s: any) => ({
+              type: s.type || 'Verse',
+              content: s.content,
+              translation: s.translation || null,
+            }))
+        : [],
+    }));
 
+    // Parsing only — the authenticated browser client performs the inserts so
+    // they run under the user's session and satisfy row-level security.
+    return NextResponse.json({ success: true, data: normalized });
   } catch (err: any) {
-    console.error('Error in import route:', err);
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    console.error('Error in import route:', err?.message || err);
+    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
   }
 }
 
 // Simple rule-based mock parser for offline/no-API key situations
-function parseSongsMock(text: string): any[] {
-  // Split text by double double newlines or common splitters
+function parseSongsMock(text: string): ParsedSong[] {
+  // Split text by triple newlines or common splitters
   const rawSections = text.split(/\n\s*\n\s*\n/);
-  const songs: any[] = [];
+  const songs: ParsedSong[] = [];
 
   rawSections.forEach((section, songIdx) => {
     const lines = section.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -163,7 +126,7 @@ function parseSongsMock(text: string): any[] {
     // Use first line as title, or a default
     let title = lines[0];
     let contentLines = lines.slice(1);
-    
+
     if (title.toLowerCase().startsWith('title:')) {
       title = title.substring(6).trim();
     } else if (title.length > 50) {
@@ -172,7 +135,7 @@ function parseSongsMock(text: string): any[] {
     }
 
     // Split content lines into slide groups (group every 4 lines)
-    const slides: any[] = [];
+    const slides: ParsedSlide[] = [];
     let currentSlideText: string[] = [];
     let slideIdx = 1;
 

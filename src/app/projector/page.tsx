@@ -142,10 +142,17 @@ function ProjectorContent() {
   // 4. Handle WebRTC Live Camera Stream lifecycle based on currently showing slide
   useEffect(() => {
     const isCameraActive = slideToShow?.media_type === 'camera';
+    let cancelled = false;
 
     if (isCameraActive) {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
         .then((stream) => {
+          // The slide may have changed away from camera before this resolved —
+          // if so, stop the stream immediately instead of leaving the camera on.
+          if (cancelled) {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
+          }
           streamRef.current = stream;
           if (cameraVideoRef.current) {
             cameraVideoRef.current.srcObject = stream;
@@ -166,6 +173,7 @@ function ProjectorContent() {
     }
 
     return () => {
+      cancelled = true;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;

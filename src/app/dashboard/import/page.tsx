@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { resolveAuth } from '@/utils/auth';
+import { usePresentationsPortal } from '@/utils/sync';
 import { ArrowLeft, Sparkles, AlertTriangle, FileText, CheckCircle2, ChevronRight, CornerDownLeft } from 'lucide-react';
 
 export default function ImportPage() {
   const router = useRouter();
+  const { createNewPresentation } = usePresentationsPortal();
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -46,57 +48,43 @@ export default function ImportPage() {
     setSuccess(false);
 
     try {
+      // The route only PARSES the text (AI or rule-based) and returns songs.
       const res = await fetch('/api/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          userId: currentUser.id || null,
-        }),
+        body: JSON.stringify({ text }),
       });
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to import songs.');
 
-      if (result.success) {
-        if (result.mode === 'demo') {
-          // Demo Mode: Save parsed songs to local storage
-          const stored = localStorage.getItem('holyproj_all_pres');
-          const currentList = stored ? JSON.parse(stored) : [];
-          
-          const newPresentations = result.data.map((song: any) => ({
-            id: `demo-presentation-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-            title: song.title,
-            settings: {
-              fontSize: 48,
-              background: '#0f172a',
-              margin: 8,
-              fontFamily: 'Inter',
-            },
-            slides: song.slides.map((s: any, idx: number) => ({
-              id: `slide-${Date.now()}-${Math.random().toString(36).substr(2, 4)}-${idx}`,
-              order_index: idx,
-              content: s.content,
-              translation: s.translation || null,
-            })),
-          }));
-
-          const updated = [...newPresentations, ...currentList];
-          localStorage.setItem('holyproj_all_pres', JSON.stringify(updated));
-
-          setImportedSongs(newPresentations.map((p: any) => ({
-            id: p.id,
-            title: p.title,
-            slidesCount: p.slides.length
-          })));
-        } else {
-          // Supabase Mode
-          setImportedSongs(result.imported || []);
-        }
-
-        setSuccess(true);
-        setText('');
+      const songs: any[] = result.data || [];
+      if (songs.length === 0) {
+        throw new Error('No songs could be parsed from that text.');
       }
+
+      // Insert here, in the browser, so the writes run under the user's
+      // authenticated session and satisfy Supabase row-level security
+      // (the server route uses the anon key and would be blocked).
+      const imported: { id: string; title: string; slidesCount: number }[] = [];
+      for (const song of songs) {
+        const slides = (song.slides || []).map((s: any) => ({
+          content: s.content,
+          translation: s.translation || undefined,
+        }));
+        const newId = await createNewPresentation(song.title, slides);
+        if (newId) {
+          imported.push({ id: newId, title: song.title, slidesCount: slides.length });
+        }
+      }
+
+      if (imported.length === 0) {
+        throw new Error('Parsing succeeded but saving failed. Check that you are signed in and that database write access is enabled.');
+      }
+
+      setImportedSongs(imported);
+      setSuccess(true);
+      setText('');
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'An error occurred during import.');

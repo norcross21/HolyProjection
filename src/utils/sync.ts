@@ -394,12 +394,13 @@ export function useRealtimePresentation(presentationId: string) {
             slides: slidesData || [],
           });
 
-          // 2. Fetch active projection
+          // 2. Fetch active projection (maybeSingle: no row yet is normal for a
+          // freshly created presentation, and should not throw)
           const { data: activeData } = await supabase
             .from('active_projection')
             .select('active_slide_id')
             .eq('presentation_id', presentationId)
-            .single();
+            .maybeSingle();
 
           if (activeData) {
             setActiveSlideId(activeData.active_slide_id);
@@ -592,12 +593,27 @@ export function useRealtimePresentation(presentationId: string) {
         data: { activeSlideId: slideId },
       });
     } else {
+      // Update the row; if none exists yet (new presentation), insert one.
+      // Without this, the very first "Go Live" updated 0 rows and never reached
+      // the projector. select() lets us detect the no-row case reliably.
       supabase
         .from('active_projection')
         .update({ active_slide_id: slideId, updated_at: new Date().toISOString() })
         .eq('presentation_id', presentationId)
-        .then(({ error }) => {
-          if (error) console.error('Error updating active slide:', error);
+        .select()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error updating active slide:', error.message);
+            return;
+          }
+          if (!data || data.length === 0) {
+            supabase
+              .from('active_projection')
+              .insert({ presentation_id: presentationId, active_slide_id: slideId })
+              .then(({ error: insertError }) => {
+                if (insertError) console.error('Error creating active projection:', insertError.message);
+              });
+          }
         });
     }
   };
@@ -887,14 +903,20 @@ export function useRealtimeSetlist(setlistId: string) {
     }
 
     try {
-      // Fetch setlist metadata
+      // Fetch setlist metadata (maybeSingle: a missing/inaccessible id should
+      // resolve loading rather than throw and hang the page on a spinner)
       const { data: listData, error: listError } = await supabase
         .from('setlists')
         .select('*')
         .eq('id', setlistId)
-        .single();
+        .maybeSingle();
 
       if (listError) throw listError;
+
+      if (!listData) {
+        setLoading(false);
+        return;
+      }
 
       if (listData) {
         // Fetch setlist items joined with presentations and slides
