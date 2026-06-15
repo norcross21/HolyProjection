@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } from '@/utils/sync';
-import { resolveAuth, signOut } from '@/utils/auth';
+import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
 import MediaLibrary from '@/components/MediaLibrary';
 import { 
   Sparkles, 
@@ -48,7 +48,6 @@ function DashboardContent() {
     presentation,
     activeSlideId,
     presenceUsers,
-    currentUser,
     loading: presLoading,
     updateSlideContent,
     setLiveSlide,
@@ -65,6 +64,7 @@ function DashboardContent() {
   const [newPresTitle, setNewPresTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
@@ -127,6 +127,8 @@ function DashboardContent() {
       const identity = await resolveAuth();
       if (!identity) {
         router.push('/login');
+      } else {
+        setAuthUser(identity);
       }
     };
     checkSession();
@@ -143,7 +145,7 @@ function DashboardContent() {
     }
   }, []);
 
-  if (!isClient || !currentUser) {
+  if (!isClient || !authUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -301,8 +303,8 @@ function DashboardContent() {
 
             <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
               <div className="text-right">
-                <p className="text-xs font-bold text-slate-200">{currentUser.displayName}</p>
-                <p className="text-[10px] text-slate-500">{currentUser.email}</p>
+                <p className="text-xs font-bold text-slate-200">{authUser.displayName}</p>
+                <p className="text-[10px] text-slate-500">{authUser.email}</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -664,8 +666,8 @@ function DashboardContent() {
 
           <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
             <div className="text-right">
-              <p className="text-xs font-bold text-slate-200">{currentUser.displayName}</p>
-              <p className="text-[10px] text-slate-500">{currentUser.email}</p>
+              <p className="text-xs font-bold text-slate-200">{authUser.displayName}</p>
+              <p className="text-[10px] text-slate-500">{authUser.email}</p>
             </div>
             <button
               onClick={handleLogout}

@@ -76,6 +76,9 @@ export default function LoginPage() {
             email,
             password,
             options: {
+              // Send the confirmation link back to wherever the user signed up
+              // (e.g. the production site) instead of Supabase's default Site URL.
+              emailRedirectTo: `${window.location.origin}/login`,
               data: {
                 displayName: displayName || email.split('@')[0],
               },
