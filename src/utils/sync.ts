@@ -549,8 +549,17 @@ export function useRealtimePresentation(presentationId: string) {
       return s;
     });
 
+    // Functional update so a concurrent settings change (e.g. switching the
+    // translation language, which also re-translates this slide) is not
+    // clobbered by a stale `presentation` snapshot.
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) =>
+        s.id === slideId ? { ...s, content, translation, media_type, media_url } : s
+      ),
+    }));
+
     const updatedPresentation = { ...presentation, slides: updatedSlides };
-    setPresentation(updatedPresentation);
 
     if (isDemoMode) {
       // Save locally
@@ -633,7 +642,8 @@ export function useRealtimePresentation(presentationId: string) {
   const updateSettings = (settings: Partial<Presentation['settings']>) => {
     const updatedSettings = { ...presentation.settings, ...settings };
     const updatedPresentation = { ...presentation, settings: updatedSettings };
-    setPresentation(updatedPresentation);
+    // Functional update so concurrent slide edits don't clobber settings.
+    setPresentation((prev) => ({ ...prev, settings: { ...prev.settings, ...settings } }));
 
     if (isDemoMode) {
       localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
