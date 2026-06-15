@@ -239,6 +239,28 @@ export function usePresentationsPortal() {
     }
   };
 
+  const deletePresentation = async (id: string) => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      const updated = presentations.filter((p) => p.id !== id);
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(updated));
+      setPresentations(updated);
+      return true;
+    }
+
+    try {
+      // Remove dependents first in case the DB has no ON DELETE CASCADE.
+      await supabase.from('active_projection').delete().eq('presentation_id', id);
+      await supabase.from('slides').delete().eq('presentation_id', id);
+      const { error } = await supabase.from('presentations').delete().eq('id', id);
+      if (error) throw error;
+      setPresentations((prev) => prev.filter((p) => p.id !== id));
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting presentation:', err?.message || err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchPresentations();
   }, []);
@@ -249,6 +271,7 @@ export function usePresentationsPortal() {
     isDemoMode,
     refresh: fetchPresentations,
     createNewPresentation,
+    deletePresentation,
   };
 }
 
@@ -880,6 +903,26 @@ export function useSetlistsPortal() {
     }
   };
 
+  const deleteSetlist = async (id: string) => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      const updated = setlists.filter((s) => s.id !== id);
+      localStorage.setItem('holyproj_all_setlists', JSON.stringify(updated));
+      setSetlists(updated);
+      return true;
+    }
+
+    try {
+      await supabase.from('setlist_items').delete().eq('setlist_id', id);
+      const { error } = await supabase.from('setlists').delete().eq('id', id);
+      if (error) throw error;
+      setSetlists((prev) => prev.filter((s) => s.id !== id));
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting setlist:', err?.message || err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchSetlists();
   }, []);
@@ -889,7 +932,8 @@ export function useSetlistsPortal() {
     loading,
     isDemoMode,
     refresh: fetchSetlists,
-    createNewSetlist
+    createNewSetlist,
+    deleteSetlist
   };
 }
 

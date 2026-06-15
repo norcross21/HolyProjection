@@ -27,7 +27,8 @@ import {
   Upload,
   Smartphone,
   MessageSquare,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -41,6 +42,7 @@ function DashboardContent() {
     loading: portalLoading,
     isDemoMode: portalDemoMode,
     createNewPresentation,
+    deletePresentation,
   } = usePresentationsPortal();
 
   // Hook for Active Presentation Sync (Only runs if presId is set)
@@ -116,7 +118,8 @@ function DashboardContent() {
   const {
     setlists,
     loading: setlistsLoading,
-    createNewSetlist
+    createNewSetlist,
+    deleteSetlist
   } = useSetlistsPortal();
 
   // Set default selected slide when presentation loads
@@ -174,6 +177,20 @@ function DashboardContent() {
     if (newId) {
       router.push(`/dashboard?pres=${newId}`);
     }
+  };
+
+  const handleDeletePresentation = async (e: React.MouseEvent, id: string, title: string) => {
+    e.stopPropagation();
+    if (!confirm(`Delete "${title}"? This permanently removes it and its slides.`)) return;
+    const ok = await deletePresentation(id);
+    if (!ok) alert('Could not delete. Make sure you are signed in and that delete is enabled in the database.');
+  };
+
+  const handleDeleteSetlist = async (e: React.MouseEvent, id: string, title: string) => {
+    e.stopPropagation();
+    if (!confirm(`Delete setlist "${title}"?`)) return;
+    const ok = await deleteSetlist(id);
+    if (!ok) alert('Could not delete. Make sure you are signed in and that delete is enabled in the database.');
   };
 
   const handleCreateSetlist = async (e: React.FormEvent) => {
@@ -482,9 +499,18 @@ function DashboardContent() {
                           <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
                             {pres.title}
                           </h4>
-                          <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => handleDeletePresentation(e, pres.id, pres.title)}
+                              title="Delete presentation"
+                              className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                          </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-3 text-xs text-slate-500">
                           <span className="bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800">
                             {pres.slides.length} {pres.slides.length === 1 ? 'slide' : 'slides'}
@@ -560,7 +586,16 @@ function DashboardContent() {
                           <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
                             {slist.title}
                           </h4>
-                          <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => handleDeleteSetlist(e, slist.id, slist.title)}
+                              title="Delete setlist"
+                              className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-3 text-xs text-slate-500">
