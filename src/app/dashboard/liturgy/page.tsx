@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase';
 import { resolveAuth } from '@/utils/auth';
+import { usePresentationsPortal } from '@/utils/sync';
 import { ArrowLeft, Sparkles, BookOpen, Calendar, CheckCircle2, ChevronRight, FileText } from 'lucide-react';
 
 interface Verse {
@@ -22,6 +22,7 @@ interface BibleApiResponse {
 
 export default function LiturgyPage() {
   const router = useRouter();
+  const { createNewPresentation } = usePresentationsPortal();
   const [isClient, setIsClient] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
@@ -142,89 +143,28 @@ export default function LiturgyPage() {
     }
   };
 
-  // Save the structured slides to Supabase/LocalStorage
+  // Save the structured slides via the authenticated client (handles both
+  // demo localStorage mode and Supabase cloud mode, and sets created_by from
+  // the session so the insert satisfies row-level security).
   const handleImport = async () => {
     if (previewSlides.length === 0) return;
     setIsLoading(true);
+    setErrorMsg(null);
 
-    const isSupabaseConfigured =
-      Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-      Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
+    try {
+      const slides = previewSlides.map((slide) => ({
+        content: slide.content,
+        translation: slide.translation,
+      }));
+      const newPresId = await createNewPresentation(`Scripture: ${title}`, slides);
 
-    if (!isSupabaseConfigured) {
-      // Demo Mode: Save to local storage
-      const stored = localStorage.getItem('holyproj_all_pres');
-      const currentList = stored ? JSON.parse(stored) : [];
+      if (!newPresId) {
+        throw new Error('Failed to save. Check that you are signed in and that database write access is enabled.');
+      }
 
-      const newPresId = `demo-presentation-lit-${Date.now()}`;
-      const newPres = {
-        id: newPresId,
-        title: `Scripture: ${title}`,
-        settings: {
-          fontSize: 48,
-          background: '#0f172a',
-          margin: 8,
-          fontFamily: 'Inter',
-        },
-        slides: previewSlides.map((slide, idx) => ({
-          id: `slide-lit-${Date.now()}-${idx}`,
-          order_index: idx,
-          content: slide.content,
-          translation: slide.translation
-        }))
-      };
-
-      const updated = [newPres, ...currentList];
-      localStorage.setItem('holyproj_all_pres', JSON.stringify(updated));
-
-      setIsLoading(false);
       setSuccess(true);
       setTimeout(() => {
         router.push(`/dashboard?pres=${newPresId}`);
-      }, 800);
-      return;
-    }
-
-    // Supabase Mode
-    try {
-      const { data: presData, error: presErr } = await supabase
-        .from('presentations')
-        .insert({
-          title: `Scripture: ${title}`,
-          created_by: currentUser.id || null,
-          settings: {
-            fontSize: 48,
-            background: '#0f172a',
-            margin: 8,
-            fontFamily: 'Inter'
-          }
-        })
-        .select()
-        .single();
-
-      if (presErr) throw presErr;
-
-      // Insert slides
-      const slidesToInsert = previewSlides.map((slide, index) => ({
-        presentation_id: presData.id,
-        order_index: index,
-        type: 'text',
-        content: slide.content,
-        translation: slide.translation,
-        settings: {}
-      }));
-
-      const { error: slideErr } = await supabase
-        .from('slides')
-        .insert(slidesToInsert);
-
-      if (slideErr) throw slideErr;
-
-      setSuccess(true);
-      setTimeout(() => {
-        router.push(`/dashboard?pres=${presData.id}`);
       }, 800);
     } catch (err: any) {
       console.error(err);
