@@ -456,13 +456,15 @@ function ProjectorContent() {
         </div>
       )}
 
-      {/* Background Image Layer */}
+      {/* Background Image Layer (full brightness when set to fill the screen) */}
       {slideToShow?.media_type === 'image' && slideToShow.media_url && (
         <img
           key={slideToShow.media_url}
           src={slideToShow.media_url}
           alt="Slide background"
-          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300"
+          className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-300 ${
+            slideToShow.media_fill ? '' : 'brightness-[0.35] contrast-[1.1]'
+          }`}
         />
       )}
 
@@ -475,7 +477,9 @@ function ProjectorContent() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] saturate-[0.8]"
+          className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none ${
+            slideToShow.media_fill ? '' : 'brightness-[0.35] contrast-[1.1] saturate-[0.8]'
+          }`}
         />
       )}
 
@@ -485,7 +489,9 @@ function ProjectorContent() {
         autoPlay
         playsInline
         muted
-        className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none brightness-[0.35] contrast-[1.1] transition-opacity duration-300 ${
+        className={`absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-300 ${
+          slideToShow?.media_fill ? '' : 'brightness-[0.35] contrast-[1.1]'
+        } ${
           slideToShow?.media_type === 'camera' ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -554,10 +560,10 @@ function ProjectorContent() {
         </div>
       )}
 
-      {/* Main Projection Canvas */}
+      {/* Main Projection Canvas (hidden when media fills the screen) */}
       <div
         ref={containerRef}
-        className={`flex h-full w-full flex-col select-none z-10 ${getVerticalAlignClass()} ${getHorizontalAlignClass()}`}
+        className={`flex h-full w-full flex-col select-none z-10 ${getVerticalAlignClass()} ${getHorizontalAlignClass()} ${slideToShow?.media_fill && slideToShow?.media_url ? 'hidden' : ''}`}
         style={{
           padding: `${fontSettings.margin * 1.5}rem`,
         }}

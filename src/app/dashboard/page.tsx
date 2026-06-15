@@ -55,6 +55,7 @@ function DashboardContent() {
     updateSlideContent,
     addSlide,
     deleteSlide,
+    setSlideFill,
     setLiveSlide,
     updateSettings,
     setBlankMode,
@@ -1325,67 +1326,50 @@ function DashboardContent() {
 
                 {/* Background Media Settings */}
                 <div className="border-t border-slate-900 pt-4 space-y-3">
-                  <label className="block text-xs text-slate-400 font-medium">Slide Media Background</label>
+                  <label className="block text-xs text-slate-400 font-medium">Slide Media</label>
                   <select
                     value={selectedSlide.media_type || 'none'}
                     onChange={(e) => updateSlideContent(
-                      selectedSlide.id, 
-                      selectedSlide.content, 
-                      selectedSlide.translation, 
-                      e.target.value as any, 
+                      selectedSlide.id,
+                      selectedSlide.content,
+                      selectedSlide.translation,
+                      e.target.value as any,
                       selectedSlide.media_url
                     )}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
                   >
                     <option value="none">Color Theme (Default)</option>
-                    <option value="image">Custom Background Image</option>
-                    <option value="video">Abstract Video Loop</option>
-                    <option value="camera">Live Camera Overlay (WebRTC)</option>
+                    <option value="image">Image (upload)</option>
+                    <option value="video">Video (upload)</option>
+                    <option value="camera">Live Camera (WebRTC)</option>
                   </select>
 
-                  {selectedSlide.media_type === 'image' && (
-                    <div className="animate-fade-in pt-1">
+                  {(selectedSlide.media_type === 'image' || selectedSlide.media_type === 'video') && (
+                    <div className="animate-fade-in pt-1 space-y-3">
                       <MediaLibrary
                         currentUrl={selectedSlide.media_url}
-                        onSelectImage={(url) => updateSlideContent(
+                        onSelectMedia={(url, kind) => updateSlideContent(
                           selectedSlide.id,
                           selectedSlide.content,
                           selectedSlide.translation,
-                          'image',
+                          url ? kind : 'none',
                           url
                         )}
                       />
-                    </div>
-                  )}
 
-                  {selectedSlide.media_type === 'video' && (
-                    <div className="space-y-2 animate-fade-in">
-                      <input
-                        type="text"
-                        placeholder="Paste MP4 Video Loop URL"
-                        value={selectedSlide.media_url || ''}
-                        onChange={(e) => updateSlideContent(
-                          selectedSlide.id, 
-                          selectedSlide.content, 
-                          selectedSlide.translation, 
-                          'video', 
-                          e.target.value
-                        )}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-650 focus:border-violet-500 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => updateSlideContent(
-                          selectedSlide.id, 
-                          selectedSlide.content, 
-                          selectedSlide.translation, 
-                          'video', 
-                          'https://assets.mixkit.co/videos/preview/mixkit-nebula-in-outer-space-40348-large.mp4'
-                        )}
-                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
-                      >
-                        ⚡ Load Demo Space Nebular Loop
-                      </button>
+                      {selectedSlide.media_url && (
+                        <label className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!selectedSlide.media_fill}
+                            onChange={(e) => setSlideFill(selectedSlide.id, e.target.checked)}
+                            className="mt-0.5 h-4 w-4 accent-violet-600"
+                          />
+                          <span className="text-[11px] text-slate-300 leading-relaxed">
+                            <strong className="text-slate-200">Fill the screen</strong> — show the {selectedSlide.media_type} full-brightness with no text on top (for announcement / picture slides). Leave off to use it as a darkened background behind lyrics.
+                          </span>
+                        </label>
+                      )}
                     </div>
                   )}
                 </div>

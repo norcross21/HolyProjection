@@ -8,6 +8,7 @@ export interface Slide {
   translation?: string;
   media_type?: 'none' | 'color' | 'video' | 'camera' | 'image';
   media_url?: string;
+  media_fill?: boolean; // true = media fills the screen at full brightness, text hidden (announcement slide)
 }
 
 export interface Presentation {
@@ -630,6 +631,34 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Toggle whether the slide's media fills the screen (full brightness, no text)
+  const setSlideFill = (slideId: string, fill: boolean) => {
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, media_fill: fill } : s)),
+    }));
+
+    if (isDemoMode) {
+      const updatedPresentation = {
+        ...presentation,
+        slides: presentation.slides.map((s) => (s.id === slideId ? { ...s, media_fill: fill } : s)),
+      };
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+    } else {
+      supabase
+        .from('slides')
+        .update({ media_fill: fill, updated_at: new Date().toISOString() })
+        .eq('id', slideId)
+        .then(({ error }) => { if (error) console.error('Error updating media fill:', error.message); });
+    }
+  };
+
   // Add a new (blank) slide to the end of the presentation
   const addSlide = async () => {
     const nextIndex = presentation.slides.length;
@@ -840,6 +869,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideContent,
     addSlide,
     deleteSlide,
+    setSlideFill,
     setLiveSlide,
     updateSettings,
     setBlankMode,
