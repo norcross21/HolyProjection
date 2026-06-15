@@ -630,6 +630,61 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Add a new (blank) slide to the end of the presentation
+  const addSlide = async () => {
+    const nextIndex = presentation.slides.length;
+
+    if (isDemoMode) {
+      const newSlide: Slide = { id: `slide-${Date.now()}`, order_index: nextIndex, content: '', translation: '' };
+      const updatedPresentation = { ...presentation, slides: [...presentation.slides, newSlide] };
+      setPresentation((prev) => ({ ...prev, slides: [...prev.slides, newSlide] }));
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+      return newSlide.id;
+    }
+
+    const { data, error } = await supabase
+      .from('slides')
+      .insert({ presentation_id: presentationId, order_index: nextIndex, content: '' })
+      .select()
+      .single();
+    if (error || !data) {
+      console.error('Error adding slide:', error?.message);
+      return null;
+    }
+    setPresentation((prev) => ({ ...prev, slides: [...prev.slides, data as Slide] }));
+    return data.id as string;
+  };
+
+  // Delete a slide from the presentation
+  const deleteSlide = async (slideId: string) => {
+    if (isDemoMode) {
+      const updatedPresentation = { ...presentation, slides: presentation.slides.filter((s) => s.id !== slideId) };
+      setPresentation((prev) => ({ ...prev, slides: prev.slides.filter((s) => s.id !== slideId) }));
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+      return true;
+    }
+
+    const { error } = await supabase.from('slides').delete().eq('id', slideId);
+    if (error) {
+      console.error('Error deleting slide:', error.message);
+      return false;
+    }
+    setPresentation((prev) => ({ ...prev, slides: prev.slides.filter((s) => s.id !== slideId) }));
+    return true;
+  };
+
   // Sync live slide selection
   const setLiveSlide = (slideId: string | null) => {
     setActiveSlideId(slideId);
@@ -783,6 +838,8 @@ export function useRealtimePresentation(presentationId: string) {
     currentUser,
     loading,
     updateSlideContent,
+    addSlide,
+    deleteSlide,
     setLiveSlide,
     updateSettings,
     setBlankMode,

@@ -53,6 +53,8 @@ function DashboardContent() {
     presenceUsers,
     loading: presLoading,
     updateSlideContent,
+    addSlide,
+    deleteSlide,
     setLiveSlide,
     updateSettings,
     setBlankMode,
@@ -122,11 +124,14 @@ function DashboardContent() {
     deleteSetlist
   } = useSetlistsPortal();
 
-  // Set default selected slide when presentation loads
+  // Keep a valid slide selected: preserve the current selection if it still
+  // exists (so editing/adding doesn't yank focus back to slide 1), otherwise
+  // fall back to the first slide.
   useEffect(() => {
-    if (presentation.slides.length > 0) {
-      setSelectedSlideId(presentation.slides[0].id);
-    }
+    setSelectedSlideId((prev) => {
+      if (prev && presentation.slides.some((s) => s.id === prev)) return prev;
+      return presentation.slides[0]?.id ?? null;
+    });
   }, [presentation.slides]);
 
   useEffect(() => {
@@ -1160,7 +1165,16 @@ function DashboardContent() {
             <>
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Presentation Slides Flow</h2>
-                <span className="text-xs text-slate-500">{presentation.slides.length} slides</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500">{presentation.slides.length} {presentation.slides.length === 1 ? 'slide' : 'slides'}</span>
+                  <button
+                    onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
+                    className="flex items-center gap-1.5 rounded-lg bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 px-3 py-1.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Slide</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -1198,13 +1212,28 @@ function DashboardContent() {
                               setLiveSlide(slide.id);
                             }}
                             className={`flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold transition-all ${
-                              isLive 
+                              isLive
                                 ? 'bg-red-500 text-white shadow-md shadow-red-500/25 pointer-events-none'
                                 : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
                             }`}
                           >
                             <Play className="h-3.5 w-3.5 fill-current" />
                             <span>{isLive ? 'LIVE' : 'Go Live'}</span>
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (presentation.slides.length <= 1) {
+                                alert('A presentation needs at least one slide.');
+                                return;
+                              }
+                              if (confirm(`Delete slide ${slide.order_index + 1}?`)) deleteSlide(slide.id);
+                            }}
+                            title="Delete slide"
+                            className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
