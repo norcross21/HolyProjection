@@ -82,14 +82,15 @@ function DashboardContent() {
 
   const translationLang = presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG;
 
-  const handleTranslateSlide = async () => {
+  const handleTranslateSlide = async (langOverride?: string) => {
     if (!selectedSlide || !selectedSlide.content.trim()) return;
+    const target = langOverride || translationLang;
     setIsTranslating(true);
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: selectedSlide.content, targetLang: translationLang }),
+        body: JSON.stringify({ text: selectedSlide.content, targetLang: target }),
       });
       const data = await response.json();
       if (data.success && data.translation) {
@@ -294,15 +295,10 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-4">
-            {portalDemoMode ? (
+            {portalDemoMode && (
               <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Demo Mode</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400">
-                <Check className="h-3.5 w-3.5" />
-                <span>Connected to Supabase</span>
               </div>
             )}
 
@@ -622,15 +618,10 @@ function DashboardContent() {
 
         {/* Action controls */}
         <div className="flex items-center gap-4">
-          {isDemoMode ? (
+          {isDemoMode && (
             <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">
               <AlertTriangle className="h-3.5 w-3.5" />
               <span>Demo Mode</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400">
-              <Check className="h-3.5 w-3.5" />
-              <span>Live Synced</span>
             </div>
           )}
 
@@ -741,8 +732,16 @@ function DashboardContent() {
                 <label className="block text-xs text-slate-400 mb-1.5">Translation Language</label>
                 <select
                   value={translationLang}
-                  onChange={(e) => updateSettings({ translationLang: e.target.value })}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
+                  onChange={(e) => {
+                    const lang = e.target.value;
+                    updateSettings({ translationLang: lang });
+                    // Re-translate the selected slide into the newly chosen language
+                    if (selectedSlide && selectedSlide.content.trim()) {
+                      handleTranslateSlide(lang);
+                    }
+                  }}
+                  disabled={isTranslating}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none disabled:opacity-50"
                 >
                   {LANGUAGES.map((lang) => (
                     <option key={lang.name} value={lang.name}>
@@ -750,7 +749,9 @@ function DashboardContent() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-[10px] text-slate-600">Used by the AI translator and shown on the projector / follower screens.</p>
+                <p className="mt-1 text-[10px] text-slate-600">
+                  {isTranslating ? 'Translating the current slide…' : 'Changing this re-translates the selected slide and updates the projector / follower screens.'}
+                </p>
               </div>
 
               <div>
@@ -1221,7 +1222,7 @@ function DashboardContent() {
                   <button
                     type="button"
                     disabled={isTranslating || !selectedSlide.content.trim()}
-                    onClick={handleTranslateSlide}
+                    onClick={() => handleTranslateSlide()}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/20 to-indigo-600/20 hover:from-violet-600/40 hover:to-indigo-600/40 border border-violet-500/30 hover:border-violet-500/50 py-2.5 px-4 text-xs font-bold text-violet-300 hover:text-white shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {isTranslating ? (

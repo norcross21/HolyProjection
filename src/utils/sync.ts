@@ -263,6 +263,7 @@ export function useRealtimePresentation(presentationId: string) {
 
   const channelRef = useRef<any>(null);
   const localBcRef = useRef<BroadcastChannel | null>(null);
+  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
   const [activeAlert, setActiveAlert] = useState<LiveAlert | null>(null);
 
@@ -568,19 +569,27 @@ export function useRealtimePresentation(presentationId: string) {
         data: { presentation: updatedPresentation },
       });
     } else {
-      supabase
-        .from('slides')
-        .update({ 
-          content, 
-          translation, 
-          media_type, 
-          media_url, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', slideId)
-        .then(({ error }) => {
-          if (error) console.error('Error updating slide:', error);
-        });
+      // Debounce the DB write per slide: writing on every keystroke triggers the
+      // realtime listener to refetch and overwrite the textarea mid-typing, which
+      // made the editor feel laggy/stuck. We save ~500ms after typing stops.
+      if (saveTimersRef.current[slideId]) {
+        clearTimeout(saveTimersRef.current[slideId]);
+      }
+      saveTimersRef.current[slideId] = setTimeout(() => {
+        supabase
+          .from('slides')
+          .update({
+            content,
+            translation,
+            media_type,
+            media_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', slideId)
+          .then(({ error }) => {
+            if (error) console.error('Error updating slide:', error.message);
+          });
+      }, 500);
     }
   };
 
