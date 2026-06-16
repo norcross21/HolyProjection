@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Slide, SlideElement, Presentation } from '@/utils/sync';
+import { Slide, SlideElement, Presentation, Template, useTemplates } from '@/utils/sync';
 import MediaLibrary from '@/components/MediaLibrary';
+import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { FONTS } from '@/utils/fonts';
 import {
   X, Type, Image as ImageIcon, Film, Trash2, ChevronUp, ChevronDown,
-  Bold, AlignLeft, AlignCenter, AlignRight, Layers, RotateCw,
+  Bold, AlignLeft, AlignCenter, AlignRight, Layers, RotateCw, LayoutTemplate, Save,
 } from 'lucide-react';
 
 interface SlideDesignerProps {
@@ -23,6 +24,8 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
   const [els, setEls] = useState<SlideElement[]>(slide.elements ? [...slide.elements] : []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showMedia, setShowMedia] = useState<null | 'image' | 'video'>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const { templates, saveTemplate, deleteTemplate } = useTemplates();
   const stageRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: string; mode: 'move' | 'resize'; sx: number; sy: number; ox: number; oy: number; ow: number; oh: number } | null>(null);
 
@@ -48,6 +51,26 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     commit([...els, el]); setSelectedId(el.id); setShowMedia(null);
   };
   const removeEl = (id: string) => { commit(els.filter((e) => e.id !== id)); if (selectedId === id) setSelectedId(null); };
+
+  const applyTemplate = (tpl: Template) => {
+    const newEls = (tpl.data.elements || []).map((e, i) => ({ ...e, id: `el-${Date.now()}-${i}` }));
+    commit(newEls);
+    if (tpl.data.bgColor) onBgChange(tpl.data.bgColor);
+    setSelectedId(null);
+    setShowTemplates(false);
+  };
+
+  const saveCurrentAsTemplate = async () => {
+    const name = prompt('Save this slide design as a template. Name:');
+    if (!name || !name.trim()) return;
+    await saveTemplate(name.trim(), {
+      bgColor: slide.settings?.bgColor,
+      media_type: slide.media_type,
+      media_url: slide.media_url,
+      media_fill: slide.media_fill,
+      elements: els,
+    });
+  };
   const bump = (id: string, dir: 1 | -1) => {
     const sorted = [...els].sort((a, b) => a.z - b.z);
     const i = sorted.findIndex((e) => e.id === id);
@@ -107,6 +130,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
           <button onClick={addText} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Type className="h-3.5 w-3.5" />Text</button>
           <button onClick={() => setShowMedia('image')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><ImageIcon className="h-3.5 w-3.5" />Image</button>
           <button onClick={() => setShowMedia('video')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Film className="h-3.5 w-3.5" />Video</button>
+          <button onClick={() => { setShowTemplates((v) => !v); setShowMedia(null); }} className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold ${showTemplates ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800'}`}><LayoutTemplate className="h-3.5 w-3.5" />Templates</button>
           <button onClick={onClose} className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white"><X className="h-3.5 w-3.5" />Done</button>
         </div>
       </div>
@@ -181,7 +205,40 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
 
         {/* Properties / media panel */}
         <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950/60 p-4 overflow-y-auto">
-          {showMedia ? (
+          {showTemplates ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Templates</span>
+                <button onClick={() => setShowTemplates(false)} className="text-slate-500 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              </div>
+              <button onClick={saveCurrentAsTemplate} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 py-2 text-xs font-bold text-violet-300">
+                <Save className="h-3.5 w-3.5" />Save current design
+              </button>
+              <div className="space-y-2.5">
+                {templates.length === 0 && (
+                  <p className="text-[10px] text-slate-600 text-center py-3">No templates yet. Design a slide and save it.</p>
+                )}
+                {templates.map((t) => (
+                  <div key={t.id} className="group relative">
+                    <button onClick={() => applyTemplate(t)} className="block w-full text-left rounded-xl border border-slate-800 hover:border-violet-500/50 overflow-hidden bg-slate-950/40 transition-colors">
+                      <div className="relative w-full aspect-video" style={{ backgroundColor: t.data.bgColor || '#0f172a', containerType: 'size' } as React.CSSProperties}>
+                        <SlideElementsLayer elements={t.data.elements} />
+                      </div>
+                      <div className="px-2.5 py-1.5 flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-200 truncate">{t.name}</span>
+                        {t.is_starter && <span className="text-[8px] text-slate-500 uppercase tracking-wider">starter</span>}
+                      </div>
+                    </button>
+                    {!t.is_starter && (
+                      <button onClick={() => deleteTemplate(t.id)} title="Delete template" className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-slate-950/80 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : showMedia ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Add {showMedia}</span>

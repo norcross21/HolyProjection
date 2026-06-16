@@ -27,6 +27,21 @@ export interface SlideElement {
   crop?: { top: number; right: number; bottom: number; left: number }; // % insets
 }
 
+export interface TemplateData {
+  bgColor?: string;
+  media_type?: 'none' | 'color' | 'video' | 'camera' | 'image';
+  media_url?: string;
+  media_fill?: boolean;
+  elements?: SlideElement[];
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  is_starter?: boolean;
+  data: TemplateData;
+}
+
 export interface Slide {
   id: string;
   order_index: number;
@@ -718,6 +733,18 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Apply a saved template's design to a slide (regenerates element ids).
+  const applyDesign = (slideId: string, design: TemplateData) => {
+    const elements: SlideElement[] = (design.elements || []).map((e, i) => ({ ...e, id: `el-${Date.now()}-${i}` }));
+    updateSlideElements(slideId, elements);
+    if (design.bgColor) updateSlideSettings(slideId, { bgColor: design.bgColor });
+    const slide = presentation.slides.find((s) => s.id === slideId);
+    if (slide) {
+      updateSlideContent(slide.id, slide.content, slide.translation, design.media_type || 'none', design.media_url || undefined);
+      if (typeof design.media_fill === 'boolean') setSlideFill(slideId, design.media_fill);
+    }
+  };
+
   // Merge per-slide designer settings (e.g. background colour) into the jsonb column
   const updateSlideSettings = (slideId: string, partial: Record<string, any>) => {
     setPresentation((prev) => ({
@@ -959,6 +986,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideContent,
     updateSlideElements,
     updateSlideSettings,
+    applyDesign,
     addSlide,
     deleteSlide,
     setSlideFill,
@@ -1702,4 +1730,66 @@ export function useRealtimeSetlist(setlistId: string) {
     activeAlert,
     refresh: fetchSetlistDetails
   };
+}
+
+// ============================================================================
+// TEMPLATES (Phase 2 — saved slide designs, shared across the church)
+// ============================================================================
+
+export function useTemplates() {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTemplates = async () => {
+    setLoading(true);
+    if (!IS_SUPABASE_CONFIGURED) {
+      const stored = localStorage.getItem('holyproj_templates');
+      setTemplates(stored ? JSON.parse(stored) : []);
+      setLoading(false);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('templates')
+      .select('*')
+      .order('is_starter', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) console.error('Error loading templates:', error.message);
+    setTemplates((data as Template[]) || []);
+    setLoading(false);
+  };
+
+  const saveTemplate = async (name: string, data: TemplateData): Promise<string | null> => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      const tpl: Template = { id: `tpl-${Date.now()}`, name, data };
+      const updated = [tpl, ...templates];
+      localStorage.setItem('holyproj_templates', JSON.stringify(updated));
+      setTemplates(updated);
+      return tpl.id;
+    }
+    const { data: sess } = await supabase.auth.getSession();
+    const { data: row, error } = await supabase
+      .from('templates')
+      .insert({ name, created_by: sess?.session?.user?.id || null, data })
+      .select()
+      .single();
+    if (error) { console.error('Error saving template:', error.message); return null; }
+    setTemplates((prev) => [row as Template, ...prev]);
+    return (row as Template).id;
+  };
+
+  const deleteTemplate = async (id: string) => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      const updated = templates.filter((t) => t.id !== id);
+      localStorage.setItem('holyproj_templates', JSON.stringify(updated));
+      setTemplates(updated);
+      return;
+    }
+    const { error } = await supabase.from('templates').delete().eq('id', id);
+    if (error) { console.error('Error deleting template:', error.message); return; }
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  useEffect(() => { fetchTemplates(); }, []);
+
+  return { templates, loading, saveTemplate, deleteTemplate, refresh: fetchTemplates };
 }
