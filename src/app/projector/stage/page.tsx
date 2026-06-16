@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
+import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { Clock, Tv, AlertTriangle, CheckCircle } from 'lucide-react';
 
 function StageDisplayContent() {
@@ -137,7 +138,17 @@ function StageDisplayContent() {
         {/* 1. CURRENT SLIDE */}
         <section className="space-y-2.5">
           <span className="text-yellow-500/70 text-[10px] uppercase font-bold tracking-widest block">Current Slide</span>
-          {currentSlide ? (
+          {currentSlide && (currentSlide.elements?.length ?? 0) > 0 ? (
+            <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: '#0f172a' }}>
+              {currentSlide.media_type === 'image' && currentSlide.media_url && (
+                <img src={currentSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              {currentSlide.media_type === 'video' && currentSlide.media_url && (
+                <video src={currentSlide.media_url} muted loop autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              <SlideElementsLayer elements={currentSlide.elements} />
+            </div>
+          ) : currentSlide ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="text-yellow-400 font-extrabold text-3xl md:text-5xl lg:text-6xl whitespace-pre-line leading-tight">
                 {currentSlide.content}
@@ -158,7 +169,17 @@ function StageDisplayContent() {
         {/* 2. NEXT SLIDE */}
         <section className="space-y-2.5">
           <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest block">Next Slide</span>
-          {nextSlide ? (
+          {nextSlide && (nextSlide.elements?.length ?? 0) > 0 ? (
+            <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 opacity-60" style={{ backgroundColor: '#0f172a' }}>
+              {nextSlide.media_type === 'image' && nextSlide.media_url && (
+                <img src={nextSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              {nextSlide.media_type === 'video' && nextSlide.media_url && (
+                <video src={nextSlide.media_url} muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              <SlideElementsLayer elements={nextSlide.elements} />
+            </div>
+          ) : nextSlide ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center opacity-60">
               <div className="text-white font-bold text-xl md:text-3xl lg:text-4xl whitespace-pre-line leading-normal">
                 {nextSlide.content}

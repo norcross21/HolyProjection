@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist, Presentation } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
+import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
 
 function ProjectorContent() {
@@ -497,39 +498,7 @@ function ProjectorContent() {
       />
 
       {/* Free-placement elements layer (Phase 2) */}
-      {(slideToShow?.elements?.length ?? 0) > 0 && (
-        <div className="absolute inset-0 z-[5] pointer-events-none" style={{ containerType: 'size' } as React.CSSProperties}>
-          {[...slideToShow.elements].sort((a: any, b: any) => a.z - b.z).map((el: any) => (
-            <div
-              key={el.id}
-              className="absolute"
-              style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`, zIndex: el.z }}
-            >
-              {el.type === 'text' ? (
-                <div
-                  className="w-full h-full flex items-center"
-                  style={{
-                    color: el.color || '#fff',
-                    fontSize: `${el.fontSize || 7}cqh`,
-                    fontWeight: el.bold ? 800 : 400,
-                    textAlign: el.align || 'center',
-                    justifyContent: el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center',
-                    lineHeight: 1.1,
-                    textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-                    fontFamily: fontSettings.fontFamily || 'Inter',
-                  }}
-                >
-                  <span className="whitespace-pre-wrap break-words w-full">{el.text}</span>
-                </div>
-              ) : el.type === 'image' ? (
-                <img src={el.url} alt="" className="w-full h-full" style={{ objectFit: el.fit || 'contain' }} />
-              ) : (
-                <video src={el.url} muted loop autoPlay playsInline className="w-full h-full" style={{ objectFit: el.fit || 'contain' }} />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <SlideElementsLayer elements={slideToShow?.elements} fontFamily={fontSettings.fontFamily} />
 
       {/* Floating Status Notification Overlay */}
       {statusVisible && (

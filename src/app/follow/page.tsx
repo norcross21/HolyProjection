@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
+import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { 
   Sparkles, 
   Tv, 
@@ -249,7 +250,18 @@ function FollowContent() {
               className="space-y-6 text-center transition-all duration-300"
               style={{ opacity: blankMode === 'clear' ? 0.05 : 1.0 }}
             >
-              {currentSlide ? (
+              {currentSlide && (currentSlide.elements?.length ?? 0) > 0 ? (
+                /* Designed (free-placement) slide — show the actual slide layout */
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: '#0f172a' }}>
+                  {currentSlide.media_type === 'image' && currentSlide.media_url && (
+                    <img src={currentSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  {currentSlide.media_type === 'video' && currentSlide.media_url && (
+                    <video src={currentSlide.media_url} muted loop autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  <SlideElementsLayer elements={currentSlide.elements} />
+                </div>
+              ) : currentSlide ? (
                 <>
                   {/* Primary Lyrics content */}
                   {(langMode === 'bilingual' || langMode === 'primary') && (
