@@ -68,30 +68,52 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
     const file = files[0];
     const kind: MediaKind = file.type.startsWith('video') ? 'video' : 'image';
     const mb = file.size / (1024 * 1024);
-    if (mb > 500) {
-      setErrorMsg(`That file is ${mb.toFixed(0)} MB — the limit is 500 MB. Please compress the ${kind} first (see the tip below).`);
+
+    // Images: hard 500MB cap. Videos: allow larger input (we compress it down),
+    // but cap at ~1GB to avoid crashing the browser tab during compression.
+    const inputCap = kind === 'video' ? 1024 : 500;
+    if (mb > inputCap) {
+      setErrorMsg(`That file is ${mb.toFixed(0)} MB — too large. Please use a smaller ${kind} (see the tip below).`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-    setUploadInfo(`${file.name} · ${mb.toFixed(1)} MB`);
+
     setIsUploading(true);
     setErrorMsg(null);
-
-    if (!isSupabaseConfigured) {
-      const localUrl = URL.createObjectURL(file);
-      const updated = [localUrl, ...items];
-      localStorage.setItem('holyproj_uploaded_media', JSON.stringify(updated));
-      setItems(updated);
-      onSelectMedia(localUrl, kind);
-      setIsUploading(false);
-      return;
-    }
+    let uploadFile = file;
 
     try {
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      // Auto-compress videos over ~20MB in the browser before uploading.
+      if (kind === 'video' && mb > 20) {
+        setUploadInfo('Preparing compressor… (first run downloads it once)');
+        try {
+          const { compressVideo } = await import('@/utils/videoCompress');
+          uploadFile = await compressVideo(file, (r) => setUploadInfo(`Compressing video… ${Math.round(r * 100)}%`));
+        } catch (cErr) {
+          console.warn('Video compression failed, using original:', cErr);
+          uploadFile = file; // graceful fallback — upload the original
+        }
+      }
+
+      const finalMb = uploadFile.size / (1024 * 1024);
+      if (finalMb > 500) {
+        throw new Error(`Still ${finalMb.toFixed(0)} MB after processing — over the 500 MB limit. Try a shorter clip.`);
+      }
+      setUploadInfo(`${uploadFile.name} · ${finalMb.toFixed(1)} MB`);
+
+      if (!isSupabaseConfigured) {
+        const localUrl = URL.createObjectURL(uploadFile);
+        const updated = [localUrl, ...items];
+        localStorage.setItem('holyproj_uploaded_media', JSON.stringify(updated));
+        setItems(updated);
+        onSelectMedia(localUrl, kind);
+        return;
+      }
+
+      const fileName = `${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const { error } = await supabase.storage
         .from('presentation-media')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        .upload(fileName, uploadFile, { cacheControl: '3600', upsert: false });
       if (error) throw error;
 
       const { data: { publicUrl } } = supabase.storage.from('presentation-media').getPublicUrl(fileName);
