@@ -6,6 +6,7 @@ import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } fr
 import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import MediaLibrary from '@/components/MediaLibrary';
+import SlideDesigner from '@/components/SlideDesigner';
 import { 
   Sparkles, 
   Tv, 
@@ -28,7 +29,8 @@ import {
   Smartphone,
   MessageSquare,
   X,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -53,6 +55,7 @@ function DashboardContent() {
     presenceUsers,
     loading: presLoading,
     updateSlideContent,
+    updateSlideElements,
     addSlide,
     deleteSlide,
     setSlideFill,
@@ -71,6 +74,7 @@ function DashboardContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
+  const [designingSlideId, setDesigningSlideId] = useState<string | null>(null);
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
@@ -1261,9 +1265,22 @@ function DashboardContent() {
         <aside className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto order-3">
           {selectedSlide ? (
             <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex flex-col h-full">
-              <div className="flex items-center gap-2 mb-4">
-                <Edit3 className="h-4 w-4 text-indigo-400" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Editor</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4 text-indigo-400" />
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Editor</h2>
+                </div>
+                <button
+                  onClick={() => setDesigningSlideId(selectedSlide.id)}
+                  className="flex items-center gap-1.5 rounded-lg bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 px-2.5 py-1.5 text-[11px] font-bold text-violet-300 transition-all"
+                  title="Open the free-placement slide designer"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  Design
+                  {selectedSlide.elements && selectedSlide.elements.length > 0 && (
+                    <span className="rounded-full bg-violet-500/30 px-1.5 text-[9px]">{selectedSlide.elements.length}</span>
+                  )}
+                </button>
               </div>
 
               <div className="flex-1 flex flex-col gap-4">
@@ -1486,6 +1503,16 @@ function DashboardContent() {
           </div>
         );
       })()}
+
+      {/* Free-placement Slide Designer (Phase 2) */}
+      {designingSlideId && selectedSlide && selectedSlide.id === designingSlideId && (
+        <SlideDesigner
+          slide={selectedSlide}
+          settings={presentation.settings}
+          onChange={(els) => updateSlideElements(designingSlideId, els)}
+          onClose={() => setDesigningSlideId(null)}
+        />
+      )}
     </div>
   );
 }

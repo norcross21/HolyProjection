@@ -1,6 +1,27 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase';
 
+// A free-placement element on a slide (Phase 2 designer). Positions/sizes are
+// percentages of the slide canvas so they scale to any screen resolution.
+export interface SlideElement {
+  id: string;
+  type: 'text' | 'image' | 'video';
+  x: number; // % from left (top-left corner)
+  y: number; // % from top
+  w: number; // % width
+  h: number; // % height
+  z: number; // stacking order
+  // text
+  text?: string;
+  color?: string;
+  fontSize?: number; // % of canvas height (vh-like)
+  align?: 'left' | 'center' | 'right';
+  bold?: boolean;
+  // media
+  url?: string;
+  fit?: 'cover' | 'contain';
+}
+
 export interface Slide {
   id: string;
   order_index: number;
@@ -9,6 +30,7 @@ export interface Slide {
   media_type?: 'none' | 'color' | 'video' | 'camera' | 'image';
   media_url?: string;
   media_fill?: boolean; // true = media fills the screen at full brightness, text hidden (announcement slide)
+  elements?: SlideElement[]; // free-placement overlay elements (Phase 2)
 }
 
 export interface Presentation {
@@ -659,6 +681,37 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Replace the free-placement elements array for a slide (Phase 2 designer)
+  const updateSlideElements = (slideId: string, elements: SlideElement[]) => {
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, elements } : s)),
+    }));
+
+    if (isDemoMode) {
+      const updatedPresentation = {
+        ...presentation,
+        slides: presentation.slides.map((s) => (s.id === slideId ? { ...s, elements } : s)),
+      };
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+    } else {
+      if (saveTimersRef.current[`el-${slideId}`]) clearTimeout(saveTimersRef.current[`el-${slideId}`]);
+      saveTimersRef.current[`el-${slideId}`] = setTimeout(() => {
+        supabase
+          .from('slides')
+          .update({ elements, updated_at: new Date().toISOString() })
+          .eq('id', slideId)
+          .then(({ error }) => { if (error) console.error('Error updating elements:', error.message); });
+      }, 400);
+    }
+  };
+
   // Add a new (blank) slide to the end of the presentation
   const addSlide = async () => {
     const nextIndex = presentation.slides.length;
@@ -867,6 +920,7 @@ export function useRealtimePresentation(presentationId: string) {
     currentUser,
     loading,
     updateSlideContent,
+    updateSlideElements,
     addSlide,
     deleteSlide,
     setSlideFill,
