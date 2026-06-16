@@ -252,7 +252,7 @@ function FollowContent() {
             >
               {currentSlide && (currentSlide.elements?.length ?? 0) > 0 ? (
                 /* Designed (free-placement) slide — show the actual slide layout */
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: '#0f172a' }}>
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: currentSlide.settings?.bgColor || '#0f172a' }}>
                   {currentSlide.media_type === 'image' && currentSlide.media_url && (
                     <img src={currentSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                   )}

@@ -139,7 +139,7 @@ function StageDisplayContent() {
         <section className="space-y-2.5">
           <span className="text-yellow-500/70 text-[10px] uppercase font-bold tracking-widest block">Current Slide</span>
           {currentSlide && (currentSlide.elements?.length ?? 0) > 0 ? (
-            <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: '#0f172a' }}>
+            <div className="relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10" style={{ backgroundColor: currentSlide.settings?.bgColor || '#0f172a' }}>
               {currentSlide.media_type === 'image' && currentSlide.media_url && (
                 <img src={currentSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
               )}
@@ -170,7 +170,7 @@ function StageDisplayContent() {
         <section className="space-y-2.5">
           <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest block">Next Slide</span>
           {nextSlide && (nextSlide.elements?.length ?? 0) > 0 ? (
-            <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 opacity-60" style={{ backgroundColor: '#0f172a' }}>
+            <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 opacity-60" style={{ backgroundColor: nextSlide.settings?.bgColor || '#0f172a' }}>
               {nextSlide.media_type === 'image' && nextSlide.media_url && (
                 <img src={nextSlide.media_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
               )}

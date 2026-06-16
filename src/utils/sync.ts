@@ -11,15 +11,20 @@ export interface SlideElement {
   w: number; // % width
   h: number; // % height
   z: number; // stacking order
+  rotation?: number; // degrees
+  flipH?: boolean;
+  flipV?: boolean;
   // text
   text?: string;
   color?: string;
   fontSize?: number; // % of canvas height (vh-like)
+  fontFamily?: string;
   align?: 'left' | 'center' | 'right';
   bold?: boolean;
   // media
   url?: string;
   fit?: 'cover' | 'contain';
+  crop?: { top: number; right: number; bottom: number; left: number }; // % insets
 }
 
 export interface Slide {
@@ -31,6 +36,7 @@ export interface Slide {
   media_url?: string;
   media_fill?: boolean; // true = media fills the screen at full brightness, text hidden (announcement slide)
   elements?: SlideElement[]; // free-placement overlay elements (Phase 2)
+  settings?: { bgColor?: string }; // per-slide designer settings (jsonb column)
 }
 
 export interface Presentation {
@@ -712,6 +718,37 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Merge per-slide designer settings (e.g. background colour) into the jsonb column
+  const updateSlideSettings = (slideId: string, partial: Record<string, any>) => {
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, settings: { ...(s.settings || {}), ...partial } } : s)),
+    }));
+
+    const current = presentation.slides.find((s) => s.id === slideId);
+    const merged = { ...(current?.settings || {}), ...partial };
+
+    if (isDemoMode) {
+      const updatedPresentation = {
+        ...presentation,
+        slides: presentation.slides.map((s) => (s.id === slideId ? { ...s, settings: merged } : s)),
+      };
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+    } else {
+      supabase
+        .from('slides')
+        .update({ settings: merged, updated_at: new Date().toISOString() })
+        .eq('id', slideId)
+        .then(({ error }) => { if (error) console.error('Error updating slide settings:', error.message); });
+    }
+  };
+
   // Add a new (blank) slide to the end of the presentation
   const addSlide = async () => {
     const nextIndex = presentation.slides.length;
@@ -921,6 +958,7 @@ export function useRealtimePresentation(presentationId: string) {
     loading,
     updateSlideContent,
     updateSlideElements,
+    updateSlideSettings,
     addSlide,
     deleteSlide,
     setSlideFill,

@@ -56,6 +56,7 @@ function DashboardContent() {
     loading: presLoading,
     updateSlideContent,
     updateSlideElements,
+    updateSlideSettings,
     addSlide,
     deleteSlide,
     setSlideFill,
@@ -1510,6 +1511,7 @@ function DashboardContent() {
           slide={selectedSlide}
           settings={presentation.settings}
           onChange={(els) => updateSlideElements(designingSlideId, els)}
+          onBgChange={(color) => updateSlideSettings(designingSlideId, { bgColor: color })}
           onClose={() => setDesigningSlideId(null)}
         />
       )}

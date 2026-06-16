@@ -374,7 +374,7 @@ function ProjectorContent() {
     <main
       className="relative flex h-screen w-screen flex-col items-center justify-center overflow-hidden transition-all duration-300"
       style={{
-        backgroundColor: fontSettings.background || '#0f172a',
+        backgroundColor: slideToShow?.settings?.bgColor || fontSettings.background || '#0f172a',
         fontFamily: fontSettings.fontFamily || 'sans-serif',
       }}
     >

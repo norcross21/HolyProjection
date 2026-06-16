@@ -3,21 +3,23 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Slide, SlideElement, Presentation } from '@/utils/sync';
 import MediaLibrary from '@/components/MediaLibrary';
+import { FONTS } from '@/utils/fonts';
 import {
   X, Type, Image as ImageIcon, Film, Trash2, ChevronUp, ChevronDown,
-  Bold, AlignLeft, AlignCenter, AlignRight, Layers,
+  Bold, AlignLeft, AlignCenter, AlignRight, Layers, RotateCw,
 } from 'lucide-react';
 
 interface SlideDesignerProps {
   slide: Slide;
   settings: Presentation['settings'];
   onChange: (elements: SlideElement[]) => void;
+  onBgChange: (color: string) => void;
   onClose: () => void;
 }
 
 const uid = () => `el-${Date.now()}-${Math.floor(performance.now() % 100000)}`;
 
-export default function SlideDesigner({ slide, settings, onChange, onClose }: SlideDesignerProps) {
+export default function SlideDesigner({ slide, settings, onChange, onBgChange, onClose }: SlideDesignerProps) {
   const [els, setEls] = useState<SlideElement[]>(slide.elements ? [...slide.elements] : []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showMedia, setShowMedia] = useState<null | 'image' | 'video'>(null);
@@ -90,7 +92,7 @@ export default function SlideDesigner({ slide, settings, onChange, onClose }: Sl
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
   });
 
-  const bgColor = settings.background || '#0f172a';
+  const bgColor = slide.settings?.bgColor || settings.background || '#0f172a';
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-slate-950/95 backdrop-blur-md">
@@ -128,12 +130,14 @@ export default function SlideDesigner({ slide, settings, onChange, onClose }: Sl
             {/* Elements */}
             {[...els].sort((a, b) => a.z - b.z).map((el) => {
               const isSel = el.id === selectedId;
+              const transform = `rotate(${el.rotation || 0}deg) scaleX(${el.flipH ? -1 : 1}) scaleY(${el.flipV ? -1 : 1})`;
+              const clipPath = el.crop ? `inset(${el.crop.top}% ${el.crop.right}% ${el.crop.bottom}% ${el.crop.left}%)` : undefined;
               return (
                 <div
                   key={el.id}
                   onPointerDown={(e) => onPointerDown(e, el.id, 'move')}
                   className={`absolute cursor-move ${isSel ? 'outline outline-2 outline-violet-400' : ''}`}
-                  style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`, zIndex: el.z }}
+                  style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`, zIndex: el.z, transform }}
                 >
                   {el.type === 'text' ? (
                     <div
@@ -146,15 +150,15 @@ export default function SlideDesigner({ slide, settings, onChange, onClose }: Sl
                         justifyContent: el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center',
                         lineHeight: 1.1,
                         textShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                        fontFamily: settings.fontFamily || 'Inter',
+                        fontFamily: el.fontFamily || settings.fontFamily || 'Inter',
                       }}
                     >
                       <span className="whitespace-pre-wrap break-words w-full">{el.text}</span>
                     </div>
                   ) : el.type === 'image' ? (
-                    <img src={el.url} alt="" className="w-full h-full pointer-events-none" style={{ objectFit: el.fit || 'contain' }} />
+                    <img src={el.url} alt="" className="w-full h-full pointer-events-none" style={{ objectFit: el.fit || 'contain', clipPath }} />
                   ) : (
-                    <video src={el.url} muted loop autoPlay playsInline className="w-full h-full pointer-events-none" style={{ objectFit: el.fit || 'contain' }} />
+                    <video src={el.url} muted loop autoPlay playsInline className="w-full h-full pointer-events-none" style={{ objectFit: el.fit || 'contain', clipPath }} />
                   )}
 
                   {isSel && (
@@ -218,16 +222,66 @@ export default function SlideDesigner({ slide, settings, onChange, onClose }: Sl
                       <button key={a} onClick={() => update(selected.id, { align: a })} className={`flex items-center justify-center rounded-lg py-1.5 ${ (selected.align || 'center') === a ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}><Icon className="h-3.5 w-3.5" /></button>
                     ))}
                   </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Font</label>
+                    <select
+                      value={selected.fontFamily || ''}
+                      onChange={(e) => update(selected.id, { fontFamily: e.target.value || undefined })}
+                      style={{ fontFamily: selected.fontFamily || 'inherit' }}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-violet-500 focus:outline-none"
+                    >
+                      <option value="">Default</option>
+                      {FONTS.map((f) => (
+                        <option key={f.family} value={f.family} style={{ fontFamily: f.family }}>{f.label} · {f.category}</option>
+                      ))}
+                    </select>
+                  </div>
                 </>
               )}
 
               {(selected.type === 'image' || selected.type === 'video') && (
-                <div className="grid grid-cols-2 gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-                  {(['contain', 'cover'] as const).map((f) => (
-                    <button key={f} onClick={() => update(selected.id, { fit: f })} className={`rounded-lg py-1.5 text-[10px] font-bold capitalize ${ (selected.fit || 'contain') === f ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>{f === 'contain' ? 'Fit (whole)' : 'Fill (crop)'}</button>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                    {(['contain', 'cover'] as const).map((f) => (
+                      <button key={f} onClick={() => update(selected.id, { fit: f })} className={`rounded-lg py-1.5 text-[10px] font-bold capitalize ${ (selected.fit || 'contain') === f ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>{f === 'contain' ? 'Fit (whole)' : 'Fill (crop)'}</button>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Crop edges (%)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
+                        <label key={side} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <span className="w-9 capitalize">{side}</span>
+                          <input
+                            type="number" min={0} max={90}
+                            value={selected.crop?.[side] ?? 0}
+                            onChange={(e) => {
+                              const v = Math.max(0, Math.min(90, Number(e.target.value) || 0));
+                              const c = { top: 0, right: 0, bottom: 0, left: 0, ...(selected.crop || {}) };
+                              update(selected.id, { crop: { ...c, [side]: v } });
+                            }}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950/60 px-2 py-1 text-slate-200 focus:outline-none"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
+
+              {/* Rotate & flip (all element types) */}
+              <div className="border-t border-slate-900 pt-3 space-y-2">
+                <label className="block text-[10px] uppercase font-bold text-slate-500">Rotate &amp; flip</label>
+                <div className="flex items-center gap-2">
+                  <RotateCw className="h-3.5 w-3.5 text-slate-500" />
+                  <input type="range" min={-180} max={180} value={selected.rotation || 0} onChange={(e) => update(selected.id, { rotation: Number(e.target.value) })} className="flex-1 accent-violet-600" />
+                  <span className="text-[10px] text-slate-400 w-9 text-right">{selected.rotation || 0}°</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => update(selected.id, { flipH: !selected.flipH })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipH ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'}`}>Flip H</button>
+                  <button onClick={() => update(selected.id, { flipV: !selected.flipV })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipV ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'}`}>Flip V</button>
+                </div>
+              </div>
 
               <div className="flex items-center gap-2 border-t border-slate-900 pt-3">
                 <span className="text-[10px] uppercase font-bold text-slate-500">Layer</span>
@@ -236,10 +290,19 @@ export default function SlideDesigner({ slide, settings, onChange, onClose }: Sl
               </div>
             </div>
           ) : (
-            <div className="text-xs text-slate-500 leading-relaxed">
-              <p className="font-bold text-slate-300 mb-2">Free-placement designer</p>
-              <p>Add text boxes, images and videos from the toolbar, then drag them around and resize from the corner. Click an element to edit it here.</p>
-              <p className="mt-3 text-slate-600">Elements show on top of the slide background on the projector and follower screens.</p>
+            <div className="text-xs text-slate-500 leading-relaxed space-y-5">
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Slide background colour</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={bgColor} onChange={(e) => onBgChange(e.target.value)} className="h-8 w-12 rounded border border-slate-800 bg-transparent cursor-pointer" />
+                  <code className="text-[10px] text-slate-400">{bgColor}</code>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-600">Used when the slide has no background image/video.</p>
+              </div>
+              <div>
+                <p className="font-bold text-slate-300 mb-2">Free-placement designer</p>
+                <p>Add text boxes, images and videos from the toolbar, then drag them around and resize from the corner. Click an element to edit it — colour, font, rotate/flip, crop and layer order.</p>
+              </div>
             </div>
           )}
         </aside>

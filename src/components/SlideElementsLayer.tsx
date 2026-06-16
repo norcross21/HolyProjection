@@ -22,35 +22,41 @@ export default function SlideElementsLayer({
       className="absolute inset-0 z-[5] pointer-events-none"
       style={{ containerType: 'size' } as React.CSSProperties}
     >
-      {[...elements].sort((a, b) => a.z - b.z).map((el) => (
-        <div
-          key={el.id}
-          className="absolute"
-          style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`, zIndex: el.z }}
-        >
-          {el.type === 'text' ? (
-            <div
-              className="w-full h-full flex items-center"
-              style={{
-                color: el.color || '#fff',
-                fontSize: `${el.fontSize || 7}cqh`,
-                fontWeight: el.bold ? 800 : 400,
-                textAlign: el.align || 'center',
-                justifyContent: el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center',
-                lineHeight: 1.1,
-                textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-                fontFamily: fontFamily || 'Inter',
-              }}
-            >
-              <span className="whitespace-pre-wrap break-words w-full">{el.text}</span>
-            </div>
-          ) : el.type === 'image' ? (
-            <img src={el.url} alt="" className="w-full h-full" style={{ objectFit: el.fit || 'contain' }} />
-          ) : (
-            <video src={el.url} muted loop autoPlay playsInline className="w-full h-full" style={{ objectFit: el.fit || 'contain' }} />
-          )}
-        </div>
-      ))}
+      {[...elements].sort((a, b) => a.z - b.z).map((el) => {
+        const transform = `rotate(${el.rotation || 0}deg) scaleX(${el.flipH ? -1 : 1}) scaleY(${el.flipV ? -1 : 1})`;
+        const clipPath = el.crop
+          ? `inset(${el.crop.top}% ${el.crop.right}% ${el.crop.bottom}% ${el.crop.left}%)`
+          : undefined;
+        return (
+          <div
+            key={el.id}
+            className="absolute"
+            style={{ left: `${el.x}%`, top: `${el.y}%`, width: `${el.w}%`, height: `${el.h}%`, zIndex: el.z, transform }}
+          >
+            {el.type === 'text' ? (
+              <div
+                className="w-full h-full flex items-center"
+                style={{
+                  color: el.color || '#fff',
+                  fontSize: `${el.fontSize || 7}cqh`,
+                  fontWeight: el.bold ? 800 : 400,
+                  textAlign: el.align || 'center',
+                  justifyContent: el.align === 'left' ? 'flex-start' : el.align === 'right' ? 'flex-end' : 'center',
+                  lineHeight: 1.1,
+                  textShadow: '0 2px 12px rgba(0,0,0,0.6)',
+                  fontFamily: el.fontFamily || fontFamily || 'Inter',
+                }}
+              >
+                <span className="whitespace-pre-wrap break-words w-full">{el.text}</span>
+              </div>
+            ) : el.type === 'image' ? (
+              <img src={el.url} alt="" className="w-full h-full" style={{ objectFit: el.fit || 'contain', clipPath }} />
+            ) : (
+              <video src={el.url} muted loop autoPlay playsInline className="w-full h-full" style={{ objectFit: el.fit || 'contain', clipPath }} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

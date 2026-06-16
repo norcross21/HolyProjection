@@ -23,6 +23,7 @@ const isSupabaseConfigured =
 export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibraryProps) {
   const [items, setItems] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadInfo, setUploadInfo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +67,13 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
     if (!files || files.length === 0) return;
     const file = files[0];
     const kind: MediaKind = file.type.startsWith('video') ? 'video' : 'image';
+    const mb = file.size / (1024 * 1024);
+    if (mb > 500) {
+      setErrorMsg(`That file is ${mb.toFixed(0)} MB — the limit is 500 MB. Please compress the ${kind} first (see the tip below).`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    setUploadInfo(`${file.name} · ${mb.toFixed(1)} MB`);
     setIsUploading(true);
     setErrorMsg(null);
 
@@ -94,6 +102,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
       setErrorMsg(err?.message || 'Upload failed. Check your connection and try again.');
     } finally {
       setIsUploading(false);
+      setUploadInfo(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -131,16 +140,22 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
         {isUploading ? (
           <div className="flex flex-col items-center justify-center gap-2">
             <Loader2 className="h-6 w-6 text-violet-400 animate-spin" />
-            <span className="text-[10px] text-slate-400">Uploading…</span>
+            <span className="text-[10px] text-slate-400">Uploading… large videos can take a minute</span>
+            {uploadInfo && <span className="text-[9px] text-slate-600">{uploadInfo}</span>}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-1.5">
             <UploadCloud className="h-6 w-6 text-slate-500" />
             <span className="text-[11px] font-bold text-slate-300">Upload Image or Video</span>
-            <span className="text-[9px] text-slate-650">JPG, PNG, GIF, MP4, WebM · up to 100MB</span>
+            <span className="text-[9px] text-slate-650">JPG, PNG, GIF, MP4, WebM · up to 500MB</span>
           </div>
         )}
       </div>
+
+      <p className="text-[9px] text-slate-600 leading-relaxed">
+        Tip: video files are large. If yours is over ~500MB or uploads slowly, compress it first
+        (free tools: HandBrake, or the "compress video" option in your phone/Photos app) — 1080p is plenty for projection.
+      </p>
 
       <div className="space-y-2">
         <label className="block text-[10px] uppercase font-semibold text-slate-500">Media Library</label>
