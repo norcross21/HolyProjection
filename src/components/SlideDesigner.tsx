@@ -45,6 +45,21 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     const el: SlideElement = { id: uid(), type: 'text', x: 25, y: 40, w: 50, h: 18, z: maxZ + 1, text: 'New text', color: '#ffffff', fontSize: 7, align: 'center', bold: true };
     commit([...els, el]); setSelectedId(el.id);
   };
+
+  // Drop the slide's song words (and translation) onto the canvas as movable text boxes.
+  const addLyrics = () => {
+    const additions: SlideElement[] = [];
+    let z = maxZ;
+    if (slide.content?.trim()) {
+      additions.push({ id: uid(), type: 'text', x: 8, y: slide.translation?.trim() ? 22 : 38, w: 84, h: 28, z: ++z, text: slide.content, color: '#ffffff', fontSize: 8, align: 'center', bold: true, fontFamily: settings.fontFamily });
+    }
+    if (slide.translation?.trim()) {
+      additions.push({ id: uid(), type: 'text', x: 8, y: 56, w: 84, h: 24, z: ++z, text: slide.translation, color: '#a5b4fc', fontSize: 7, align: 'center', bold: false, fontFamily: settings.fontFamily });
+    }
+    if (additions.length === 0) { addText(); return; }
+    commit([...els, ...additions]);
+    setSelectedId(additions[0].id);
+  };
   const addMedia = (url: string, kind: 'image' | 'video') => {
     if (!url) { setShowMedia(null); return; }
     const el: SlideElement = { id: uid(), type: kind, x: 30, y: 25, w: 40, h: 45, z: maxZ + 1, url, fit: 'contain' };
@@ -154,6 +169,9 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
           <span className="text-[10px] text-slate-500 hidden sm:inline">drag to move · corner to resize · arrows nudge · Del removes</span>
         </div>
         <div className="flex items-center gap-2">
+          {(slide.content?.trim() || slide.translation?.trim()) && (
+            <button onClick={addLyrics} title="Drop the slide's song words on as movable text" className="flex items-center gap-1.5 rounded-lg bg-violet-600/20 border border-violet-500/40 hover:bg-violet-600/40 px-3 py-1.5 text-xs font-bold text-violet-200"><Type className="h-3.5 w-3.5" />Add lyrics</button>
+          )}
           <button onClick={addText} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Type className="h-3.5 w-3.5" />Text</button>
           <button onClick={() => setShowMedia('image')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><ImageIcon className="h-3.5 w-3.5" />Image</button>
           <button onClick={() => setShowMedia('video')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Film className="h-3.5 w-3.5" />Video</button>

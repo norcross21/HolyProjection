@@ -95,11 +95,21 @@ export default function SlideEditor(props: SlideEditorProps) {
       </header>
 
       <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
-        {/* Preview */}
-        <div className="lg:flex-1 flex items-start lg:items-center justify-center p-4 lg:p-8 bg-slate-950 overflow-auto">
-          <div className="w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+        {/* Preview — click to open the designer and move things around */}
+        <div className="lg:flex-1 flex flex-col items-center justify-center gap-3 p-4 lg:p-8 bg-slate-950 overflow-auto">
+          <button
+            onClick={props.onOpenDesigner}
+            title="Open the designer to move text and arrange the slide"
+            className="group relative w-full max-w-3xl aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 hover:ring-violet-500/60 shadow-2xl transition-all"
+          >
             <SlidePreview slide={slide} settings={settings} />
-          </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+              <span className="flex items-center gap-1.5 rounded-full bg-violet-600/90 px-4 py-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <Layers className="h-4 w-4" /> Arrange &amp; move text
+              </span>
+            </div>
+          </button>
+          <p className="text-[11px] text-slate-500">Click the slide to open the designer — drag text, images and video anywhere.</p>
         </div>
 
         {/* Editing controls */}
