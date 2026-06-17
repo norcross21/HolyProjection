@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Internal Server Error';
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { text, targetLang } = await req.json() as { text: string; targetLang?: string };
+    const body: unknown = await req.json();
+    const text = isRecord(body) && typeof body.text === 'string' ? body.text : '';
+    const targetLang = isRecord(body) && typeof body.targetLang === 'string' ? body.targetLang : undefined;
 
     if (!text || !text.trim()) {
       return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
@@ -50,14 +60,16 @@ ${text}
       translation: translatedText.trim()
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error in translate API:', err);
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
 // Simple rule-based mock translator for offline/no-API key situations
 function translateMock(text: string, target: string): string {
+  void target;
+
   // Simple word mappings for typical worship lyrics to give a semi-realistic feel
   const dictionary: { [key: string]: string } = {
     'amazing': 'مدهشة',

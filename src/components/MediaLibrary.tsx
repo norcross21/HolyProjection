@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
 import { UploadCloud, Loader2, Trash2, CheckCircle2 } from 'lucide-react';
 
@@ -20,6 +20,10 @@ const isSupabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
 
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
 export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibraryProps) {
   const [items, setItems] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -28,11 +32,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadMedia();
-  }, []);
-
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
 
@@ -54,13 +54,19 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
           .map((file) => supabase.storage.from('presentation-media').getPublicUrl(file.name).data.publicUrl);
         setItems(urls);
       }
-    } catch (err: any) {
-      console.error('Error fetching media:', err?.message || err);
-      setErrorMsg(err?.message || 'Failed to load media.');
+    } catch (err: unknown) {
+      console.error('Error fetching media:', errorMessage(err, 'Failed to load media.'));
+      setErrorMsg(errorMessage(err, 'Failed to load media.'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadMedia();
+    });
+  }, [loadMedia]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -119,9 +125,9 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
       const { data: { publicUrl } } = supabase.storage.from('presentation-media').getPublicUrl(fileName);
       setItems((prev) => [publicUrl, ...prev]);
       onSelectMedia(publicUrl, kind);
-    } catch (err: any) {
-      console.error('Error uploading media:', err?.message || err);
-      setErrorMsg(err?.message || 'Upload failed. Check your connection and try again.');
+    } catch (err: unknown) {
+      console.error('Error uploading media:', errorMessage(err, 'Upload failed. Check your connection and try again.'));
+      setErrorMsg(errorMessage(err, 'Upload failed. Check your connection and try again.'));
     } finally {
       setIsUploading(false);
       setUploadInfo(null);
@@ -176,7 +182,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
 
       <p className="text-[9px] text-slate-600 leading-relaxed">
         Tip: video files are large. If yours is over ~500MB or uploads slowly, compress it first
-        (free tools: HandBrake, or the "compress video" option in your phone/Photos app) — 1080p is plenty for projection.
+        (free tools: HandBrake, or the &quot;compress video&quot; option in your phone/Photos app) — 1080p is plenty for projection.
       </p>
 
       <div className="space-y-2">

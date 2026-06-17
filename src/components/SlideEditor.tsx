@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import { Slide, Presentation } from '@/utils/sync';
 import SlidePreview from '@/components/SlidePreview';
 import MediaLibrary from '@/components/MediaLibrary';
@@ -26,6 +26,27 @@ interface SlideEditorProps {
   onClose: () => void;
 }
 
+interface TranslateResponse {
+  success?: boolean;
+  translation?: string;
+  error?: string;
+}
+
+interface SectionProps {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  children: ReactNode;
+}
+
+function Section({ icon: Icon, title, children }: SectionProps) {
+  return (
+    <section className="rounded-2xl border border-slate-900 bg-slate-900/30 p-4 space-y-3">
+      <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-violet-400" /><h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">{title}</h3></div>
+      {children}
+    </section>
+  );
+}
+
 export default function SlideEditor(props: SlideEditorProps) {
   const { slide, settings, slideIndex, slideCount, isLive } = props;
   const [isTranslating, setIsTranslating] = useState(false);
@@ -45,7 +66,7 @@ export default function SlideEditor(props: SlideEditorProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: slide.content, targetLang: target }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as TranslateResponse;
       if (data.success && data.translation) setTranslation(data.translation);
       else alert(data.error || 'Translation failed.');
     } catch {
@@ -54,13 +75,6 @@ export default function SlideEditor(props: SlideEditorProps) {
       setIsTranslating(false);
     }
   };
-
-  const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
-    <section className="rounded-2xl border border-slate-900 bg-slate-900/30 p-4 space-y-3">
-      <div className="flex items-center gap-2"><Icon className="h-4 w-4 text-violet-400" /><h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">{title}</h3></div>
-      {children}
-    </section>
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-slate-100">
@@ -191,26 +205,26 @@ export default function SlideEditor(props: SlideEditorProps) {
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Caps</label>
-                <select value={settings.textTransform || 'none'} onChange={(e) => props.onUpdateSettings({ textTransform: e.target.value as any })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
+                <select value={settings.textTransform || 'none'} onChange={(e) => props.onUpdateSettings({ textTransform: e.target.value as Presentation['settings']['textTransform'] })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
                   <option value="none">Normal</option><option value="uppercase">CAPS</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Shadow</label>
-                <select value={settings.textShadow || 'none'} onChange={(e) => props.onUpdateSettings({ textShadow: e.target.value as any })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
+                <select value={settings.textShadow || 'none'} onChange={(e) => props.onUpdateSettings({ textShadow: e.target.value as Presentation['settings']['textShadow'] })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
                   <option value="none">None</option><option value="subtle">Subtle</option><option value="strong">Strong</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Outline</label>
-                <select value={settings.textOutline || 'none'} onChange={(e) => props.onUpdateSettings({ textOutline: e.target.value as any })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
+                <select value={settings.textOutline || 'none'} onChange={(e) => props.onUpdateSettings({ textOutline: e.target.value as Presentation['settings']['textOutline'] })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
                   <option value="none">None</option><option value="subtle">Subtle</option><option value="strong">Strong</option>
                 </select>
               </div>
             </div>
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Transition</label>
-              <select value={settings.slideTransition || 'none'} onChange={(e) => props.onUpdateSettings({ slideTransition: e.target.value as any })} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:outline-none">
+              <select value={settings.slideTransition || 'none'} onChange={(e) => props.onUpdateSettings({ slideTransition: e.target.value as Presentation['settings']['slideTransition'] })} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:outline-none">
                 <option value="none">None (instant)</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="zoom">Zoom</option>
               </select>
               <p className="mt-1 text-[10px] text-slate-600">Text style &amp; transitions apply to all lyric slides in this presentation.</p>

@@ -2,23 +2,46 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { resolveAuth } from '@/utils/auth';
+import { resolveAuth, type AuthIdentity } from '@/utils/auth';
 import { usePresentationsPortal } from '@/utils/sync';
-import { ArrowLeft, Sparkles, AlertTriangle, FileText, CheckCircle2, ChevronRight, CornerDownLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertTriangle, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
+
+interface ImportedSlide {
+  content: string;
+  translation?: string | null;
+}
+
+interface ImportedSong {
+  title: string;
+  slides: ImportedSlide[];
+}
+
+interface ImportResult {
+  error?: string;
+  data?: ImportedSong[];
+}
+
+interface SavedImport {
+  id: string;
+  title: string;
+  slidesCount: number;
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
 
 export default function ImportPage() {
   const router = useRouter();
   const { createNewPresentation } = usePresentationsPortal();
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [importedSongs, setImportedSongs] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<AuthIdentity | null>(null);
+  const [importedSongs, setImportedSongs] = useState<SavedImport[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkAuth = async () => {
       const identity = await resolveAuth();
@@ -31,7 +54,7 @@ export default function ImportPage() {
     checkAuth();
   }, [router]);
 
-  if (!isClient || !currentUser) {
+  if (!currentUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -55,10 +78,10 @@ export default function ImportPage() {
         body: JSON.stringify({ text }),
       });
 
-      const result = await res.json();
+      const result = (await res.json()) as ImportResult;
       if (!res.ok) throw new Error(result.error || 'Failed to import songs.');
 
-      const songs: any[] = result.data || [];
+      const songs = result.data || [];
       if (songs.length === 0) {
         throw new Error('No songs could be parsed from that text.');
       }
@@ -66,9 +89,9 @@ export default function ImportPage() {
       // Insert here, in the browser, so the writes run under the user's
       // authenticated session and satisfy Supabase row-level security
       // (the server route uses the anon key and would be blocked).
-      const imported: { id: string; title: string; slidesCount: number }[] = [];
+      const imported: SavedImport[] = [];
       for (const song of songs) {
-        const slides = (song.slides || []).map((s: any) => ({
+        const slides = (song.slides || []).map((s) => ({
           content: s.content,
           translation: s.translation || undefined,
         }));
@@ -85,9 +108,9 @@ export default function ImportPage() {
       setImportedSongs(imported);
       setSuccess(true);
       setText('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || 'An error occurred during import.');
+      setErrorMsg(errorMessage(err, 'An error occurred during import.'));
     } finally {
       setIsLoading(false);
     }

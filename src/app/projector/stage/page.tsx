@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { Clock, Tv, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -45,8 +45,8 @@ function StageDisplayContent() {
   }, []);
 
   // Resolve slides queue, current slide, and next slide
-  let currentSlide: any = null;
-  let nextSlide: any = null;
+  let currentSlide: Slide | undefined;
+  let nextSlide: Slide | undefined;
   let translationLang: string | undefined;
 
   if (setlistId) {

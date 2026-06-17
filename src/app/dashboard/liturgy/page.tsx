@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { resolveAuth } from '@/utils/auth';
+import { resolveAuth, type AuthIdentity } from '@/utils/auth';
 import { usePresentationsPortal } from '@/utils/sync';
-import { ArrowLeft, Sparkles, BookOpen, Calendar, CheckCircle2, ChevronRight, FileText } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface Verse {
   book_name: string;
@@ -20,11 +20,20 @@ interface BibleApiResponse {
   translation_name: string;
 }
 
+interface ScriptureSlide {
+  label: string;
+  content: string;
+  translation: string;
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
 export default function LiturgyPage() {
   const router = useRouter();
   const { createNewPresentation } = usePresentationsPortal();
-  const [isClient, setIsClient] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<AuthIdentity | null>(null);
   
   // Importer State
   const [reference, setReference] = useState('');
@@ -32,7 +41,7 @@ export default function LiturgyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [previewSlides, setPreviewSlides] = useState<any[]>([]);
+  const [previewSlides, setPreviewSlides] = useState<ScriptureSlide[]>([]);
   const [title, setTitle] = useState('');
 
   // Daily Lectionary Readings database
@@ -64,7 +73,6 @@ export default function LiturgyPage() {
   const dailyReadings = getDailyLectionary(selectedDate);
 
   useEffect(() => {
-    setIsClient(true);
     const checkAuth = async () => {
       const identity = await resolveAuth();
       if (!identity) {
@@ -76,7 +84,7 @@ export default function LiturgyPage() {
     checkAuth();
   }, [router]);
 
-  if (!isClient || !currentUser) {
+  if (!currentUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -108,7 +116,7 @@ export default function LiturgyPage() {
       setTitle(data.reference);
 
       // Auto-chunking: Group every 3 verses per slide
-      const chunkedSlides: any[] = [];
+      const chunkedSlides: ScriptureSlide[] = [];
       const versesPerSlide = 3;
 
       for (let i = 0; i < data.verses.length; i += versesPerSlide) {
@@ -135,9 +143,9 @@ export default function LiturgyPage() {
       }
 
       setPreviewSlides(chunkedSlides);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || 'Failed to fetch scripture.');
+      setErrorMsg(errorMessage(err, 'Failed to fetch scripture.'));
     } finally {
       setIsLoading(false);
     }
@@ -166,9 +174,9 @@ export default function LiturgyPage() {
       setTimeout(() => {
         router.push(`/dashboard?pres=${newPresId}`);
       }, 800);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || 'Failed to save presentation.');
+      setErrorMsg(errorMessage(err, 'Failed to save presentation.'));
     } finally {
       setIsLoading(false);
     }
@@ -246,7 +254,7 @@ export default function LiturgyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] uppercase font-semibold text-slate-500">Today's Readings</label>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500">Today&apos;s Readings</label>
                   
                   {dailyReadings.map((reading, idx) => (
                     <button

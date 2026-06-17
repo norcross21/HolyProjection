@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { 
@@ -43,7 +43,6 @@ function FollowContent() {
 
   const activeAlert = setlistId ? setlistActiveAlert : presActiveAlert;
 
-  const [isClient, setIsClient] = useState(false);
   const [langMode, setLangMode] = useState<'bilingual' | 'primary' | 'translation'>('bilingual');
   const [textSize, setTextSize] = useState<number>(1.2); // scaling multiplier
   const [isLightTheme, setIsLightTheme] = useState(false);
@@ -55,20 +54,8 @@ function FollowContent() {
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
-      </div>
-    );
-  }
-
   // Resolve slides queue, current slide index, current slide, next slide, and settings
-  let slides: any[] = [];
+  let slides: Slide[] = [];
   let activeSlideId: string | null = null;
   let blankMode: 'none' | 'black' | 'clear' | 'logo' = 'none';
   let title = 'HolyProjection Live';

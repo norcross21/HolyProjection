@@ -12,16 +12,53 @@ interface ParsedSong {
   slides: ParsedSlide[];
 }
 
+type UnknownRecord = Record<string, unknown>;
+type SlideRecord = UnknownRecord & { content: string };
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Internal Server Error';
+}
+
+function normalizeSongs(input: unknown): ParsedSong[] {
+  if (!Array.isArray(input)) return [];
+
+  return input.map((song, i) => {
+    const songRecord = isRecord(song) ? song : {};
+    const rawSlides = songRecord.slides;
+
+    return {
+      title:
+        typeof songRecord.title === 'string' && songRecord.title.trim()
+          ? songRecord.title
+          : `Imported Song #${i + 1}`,
+      slides: Array.isArray(rawSlides)
+        ? rawSlides
+            .filter((slide): slide is SlideRecord => isRecord(slide) && typeof slide.content === 'string')
+            .map((slide) => ({
+              type: typeof slide.type === 'string' && slide.type.trim() ? slide.type : 'Verse',
+              content: slide.content,
+              translation: typeof slide.translation === 'string' && slide.translation.trim() ? slide.translation : null,
+            }))
+        : [],
+    };
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json() as { text: string };
+    const body: unknown = await req.json();
+    const text = isRecord(body) && typeof body.text === 'string' ? body.text : '';
 
     if (!text || !text.trim()) {
       return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
     }
 
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    let parsedSongs: ParsedSong[] = [];
+    let parsedSongs: unknown = [];
 
     if (!geminiApiKey || geminiApiKey === 'your-gemini-key') {
       console.warn('GEMINI_API_KEY is missing! Using rule-based fallback parser.');
@@ -91,25 +128,14 @@ ${text}
     }
 
     // Normalize so the client can rely on the shape (slides is always an array).
-    const normalized: ParsedSong[] = (Array.isArray(parsedSongs) ? parsedSongs : []).map((song: any, i) => ({
-      title: (song?.title || `Imported Song #${i + 1}`).toString(),
-      slides: Array.isArray(song?.slides)
-        ? song.slides
-            .filter((s: any) => s && typeof s.content === 'string')
-            .map((s: any) => ({
-              type: s.type || 'Verse',
-              content: s.content,
-              translation: s.translation || null,
-            }))
-        : [],
-    }));
+    const normalized = normalizeSongs(parsedSongs);
 
     // Parsing only — the authenticated browser client performs the inserts so
     // they run under the user's session and satisfy row-level security.
     return NextResponse.json({ success: true, data: normalized });
-  } catch (err: any) {
-    console.error('Error in import route:', err?.message || err);
-    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Error in import route:', errorMessage(err));
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 

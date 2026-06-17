@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
 import { resolveAuth } from '@/utils/auth';
 import { dirFor } from '@/utils/languages';
 import { 
@@ -46,23 +46,24 @@ function RemoteContent() {
 
   const isDemoMode = setlistId ? isSetlistDemo : isPresDemo;
 
-  const [isClient, setIsClient] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkSession = async () => {
       const identity = await resolveAuth();
       if (!identity) {
         router.push('/login');
+      } else {
+        setAuthReady(true);
       }
     };
-    checkSession();
+    void checkSession();
   }, [router]);
 
   // In setlist mode we wait for the setlist to load; in single-presentation mode
   // singlePres always has a value, so only gate on the client being ready.
-  if (!isClient || (setlistId ? !setlist : false)) {
+  if (!authReady || (setlistId ? !setlist : false)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -71,7 +72,7 @@ function RemoteContent() {
   }
 
   // Resolve slides queue, current slide index, current slide, next slide, and settings
-  let slides: any[] = [];
+  let slides: Slide[] = [];
   let activeSlideId: string | null = null;
   let blankMode: 'none' | 'black' | 'clear' | 'logo' = 'none';
   let title = '';

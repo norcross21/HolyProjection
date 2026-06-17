@@ -54,7 +54,10 @@ export async function compressVideo(file: File, onProgress?: (ratio: number) => 
       outName,
     ]);
     const data = await ff.readFile(outName);
-    const blob = new Blob([data as any], { type: 'video/mp4' });
+    const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+    const arrayBuffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(arrayBuffer).set(bytes);
+    const blob = new Blob([arrayBuffer], { type: 'video/mp4' });
     const baseName = file.name.replace(/\.[^.]+$/, '');
     return new File([blob], `${baseName}-compressed.mp4`, { type: 'video/mp4' });
   } finally {

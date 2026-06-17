@@ -89,6 +89,32 @@ export interface LiveAlert {
   timestamp: string;
 }
 
+type SupabaseChannel = ReturnType<typeof supabase.channel>;
+type RealtimeCleanup = () => void;
+
+interface RealtimeChannels {
+  activeProjChannel?: SupabaseChannel;
+  setlistChannel?: SupabaseChannel;
+  presenceChannel: SupabaseChannel;
+}
+
+interface PresenceMeta {
+  displayName?: string;
+  onlineAt?: string;
+}
+
+interface SetlistItemRow {
+  id: string;
+  setlist_id: string;
+  presentation_id: string;
+  order_index: number;
+  presentations?: Presentation | null;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 // Initial Mock/Default Presentation Data
 export const DEFAULT_PRESENTATION: Presentation = {
   id: 'demo-presentation-1',
@@ -299,14 +325,14 @@ export function usePresentationsPortal() {
       if (error) throw error;
       setPresentations((prev) => prev.filter((p) => p.id !== id));
       return true;
-    } catch (err: any) {
-      console.error('Error deleting presentation:', err?.message || err);
+    } catch (err: unknown) {
+      console.error('Error deleting presentation:', errorMessage(err));
       return false;
     }
   };
 
   useEffect(() => {
-    fetchPresentations();
+    void Promise.resolve().then(fetchPresentations);
   }, []);
 
   return {
@@ -328,7 +354,7 @@ export function useRealtimePresentation(presentationId: string) {
   const [currentUser, setCurrentUser] = useState<{ email: string; displayName: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannels | null>(null);
   const localBcRef = useRef<BroadcastChannel | null>(null);
   const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
@@ -337,9 +363,9 @@ export function useRealtimePresentation(presentationId: string) {
   // Load profile and run synchronization
   useEffect(() => {
     if (!presentationId) return;
-    setLoading(true);
 
     const initSessionAndSync = async () => {
+      setLoading(true);
       let email = 'collaborator@church.org';
       let displayName = 'Presenter';
 
@@ -478,8 +504,8 @@ export function useRealtimePresentation(presentationId: string) {
             setActiveSlideId(slidesData[0].id);
           }
         }
-      } catch (err: any) {
-        console.error('Error loading presentation sync:', err?.message || err);
+      } catch (err: unknown) {
+        console.error('Error loading presentation sync:', errorMessage(err));
       }
       setLoading(false);
 
@@ -494,9 +520,10 @@ export function useRealtimePresentation(presentationId: string) {
             table: 'active_projection',
             filter: `presentation_id=eq.${presentationId}`,
           },
-          (payload: any) => {
+          (payload) => {
             if (payload.new) {
-              setActiveSlideId(payload.new.active_slide_id);
+              const row = payload.new as { active_slide_id?: string | null };
+              setActiveSlideId(row.active_slide_id ?? null);
             }
           }
         )
@@ -529,12 +556,16 @@ export function useRealtimePresentation(presentationId: string) {
             table: 'presentations',
             filter: `id=eq.${presentationId}`,
           },
-          (payload: any) => {
+          (payload) => {
             if (payload.new) {
+              const row = payload.new as {
+                title?: string;
+                settings?: Presentation['settings'];
+              };
               setPresentation((prev) => ({
                 ...prev,
-                title: payload.new.title,
-                settings: payload.new.settings,
+                title: row.title || prev.title,
+                settings: row.settings || prev.settings,
               }));
             }
           }
@@ -550,13 +581,13 @@ export function useRealtimePresentation(presentationId: string) {
           const state = presenceChannel.presenceState();
           const users: PresenceUser[] = [];
           Object.keys(state).forEach((key) => {
-            const userPresences = state[key] as any;
+            const userPresences = state[key] as PresenceMeta[] | undefined;
             if (userPresences && userPresences.length > 0) {
               users.push({
                 id: key,
                 email: key,
                 displayName: userPresences[0].displayName || key,
-                onlineAt: userPresences[0].onlineAt,
+                onlineAt: userPresences[0].onlineAt || new Date().toISOString(),
               });
             }
           });
@@ -593,10 +624,10 @@ export function useRealtimePresentation(presentationId: string) {
       };
     };
 
-    let cleanupFn: any = null;
+    let cleanupFn: RealtimeCleanup | undefined;
     let cancelled = false;
     initSessionAndSync().then(fn => {
-      cleanupFn = fn;
+      cleanupFn = typeof fn === 'function' ? fn : undefined;
       // If the effect was already torn down before setup finished, the channels
       // it just created would otherwise leak — clean them up immediately.
       if (cancelled && typeof fn === 'function') fn();
@@ -746,7 +777,7 @@ export function useRealtimePresentation(presentationId: string) {
   };
 
   // Merge per-slide designer settings (e.g. background colour) into the jsonb column
-  const updateSlideSettings = (slideId: string, partial: Record<string, any>) => {
+  const updateSlideSettings = (slideId: string, partial: Record<string, unknown>) => {
     setPresentation((prev) => ({
       ...prev,
       slides: prev.slides.map((s) => (s.id === slideId ? { ...s, settings: { ...(s.settings || {}), ...partial } } : s)),
@@ -1142,7 +1173,12 @@ export function useSetlistsPortal() {
             id: list.id,
             title: list.title,
             settings: list.settings || {},
-            items: Array(count || 0).fill({} as any), // Placeholder items to represent count
+            items: Array.from({ length: count || 0 }, (_, idx) => ({
+              id: `placeholder-${list.id}-${idx}`,
+              setlist_id: list.id,
+              presentation_id: '',
+              order_index: idx,
+            })),
             created_at: list.created_at
           });
         }
@@ -1206,14 +1242,14 @@ export function useSetlistsPortal() {
       if (error) throw error;
       setSetlists((prev) => prev.filter((s) => s.id !== id));
       return true;
-    } catch (err: any) {
-      console.error('Error deleting setlist:', err?.message || err);
+    } catch (err: unknown) {
+      console.error('Error deleting setlist:', errorMessage(err));
       return false;
     }
   };
 
   useEffect(() => {
-    fetchSetlists();
+    void Promise.resolve().then(fetchSetlists);
   }, []);
 
   return {
@@ -1235,7 +1271,7 @@ export function useRealtimeSetlist(setlistId: string) {
   const [loading, setLoading] = useState(true);
 
   const localBcRef = useRef<BroadcastChannel | null>(null);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannels | null>(null);
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
   const [activeAlert, setActiveAlert] = useState<LiveAlert | null>(null);
 
@@ -1300,18 +1336,21 @@ export function useRealtimeSetlist(setlistId: string) {
 
         if (itemsError) throw itemsError;
 
-        const itemsMapped: SetlistItem[] = (itemsData || []).map((item: any) => ({
-          id: item.id,
-          setlist_id: item.setlist_id,
-          presentation_id: item.presentation_id,
-          order_index: item.order_index,
-          presentation: item.presentations ? {
-            id: item.presentations.id,
-            title: item.presentations.title,
-            settings: item.presentations.settings,
-            slides: item.presentations.slides || []
-          } : undefined
-        }));
+        const itemsMapped: SetlistItem[] = (itemsData || []).map((item) => {
+          const row = item as unknown as SetlistItemRow;
+          return {
+            id: row.id,
+            setlist_id: row.setlist_id,
+            presentation_id: row.presentation_id,
+            order_index: row.order_index,
+            presentation: row.presentations ? {
+              id: row.presentations.id,
+              title: row.presentations.title,
+              settings: row.presentations.settings,
+              slides: row.presentations.slides || []
+            } : undefined
+          };
+        });
 
         const loadedSetlist: Setlist = {
           id: listData.id,
@@ -1331,9 +1370,9 @@ export function useRealtimeSetlist(setlistId: string) {
 
   useEffect(() => {
     if (!setlistId) return;
-    setLoading(true);
 
     const initSync = async () => {
+      setLoading(true);
       let email = 'collaborator@church.org';
       let displayName = 'Presenter';
 
@@ -1421,18 +1460,22 @@ export function useRealtimeSetlist(setlistId: string) {
             table: 'setlists',
             filter: `id=eq.${setlistId}`,
           },
-          (payload: any) => {
+          (payload) => {
             if (payload.new) {
+              const row = payload.new as {
+                title?: string;
+                settings?: Setlist['settings'];
+              };
               setSetlist((prev) => {
                 if (!prev) return null;
                 return {
                   ...prev,
-                  title: payload.new.title,
-                  settings: payload.new.settings || {},
+                  title: row.title || prev.title,
+                  settings: row.settings || {},
                 };
               });
-              if (payload.new.settings && payload.new.settings.active_slide_id !== undefined) {
-                setActiveSlideId(payload.new.settings.active_slide_id);
+              if (row.settings && row.settings.active_slide_id !== undefined) {
+                setActiveSlideId(row.settings.active_slide_id);
               }
             }
           }
@@ -1459,13 +1502,13 @@ export function useRealtimeSetlist(setlistId: string) {
           const state = presenceChannel.presenceState();
           const users: PresenceUser[] = [];
           Object.keys(state).forEach((key) => {
-            const userPresences = state[key] as any;
+            const userPresences = state[key] as PresenceMeta[] | undefined;
             if (userPresences && userPresences.length > 0) {
               users.push({
                 id: key,
                 email: key,
                 displayName: userPresences[0].displayName || key,
-                onlineAt: userPresences[0].onlineAt,
+                onlineAt: userPresences[0].onlineAt || new Date().toISOString(),
               });
             }
           });
@@ -1502,10 +1545,10 @@ export function useRealtimeSetlist(setlistId: string) {
       };
     };
 
-    let cleanupFn: any = null;
+    let cleanupFn: RealtimeCleanup | undefined;
     let cancelled = false;
     initSync().then((fn) => {
-      cleanupFn = fn;
+      cleanupFn = typeof fn === 'function' ? fn : undefined;
       if (cancelled && typeof fn === 'function') fn();
     });
 
@@ -1866,7 +1909,7 @@ export function useTemplates() {
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   };
 
-  useEffect(() => { fetchTemplates(); }, []);
+  useEffect(() => { void Promise.resolve().then(fetchTemplates); }, []);
 
   return { templates, loading, saveTemplate, deleteTemplate, refresh: fetchTemplates };
 }

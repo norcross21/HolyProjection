@@ -37,6 +37,32 @@ import {
   ChevronLeft
 } from 'lucide-react';
 
+type ImportedSlideInput = {
+  content?: unknown;
+  text?: unknown;
+  translation?: unknown;
+  arabic?: unknown;
+};
+
+type JsonWithSlides = {
+  slides?: unknown;
+};
+
+type AlertType = 'general' | 'nursery' | 'warning';
+type AlertPosition = 'top' | 'bottom';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeImportedSlide(value: unknown): { content: string; translation?: string } {
+  const slide = (isRecord(value) ? value : {}) as ImportedSlideInput;
+  return {
+    content: String(slide.content || slide.text || ''),
+    translation: String(slide.translation || slide.arabic || ''),
+  };
+}
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,7 +105,6 @@ function DashboardContent() {
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [newPresTitle, setNewPresTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
   const [designingSlideId, setDesigningSlideId] = useState<string | null>(null);
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
@@ -104,8 +129,8 @@ function DashboardContent() {
 
   // Live Alert States
   const [alertText, setAlertText] = useState('');
-  const [alertType, setAlertType] = useState<'general' | 'nursery' | 'warning'>('general');
-  const [alertPosition, setAlertPosition] = useState<'top' | 'bottom'>('bottom');
+  const [alertType, setAlertType] = useState<AlertType>('general');
+  const [alertPosition, setAlertPosition] = useState<AlertPosition>('bottom');
   const [nurseryNumber, setNurseryNumber] = useState('');
 
   const translationLang = presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG;
@@ -148,18 +173,7 @@ function DashboardContent() {
     deleteSetlist
   } = useSetlistsPortal();
 
-  // Keep a valid slide selected: preserve the current selection if it still
-  // exists (so editing/adding doesn't yank focus back to slide 1), otherwise
-  // fall back to the first slide.
   useEffect(() => {
-    setSelectedSlideId((prev) => {
-      if (prev && presentation.slides.some((s) => s.id === prev)) return prev;
-      return presentation.slides[0]?.id ?? null;
-    });
-  }, [presentation.slides]);
-
-  useEffect(() => {
-    setIsClient(true);
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkSession = async () => {
       const identity = await resolveAuth();
@@ -183,7 +197,7 @@ function DashboardContent() {
     }
   }, []);
 
-  if (!isClient || !authUser) {
+  if (!authUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -246,17 +260,11 @@ function DashboardContent() {
         let slides: { content: string; translation?: string }[] = [];
         
         if (file.name.endsWith('.json')) {
-          const parsed = JSON.parse(text);
+          const parsed: unknown = JSON.parse(text);
           if (Array.isArray(parsed)) {
-            slides = parsed.map(s => ({
-              content: s.content || s.text || '',
-              translation: s.translation || s.arabic || ''
-            }));
-          } else if (parsed.slides && Array.isArray(parsed.slides)) {
-            slides = parsed.slides.map((s: any) => ({
-              content: s.content || s.text || '',
-              translation: s.translation || s.arabic || ''
-            }));
+            slides = parsed.map(normalizeImportedSlide);
+          } else if (isRecord(parsed) && Array.isArray((parsed as JsonWithSlides).slides)) {
+            slides = (parsed as { slides: unknown[] }).slides.map(normalizeImportedSlide);
           }
         } else {
           // Plain text .txt files
@@ -317,7 +325,8 @@ function DashboardContent() {
     }
   };
 
-  const selectedSlide = presentation.slides.find((s) => s.id === selectedSlideId);
+  const selectedSlide = presentation.slides.find((s) => s.id === selectedSlideId) || presentation.slides[0];
+  const effectiveSelectedSlideId = selectedSlide?.id ?? null;
 
   // ----------------------------------------------------
   // Portal View (No presentation selected)
@@ -808,7 +817,7 @@ function DashboardContent() {
                   <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Alert Type</label>
                   <select
                     value={alertType}
-                    onChange={(e) => setAlertType(e.target.value as any)}
+                    onChange={(e) => setAlertType(e.target.value as AlertType)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
                   >
                     <option value="general">General (Slate)</option>
@@ -821,7 +830,7 @@ function DashboardContent() {
                   <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Position</label>
                   <select
                     value={alertPosition}
-                    onChange={(e) => setAlertPosition(e.target.value as any)}
+                    onChange={(e) => setAlertPosition(e.target.value as AlertPosition)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
                   >
                     <option value="top">Top Screen</option>
@@ -972,7 +981,7 @@ function DashboardContent() {
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
                 {presentation.slides.map((slide, idx) => {
                   const isLive = activeSlideId === slide.id;
-                  const isSelected = selectedSlideId === slide.id;
+                  const isSelected = effectiveSelectedSlideId === slide.id;
                   return (
                     <div
                       key={slide.id}

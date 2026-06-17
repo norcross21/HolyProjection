@@ -30,6 +30,9 @@ import {
   X
 } from 'lucide-react';
 
+type AlertType = 'general' | 'nursery' | 'warning';
+type AlertPosition = 'top' | 'bottom';
+
 function SetlistContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,8 +62,8 @@ function SetlistContent() {
 
   // Live Alert States
   const [alertText, setAlertText] = useState('');
-  const [alertType, setAlertType] = useState<'general' | 'nursery' | 'warning'>('general');
-  const [alertPosition, setAlertPosition] = useState<'top' | 'bottom'>('bottom');
+  const [alertType, setAlertType] = useState<AlertType>('general');
+  const [alertPosition, setAlertPosition] = useState<AlertPosition>('bottom');
   const [nurseryNumber, setNurseryNumber] = useState('');
 
   // Portal hook to list existing presentations
@@ -70,10 +73,8 @@ function SetlistContent() {
   } = usePresentationsPortal();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkSession = async () => {
       const identity = await resolveAuth();
@@ -81,10 +82,10 @@ function SetlistContent() {
         router.push('/login');
       }
     };
-    checkSession();
+    void checkSession();
   }, [router]);
 
-  if (!isClient || !currentUser || !setlist) {
+  if (!currentUser || !setlist) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
@@ -387,7 +388,7 @@ function SetlistContent() {
                   <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Alert Type</label>
                   <select
                     value={alertType}
-                    onChange={(e) => setAlertType(e.target.value as any)}
+                    onChange={(e) => setAlertType(e.target.value as AlertType)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
                   >
                     <option value="general">General (Slate)</option>
@@ -400,7 +401,7 @@ function SetlistContent() {
                   <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Position</label>
                   <select
                     value={alertPosition}
-                    onChange={(e) => setAlertPosition(e.target.value as any)}
+                    onChange={(e) => setAlertPosition(e.target.value as AlertPosition)}
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
                   >
                     <option value="top">Top Screen</option>

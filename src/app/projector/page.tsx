@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist, Presentation } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist, type Presentation, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
+
+type DisplayMode = 'primary' | 'translation' | 'bilingual';
+
+function parseDisplayMode(value: string | null): DisplayMode {
+  return value === 'primary' || value === 'translation' || value === 'bilingual' ? value : 'bilingual';
+}
 
 function ProjectorContent() {
   const searchParams = useSearchParams();
@@ -32,13 +38,13 @@ function ProjectorContent() {
   const activeAlert = setlistId ? setlistActiveAlert : presActiveAlert;
 
   // Layout parameters
-  const [displayMode, setDisplayMode] = useState<'primary' | 'translation' | 'bilingual'>('bilingual');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => parseDisplayMode(langParam));
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [statusVisible, setStatusVisible] = useState(true);
 
   // Transition & Slide rendering states
   const [transitionState, setTransitionState] = useState<'idle' | 'exiting' | 'entering'>('idle');
-  const [slideToShow, setSlideToShow] = useState<any>(null);
+  const [slideToShow, setSlideToShow] = useState<Slide | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const primaryTextRef = useRef<HTMLDivElement>(null);
@@ -49,7 +55,7 @@ function ProjectorContent() {
   const streamRef = useRef<MediaStream | null>(null);
 
   // Resolve slides, active slide, and settings based on routing mode
-  let activeSlide: any = null;
+  let activeSlide: Slide | null = null;
   let fontSettings: Presentation['settings'] = { fontSize: 48, fontFamily: 'sans-serif', margin: 8, background: '#0f172a', blankMode: 'none' };
 
   if (setlistId) {
@@ -68,14 +74,7 @@ function ProjectorContent() {
     fontSettings = singlePres.settings;
   }
 
-  // 1. Handle language query parameter routing
-  useEffect(() => {
-    if (langParam === 'primary') setDisplayMode('primary');
-    else if (langParam === 'translation') setDisplayMode('translation');
-    else if (langParam === 'bilingual') setDisplayMode('bilingual');
-  }, [langParam]);
-
-  // 2. Load Google Fonts dynamically
+  // 1. Load Google Fonts dynamically
   useEffect(() => {
     const linkId = 'google-fonts-projector';
     if (!document.getElementById(linkId)) {
@@ -87,17 +86,21 @@ function ProjectorContent() {
     }
   }, []);
 
-  // 3. Handle stateful slide transitions and live updates
+  // 2. Handle stateful slide transitions and live updates
   useEffect(() => {
     if (!activeSlide) {
-      setSlideToShow(null);
-      setTransitionState('idle');
+      queueMicrotask(() => {
+        setSlideToShow(null);
+        setTransitionState('idle');
+      });
       return;
     }
 
     if (!slideToShow) {
-      setSlideToShow(activeSlide);
-      setTransitionState('idle');
+      queueMicrotask(() => {
+        setSlideToShow(activeSlide);
+        setTransitionState('idle');
+      });
       return;
     }
 
@@ -111,17 +114,23 @@ function ProjectorContent() {
         activeSlide.media_type !== slideToShow.media_type ||
         activeSlide.media_url !== slideToShow.media_url
       ) {
-        setSlideToShow(activeSlide);
+        queueMicrotask(() => {
+          setSlideToShow(activeSlide);
+        });
       }
       return;
     }
 
     // Active slide changed
     if (transition === 'none') {
-      setSlideToShow(activeSlide);
-      setTransitionState('idle');
+      queueMicrotask(() => {
+        setSlideToShow(activeSlide);
+        setTransitionState('idle');
+      });
     } else {
-      setTransitionState('exiting');
+      queueMicrotask(() => {
+        setTransitionState('exiting');
+      });
       const exitTimer = setTimeout(() => {
         setSlideToShow(activeSlide);
         setTransitionState('entering');
@@ -141,7 +150,7 @@ function ProjectorContent() {
     fontSettings.slideTransition
   ]);
 
-  // 4. Handle WebRTC Live Camera Stream lifecycle based on currently showing slide
+  // 3. Handle WebRTC Live Camera Stream lifecycle based on currently showing slide
   useEffect(() => {
     const isCameraActive = slideToShow?.media_type === 'camera';
     let cancelled = false;
@@ -335,7 +344,9 @@ function ProjectorContent() {
 
   // Hide connection status badge after 4 seconds
   useEffect(() => {
-    setStatusVisible(true);
+    queueMicrotask(() => {
+      setStatusVisible(true);
+    });
     const timer = setTimeout(() => {
       setStatusVisible(false);
     }, 4000);

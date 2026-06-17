@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import { Sparkles, ArrowRight, User, Mail, ShieldAlert, MonitorPlay, KeyRound } from 'lucide-react';
 
+const isSupabaseConfigured =
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Authentication failed. Please check your details.';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -14,18 +24,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [isDemo, setIsDemo] = useState(true);
+  const isDemo = !isSupabaseConfigured;
 
   // Check if Supabase URL is configured
   useEffect(() => {
-    const configured =
-      Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-      Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
-    setIsDemo(!configured);
-
-    if (configured) {
+    if (isSupabaseConfigured) {
       // If already logged in, redirect to dashboard
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
@@ -101,8 +104,8 @@ export default function LoginPage() {
           if (error) throw error;
           router.push('/dashboard');
         }
-      } catch (err: any) {
-        setErrorMsg(err.message || 'Authentication failed. Please check your details.');
+      } catch (err: unknown) {
+        setErrorMsg(errorMessage(err));
         setIsLoading(false);
       }
     }
