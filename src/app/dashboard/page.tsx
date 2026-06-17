@@ -7,6 +7,7 @@ import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import MediaLibrary from '@/components/MediaLibrary';
 import SlideDesigner from '@/components/SlideDesigner';
+import SlideEditor from '@/components/SlideEditor';
 import SlidePreview from '@/components/SlidePreview';
 import { 
   Sparkles, 
@@ -32,7 +33,8 @@ import {
   X,
   Trash2,
   Layers,
-  Copy
+  Copy,
+  ChevronLeft
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -80,6 +82,7 @@ function DashboardContent() {
   const [isClient, setIsClient] = useState(false);
   const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
   const [designingSlideId, setDesigningSlideId] = useState<string | null>(null);
+  const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const dragIndexRef = useRef<number | null>(null);
 
   const handleReorderDrop = (toIndex: number) => {
@@ -750,239 +753,6 @@ function DashboardContent() {
             <p className="text-xs text-slate-400">ID: <code className="bg-slate-950 px-1 py-0.5 rounded text-indigo-400">{presentation.id}</code></p>
           </section>
 
-          {/* Settings Section */}
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
-            <div className="flex items-center gap-2 mb-4">
-              <Settings className="h-4 w-4 text-violet-400" />
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Settings</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Background Theme</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={presentation.settings.background}
-                    onChange={(e) => updateSettings({ background: e.target.value })}
-                    className="h-8 w-12 rounded border border-slate-800 bg-transparent cursor-pointer"
-                  />
-                  <code className="text-xs text-slate-400">{presentation.settings.background}</code>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Font Family</label>
-                <select
-                  value={presentation.settings.fontFamily}
-                  onChange={(e) => updateSettings({ fontFamily: e.target.value })}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
-                >
-                  <option value="Inter">Inter (Sans)</option>
-                  <option value="Montserrat">Montserrat (Modern Sans)</option>
-                  <option value="Outfit">Outfit (Geometric Sans)</option>
-                  <option value="Lora">Lora (Worship Serif)</option>
-                  <option value="Playfair Display">Playfair Display (Serif)</option>
-                  <option value="Georgia">Georgia (Serif)</option>
-                  <option value="system-ui">System Default</option>
-                  <option value="Courier New">Monospace</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Translation Language</label>
-                <select
-                  value={translationLang}
-                  onChange={(e) => {
-                    const lang = e.target.value;
-                    updateSettings({ translationLang: lang });
-                    // Re-translate the selected slide into the newly chosen language
-                    if (selectedSlide && selectedSlide.content.trim()) {
-                      handleTranslateSlide(lang);
-                    }
-                  }}
-                  disabled={isTranslating}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none disabled:opacity-50"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.name} value={lang.name}>
-                      {lang.name}{lang.rtl ? ' (RTL)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-[10px] text-slate-600">
-                  {isTranslating ? 'Translating the current slide…' : 'Changing this re-translates the selected slide and updates the projector / follower screens.'}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Text Alignment</label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
-                  {(['left', 'center', 'right'] as const).map((align) => (
-                    <button
-                      key={align}
-                      type="button"
-                      onClick={() => updateSettings({ textAlign: align })}
-                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
-                        (presentation.settings.textAlign || 'center') === align
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {align}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Vertical Alignment</label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
-                  {(['top', 'center', 'bottom'] as const).map((valign) => (
-                    <button
-                      key={valign}
-                      type="button"
-                      onClick={() => updateSettings({ verticalAlign: valign })}
-                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
-                        (presentation.settings.verticalAlign || 'center') === valign
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {valign}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Text Capitalization</label>
-                <div className="grid grid-cols-2 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-855">
-                  {(['none', 'uppercase'] as const).map((transform) => (
-                    <button
-                      key={transform}
-                      type="button"
-                      onClick={() => updateSettings({ textTransform: transform })}
-                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold transition-all ${
-                        (presentation.settings.textTransform || 'none') === transform
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {transform === 'none' ? 'Normal' : 'ALL CAPS'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Text Shadow</label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
-                  {(['none', 'subtle', 'strong'] as const).map((shadow) => (
-                    <button
-                      key={shadow}
-                      type="button"
-                      onClick={() => updateSettings({ textShadow: shadow })}
-                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
-                        (presentation.settings.textShadow || 'none') === shadow
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {shadow}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Text Outline</label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-950/65 p-1 rounded-xl border border-slate-850">
-                  {(['none', 'subtle', 'strong'] as const).map((outline) => (
-                    <button
-                      key={outline}
-                      type="button"
-                      onClick={() => updateSettings({ textOutline: outline })}
-                      className={`rounded-lg py-1 px-1.5 text-[10px] font-bold capitalize transition-all ${
-                        (presentation.settings.textOutline || 'none') === outline
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {outline}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Slide Transition</label>
-                <select
-                  value={presentation.settings.slideTransition || 'none'}
-                  onChange={(e) => updateSettings({ slideTransition: e.target.value as any })}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
-                >
-                  <option value="none">None (Instant)</option>
-                  <option value="fade">Fade (Crossfade)</option>
-                  <option value="slide">Slide (Push Left)</option>
-                  <option value="zoom">Scale Zoom</option>
-                </select>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                  <span>Layout Margins</span>
-                  <span>{presentation.settings.margin} units</span>
-                </div>
-                <input
-                  type="range"
-                  min="2"
-                  max="12"
-                  value={presentation.settings.margin}
-                  onChange={(e) => updateSettings({ margin: Number(e.target.value) })}
-                  className="w-full accent-violet-600 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-
-              {/* Quick Screen Overlays */}
-              <div className="border-t border-slate-900 pt-4 mt-4 space-y-2.5">
-                <span className="block text-xs text-slate-400 font-medium">Quick Screen Overlays</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black')}
-                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
-                      presentation.settings.blankMode === 'black'
-                        ? 'bg-red-950/40 border-red-500/50 text-red-400'
-                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    ⚫ Blackout
-                  </button>
-                  <button
-                    onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')}
-                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border transition-all ${
-                      presentation.settings.blankMode === 'clear'
-                        ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400'
-                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    🔍 Clear Text
-                  </button>
-                  <button
-                    onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')}
-                    className={`rounded-xl py-2 px-2 text-[10px] font-bold border col-span-2 transition-all ${
-                      presentation.settings.blankMode === 'logo'
-                        ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400'
-                        : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    ✨ Show Logo Placeholder
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* Live Alerts Section */}
           <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
             <div className="flex items-center gap-2 mb-4 justify-between">
@@ -1210,8 +980,7 @@ function DashboardContent() {
                       onDragStart={() => { dragIndexRef.current = idx; }}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => handleReorderDrop(idx)}
-                      onClick={() => setSelectedSlideId(slide.id)}
-                      onDoubleClick={() => { setSelectedSlideId(slide.id); setDesigningSlideId(slide.id); }}
+                      onClick={() => { setSelectedSlideId(slide.id); setEditingSlideId(slide.id); }}
                       className={`group relative rounded-xl border overflow-hidden cursor-pointer transition-all ${
                         isLive
                           ? 'border-red-500/60 ring-2 ring-red-500/30'
@@ -1248,169 +1017,46 @@ function DashboardContent() {
           )}
         </section>
 
-        {/* Right Panel: Live Text Editor */}
-        <aside className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto order-3">
-          {selectedSlide ? (
-            <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex flex-col h-full">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Edit3 className="h-4 w-4 text-indigo-400" />
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live Editor</h2>
+        {/* Right Panel: Now Live (present controls) */}
+        <aside className="lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto order-3">
+          {(() => {
+            const liveIdx = presentation.slides.findIndex((s) => s.id === activeSlideId);
+            const liveSlide = presentation.slides[liveIdx];
+            const goTo = (i: number) => { const s = presentation.slides[i]; if (s) setLiveSlide(s.id); };
+            return (
+              <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <Play className="h-4 w-4 text-red-400 fill-current" />
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Now Live</h2>
                 </div>
-                <button
-                  onClick={() => setDesigningSlideId(selectedSlide.id)}
-                  className="flex items-center gap-1.5 rounded-lg bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 px-2.5 py-1.5 text-[11px] font-bold text-violet-300 transition-all"
-                  title="Open the free-placement slide designer"
-                >
-                  <Layers className="h-3.5 w-3.5" />
-                  Design
-                  {selectedSlide.elements && selectedSlide.elements.length > 0 && (
-                    <span className="rounded-full bg-violet-500/30 px-1.5 text-[9px]">{selectedSlide.elements.length}</span>
+                <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 mb-3 bg-slate-950">
+                  {liveSlide ? (
+                    <SlidePreview slide={liveSlide} settings={presentation.settings} />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-[11px] text-slate-600 px-4 text-center">Nothing live yet — press Go Live on a slide.</div>
                   )}
-                </button>
-              </div>
-
-              <div className="flex-1 flex flex-col gap-4">
-                <div className="flex-1 flex flex-col">
-                  <label className="block text-xs text-slate-400 mb-1.5 font-medium">English Lyrics (Primary)</label>
-                  <textarea
-                    value={selectedSlide.content}
-                    onChange={(e) => updateSlideContent(
-                      selectedSlide.id, 
-                      e.target.value, 
-                      selectedSlide.translation,
-                      selectedSlide.media_type,
-                      selectedSlide.media_url
-                    )}
-                    placeholder="Enter slide content..."
-                    className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-sans"
-                  />
                 </div>
-
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    disabled={isTranslating || !selectedSlide.content.trim()}
-                    onClick={() => handleTranslateSlide()}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/20 to-indigo-600/20 hover:from-violet-600/40 hover:to-indigo-600/40 border border-violet-500/30 hover:border-violet-500/50 py-2.5 px-4 text-xs font-bold text-violet-300 hover:text-white shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {isTranslating ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
-                        <span>Translating with AI...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 text-violet-400 animate-pulse" />
-                        <span>AI Translate to {translationLang}</span>
-                      </>
-                    )}
+                <div className="flex items-center gap-2">
+                  <button onClick={() => goTo(liveIdx - 1)} disabled={liveIdx <= 0} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 py-2 text-xs font-bold text-slate-300 disabled:opacity-30">
+                    <ChevronLeft className="h-4 w-4" />Prev
+                  </button>
+                  <span className="text-[10px] text-slate-500 w-14 text-center">{liveIdx >= 0 ? `${liveIdx + 1} / ${presentation.slides.length}` : '—'}</span>
+                  <button onClick={() => goTo(liveIdx < 0 ? 0 : liveIdx + 1)} disabled={liveIdx >= presentation.slides.length - 1} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2 text-xs font-bold text-white disabled:opacity-30">
+                    Next<ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+              </section>
+            );
+          })()}
 
-                <div className="flex-1 flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Languages className="h-3.5 w-3.5 text-indigo-400" />
-                    <label className="block text-xs text-slate-400 font-medium">{translationLang} Translation (Linked)</label>
-                  </div>
-                  <textarea
-                    dir={dirFor(translationLang)}
-                    value={selectedSlide.translation || ''}
-                    onChange={(e) => updateSlideContent(
-                      selectedSlide.id,
-                      selectedSlide.content,
-                      e.target.value,
-                      selectedSlide.media_type,
-                      selectedSlide.media_url
-                    )}
-                    placeholder="Enter translation here..."
-                    className="w-full flex-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none font-serif"
-                  />
-                </div>
-
-                {/* Background Media Settings */}
-                <div className="border-t border-slate-900 pt-4 space-y-3">
-                  <label className="block text-xs text-slate-400 font-medium">Slide Media</label>
-                  <select
-                    value={selectedSlide.media_type || 'none'}
-                    onChange={(e) => updateSlideContent(
-                      selectedSlide.id,
-                      selectedSlide.content,
-                      selectedSlide.translation,
-                      e.target.value as any,
-                      selectedSlide.media_url
-                    )}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
-                  >
-                    <option value="none">Color Theme (Default)</option>
-                    <option value="image">Image (upload)</option>
-                    <option value="video">Video (upload)</option>
-                    <option value="camera">Live Camera (WebRTC)</option>
-                  </select>
-
-                  {(selectedSlide.media_type === 'image' || selectedSlide.media_type === 'video') && (
-                    <div className="animate-fade-in pt-1 space-y-3">
-                      <MediaLibrary
-                        currentUrl={selectedSlide.media_url}
-                        onSelectMedia={(url, kind) => updateSlideContent(
-                          selectedSlide.id,
-                          selectedSlide.content,
-                          selectedSlide.translation,
-                          url ? kind : 'none',
-                          url
-                        )}
-                      />
-
-                      {selectedSlide.media_type === 'video' && (
-                        <div>
-                          <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">…or paste a video link (no upload)</label>
-                          <input
-                            type="url"
-                            placeholder="https://example.com/clip.mp4"
-                            defaultValue={selectedSlide.media_url || ''}
-                            onBlur={(e) => updateSlideContent(
-                              selectedSlide.id,
-                              selectedSlide.content,
-                              selectedSlide.translation,
-                              e.target.value.trim() ? 'video' : 'none',
-                              e.target.value.trim() || undefined
-                            )}
-                            className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-650 focus:border-violet-500 focus:outline-none"
-                          />
-                          <p className="mt-1 text-[10px] text-slate-600">Use a direct link to an .mp4/.webm file (saves storage space). Must be publicly accessible.</p>
-                        </div>
-                      )}
-
-                      {selectedSlide.media_url && (
-                        <label className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!selectedSlide.media_fill}
-                            onChange={(e) => setSlideFill(selectedSlide.id, e.target.checked)}
-                            className="mt-0.5 h-4 w-4 accent-violet-600"
-                          />
-                          <span className="text-[11px] text-slate-300 leading-relaxed">
-                            <strong className="text-slate-200">Fill the screen</strong> — show the {selectedSlide.media_type} full-brightness with no text on top (for announcement / picture slides). Leave off to use it as a darkened background behind lyrics.
-                          </span>
-                        </label>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-2 rounded-xl bg-slate-950/40 border border-slate-800 p-3 text-[10px] text-slate-500 flex items-start gap-2">
-                  <Edit3 className="h-3.5 w-3.5 text-indigo-500 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Collaborative Live Editing</strong>: Typos fixed here propagate instantly to the live projector and other connected boards.
-                  </span>
-                </div>
-              </div>
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">Quick screen overlays</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'black' ? 'bg-red-950/40 border-red-500/50 text-red-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>⚫ Blackout</button>
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'clear' ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>🔍 Clear text</button>
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')} className={`rounded-xl py-2 text-[10px] font-bold border col-span-2 transition-all ${presentation.settings.blankMode === 'logo' ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>✨ Show logo</button>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 text-center text-slate-500 flex items-center justify-center flex-1">
-              Select a slide to load the Live Editor.
-            </div>
-          )}
+          </section>
         </aside>
       </div>
 
@@ -1511,16 +1157,46 @@ function DashboardContent() {
         );
       })()}
 
+      {/* Full-screen slide editor (all editing happens here) */}
+      {(() => {
+        if (!editingSlideId) return null;
+        const idx = presentation.slides.findIndex((s) => s.id === editingSlideId);
+        const editingSlide = presentation.slides[idx];
+        if (!editingSlide) return null;
+        return (
+          <SlideEditor
+            slide={editingSlide}
+            settings={presentation.settings}
+            slideIndex={idx}
+            slideCount={presentation.slides.length}
+            isLive={activeSlideId === editingSlide.id}
+            onPrev={() => { const p = presentation.slides[idx - 1]; if (p) setEditingSlideId(p.id); }}
+            onNext={() => { const n = presentation.slides[idx + 1]; if (n) setEditingSlideId(n.id); }}
+            onUpdateContent={(c, t, mt, mu) => updateSlideContent(editingSlide.id, c, t, mt, mu)}
+            onUpdateSettings={(partial) => updateSettings(partial)}
+            onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
+            onGoLive={() => setLiveSlide(editingSlide.id)}
+            onOpenDesigner={() => setDesigningSlideId(editingSlide.id)}
+            onClose={() => setEditingSlideId(null)}
+          />
+        );
+      })()}
+
       {/* Free-placement Slide Designer (Phase 2) */}
-      {designingSlideId && selectedSlide && selectedSlide.id === designingSlideId && (
-        <SlideDesigner
-          slide={selectedSlide}
-          settings={presentation.settings}
-          onChange={(els) => updateSlideElements(designingSlideId, els)}
-          onBgChange={(color) => updateSlideSettings(designingSlideId, { bgColor: color })}
-          onClose={() => setDesigningSlideId(null)}
-        />
-      )}
+      {(() => {
+        if (!designingSlideId) return null;
+        const designingSlide = presentation.slides.find((s) => s.id === designingSlideId);
+        if (!designingSlide) return null;
+        return (
+          <SlideDesigner
+            slide={designingSlide}
+            settings={presentation.settings}
+            onChange={(els) => updateSlideElements(designingSlideId, els)}
+            onBgChange={(color) => updateSlideSettings(designingSlideId, { bgColor: color })}
+            onClose={() => setDesigningSlideId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
