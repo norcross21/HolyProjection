@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } from '@/utils/sync';
 import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import MediaLibrary from '@/components/MediaLibrary';
 import SlideDesigner from '@/components/SlideDesigner';
+import SlidePreview from '@/components/SlidePreview';
 import { 
   Sparkles, 
   Tv, 
@@ -60,6 +61,7 @@ function DashboardContent() {
     updateSlideSettings,
     addSlide,
     duplicateSlide,
+    reorderSlides,
     deleteSlide,
     setSlideFill,
     setLiveSlide,
@@ -78,6 +80,17 @@ function DashboardContent() {
   const [isClient, setIsClient] = useState(false);
   const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
   const [designingSlideId, setDesigningSlideId] = useState<string | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+
+  const handleReorderDrop = (toIndex: number) => {
+    const from = dragIndexRef.current;
+    dragIndexRef.current = null;
+    if (from === null || from === toIndex) return;
+    const ids = presentation.slides.map((s) => s.id);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(toIndex, 0, moved);
+    reorderSlides(ids);
+  };
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
@@ -1185,92 +1198,51 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {presentation.slides.map((slide) => {
+              <p className="text-[11px] text-slate-500 -mt-1">Drag thumbnails to reorder. Click a slide to edit it; double-click to open the designer.</p>
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+                {presentation.slides.map((slide, idx) => {
                   const isLive = activeSlideId === slide.id;
                   const isSelected = selectedSlideId === slide.id;
-
                   return (
                     <div
                       key={slide.id}
+                      draggable
+                      onDragStart={() => { dragIndexRef.current = idx; }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => handleReorderDrop(idx)}
                       onClick={() => setSelectedSlideId(slide.id)}
-                      className={`group relative flex flex-col rounded-2xl border p-5 cursor-pointer transition-all duration-200 ${
-                        isLive 
-                          ? 'border-red-500/40 bg-red-950/5 shadow-[0_0_20px_rgba(239,68,68,0.05)]' 
+                      onDoubleClick={() => { setSelectedSlideId(slide.id); setDesigningSlideId(slide.id); }}
+                      className={`group relative rounded-xl border overflow-hidden cursor-pointer transition-all ${
+                        isLive
+                          ? 'border-red-500/60 ring-2 ring-red-500/30'
                           : isSelected
-                            ? 'border-violet-500/40 bg-slate-900/40'
-                            : 'border-slate-900 bg-slate-900/10 hover:border-slate-800 hover:bg-slate-900/20'
+                            ? 'border-violet-500/60 ring-1 ring-violet-500/30'
+                            : 'border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-semibold text-slate-500">
-                          Slide {slide.order_index + 1}
-                        </span>
-                        
-                        <div className="flex items-center gap-2">
-                          {isLive && (
-                            <span className="flex items-center gap-1 rounded bg-red-500/10 border border-red-500/30 px-1.5 py-0.5 text-[10px] font-bold text-red-400 uppercase tracking-widest animate-pulse">
-                              Live
-                            </span>
-                          )}
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLiveSlide(slide.id);
-                            }}
-                            className={`flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold transition-all ${
-                              isLive
-                                ? 'bg-red-500 text-white shadow-md shadow-red-500/25 pointer-events-none'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                            }`}
-                          >
-                            <Play className="h-3.5 w-3.5 fill-current" />
-                            <span>{isLive ? 'LIVE' : 'Go Live'}</span>
-                          </button>
-
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const id = await duplicateSlide(slide.id);
-                              if (id) setSelectedSlideId(id);
-                            }}
-                            title="Duplicate slide"
-                            className="rounded-lg p-1.5 text-slate-600 hover:text-indigo-300 hover:bg-indigo-950/30 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (presentation.slides.length <= 1) {
-                                alert('A presentation needs at least one slide.');
-                                return;
-                              }
-                              if (confirm(`Delete slide ${slide.order_index + 1}?`)) deleteSlide(slide.id);
-                            }}
-                            title="Delete slide"
-                            className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-sm font-semibold text-slate-200 whitespace-pre-line leading-relaxed">
-                          {slide.content}
-                        </div>
-                        {slide.translation && (
-                          <div dir={dirFor(translationLang)} className="text-sm font-bold text-indigo-300 whitespace-pre-line leading-relaxed border-l border-slate-900/80 pr-4 font-serif">
-                            {slide.translation}
-                          </div>
+                      <div className="relative aspect-video bg-slate-950">
+                        <SlidePreview slide={slide} settings={presentation.settings} />
+                        <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white">{idx + 1}</span>
+                        {isLive && (
+                          <span className="absolute top-1 left-1 rounded bg-red-500 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-widest animate-pulse">Live</span>
                         )}
+                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/85 to-transparent pt-6 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); setLiveSlide(slide.id); }} title="Go Live" className={`rounded-md p-1.5 text-white ${isLive ? 'bg-red-500 pointer-events-none' : 'bg-indigo-600 hover:bg-indigo-500'}`}><Play className="h-3 w-3 fill-current" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedSlideId(slide.id); setDesigningSlideId(slide.id); }} title="Design" className="rounded-md p-1.5 bg-slate-800 hover:bg-slate-700 text-violet-300"><Layers className="h-3 w-3" /></button>
+                          <button onClick={async (e) => { e.stopPropagation(); const id = await duplicateSlide(slide.id); if (id) setSelectedSlideId(id); }} title="Duplicate" className="rounded-md p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200"><Copy className="h-3 w-3" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); if (presentation.slides.length <= 1) { alert('A presentation needs at least one slide.'); return; } if (confirm(`Delete slide ${idx + 1}?`)) deleteSlide(slide.id); }} title="Delete" className="rounded-md p-1.5 bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+                <button
+                  onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
+                  className="aspect-video rounded-xl border-2 border-dashed border-slate-800 hover:border-violet-500/50 hover:bg-slate-900/30 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-violet-300 transition-all"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="text-[10px] font-bold">Add slide</span>
+                </button>
               </div>
             </>
           )}
@@ -1388,6 +1360,26 @@ function DashboardContent() {
                           url
                         )}
                       />
+
+                      {selectedSlide.media_type === 'video' && (
+                        <div>
+                          <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">…or paste a video link (no upload)</label>
+                          <input
+                            type="url"
+                            placeholder="https://example.com/clip.mp4"
+                            defaultValue={selectedSlide.media_url || ''}
+                            onBlur={(e) => updateSlideContent(
+                              selectedSlide.id,
+                              selectedSlide.content,
+                              selectedSlide.translation,
+                              e.target.value.trim() ? 'video' : 'none',
+                              e.target.value.trim() || undefined
+                            )}
+                            className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-650 focus:border-violet-500 focus:outline-none"
+                          />
+                          <p className="mt-1 text-[10px] text-slate-600">Use a direct link to an .mp4/.webm file (saves storage space). Must be publicly accessible.</p>
+                        </div>
+                      )}
 
                       {selectedSlide.media_url && (
                         <label className="flex items-start gap-2.5 rounded-xl border border-slate-800 bg-slate-950/40 p-3 cursor-pointer">

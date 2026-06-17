@@ -850,6 +850,38 @@ export function useRealtimePresentation(presentationId: string) {
     return data.id as string;
   };
 
+  // Reorder slides (drag-and-drop running order). `orderedIds` is the new order.
+  const reorderSlides = async (orderedIds: string[]) => {
+    setPresentation((prev) => {
+      const byId = new Map(prev.slides.map((s) => [s.id, s]));
+      const reordered = orderedIds
+        .map((id, i) => { const s = byId.get(id); return s ? { ...s, order_index: i } : null; })
+        .filter(Boolean) as Slide[];
+      return { ...prev, slides: reordered };
+    });
+
+    if (isDemoMode) {
+      const stored = localStorage.getItem(`holyproj_pres_${presentationId}`);
+      // Persist via the portal list cache as well
+      const list = JSON.parse(localStorage.getItem('holyproj_all_pres') || '[]') as Presentation[];
+      const updatedList = list.map((p) => {
+        if (p.id !== presentationId) return p;
+        const byId = new Map(p.slides.map((s) => [s.id, s]));
+        return { ...p, slides: orderedIds.map((id, i) => ({ ...(byId.get(id) as Slide), order_index: i })).filter(Boolean) as Slide[] };
+      });
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(updatedList));
+      const cur = updatedList.find((p) => p.id === presentationId);
+      if (cur) localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(cur));
+      void stored;
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: { id: presentationId } } });
+      return;
+    }
+
+    for (let i = 0; i < orderedIds.length; i++) {
+      await supabase.from('slides').update({ order_index: i }).eq('id', orderedIds[i]);
+    }
+  };
+
   // Delete a slide from the presentation
   const deleteSlide = async (slideId: string) => {
     if (isDemoMode) {
@@ -1032,6 +1064,7 @@ export function useRealtimePresentation(presentationId: string) {
     applyDesign,
     addSlide,
     duplicateSlide,
+    reorderSlides,
     deleteSlide,
     setSlideFill,
     setLiveSlide,
