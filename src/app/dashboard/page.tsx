@@ -967,10 +967,23 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Presentation Slides Flow</h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500">{presentation.slides.length} {presentation.slides.length === 1 ? 'slide' : 'slides'}</span>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Running order · {presentation.slides.length} {presentation.slides.length === 1 ? 'slide' : 'slides'}</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => router.push(`/dashboard/import?append=${presId}`)}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                    <span>Import songs</span>
+                  </button>
+                  <button
+                    onClick={() => router.push(`/dashboard/liturgy?append=${presId}`)}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                  >
+                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+                    <span>Import scripture</span>
+                  </button>
                   <button
                     onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
                     className="flex items-center gap-1.5 rounded-lg bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 px-3 py-1.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98]"

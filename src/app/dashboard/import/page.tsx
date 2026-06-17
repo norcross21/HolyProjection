@@ -33,15 +33,17 @@ function errorMessage(err: unknown, fallback: string): string {
 
 export default function ImportPage() {
   const router = useRouter();
-  const { createNewPresentation } = usePresentationsPortal();
+  const { createNewPresentation, appendSlidesToPresentation } = usePresentationsPortal();
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthIdentity | null>(null);
   const [importedSongs, setImportedSongs] = useState<SavedImport[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [appendTo, setAppendTo] = useState<string | null>(null);
 
   useEffect(() => {
+    setAppendTo(new URLSearchParams(window.location.search).get('append'));
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkAuth = async () => {
       const identity = await resolveAuth();
@@ -89,6 +91,19 @@ export default function ImportPage() {
       // Insert here, in the browser, so the writes run under the user's
       // authenticated session and satisfy Supabase row-level security
       // (the server route uses the anon key and would be blocked).
+      if (appendTo) {
+        // Append all parsed slides into the current presentation.
+        const allSlides = songs.flatMap((song) =>
+          (song.slides || []).map((s) => ({ content: s.content, translation: s.translation || undefined }))
+        );
+        const count = await appendSlidesToPresentation(appendTo, allSlides);
+        if (count === 0) {
+          throw new Error('Parsing succeeded but saving failed. Check that you are signed in and that database write access is enabled.');
+        }
+        router.push(`/dashboard?pres=${appendTo}`);
+        return;
+      }
+
       const imported: SavedImport[] = [];
       for (const song of songs) {
         const slides = (song.slides || []).map((s) => ({
@@ -126,7 +141,7 @@ export default function ImportPage() {
       <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(appendTo ? `/dashboard?pres=${appendTo}` : '/dashboard')}
             className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -209,7 +224,7 @@ export default function ImportPage() {
                 Import More Songs
               </button>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(appendTo ? `/dashboard?pres=${appendTo}` : '/dashboard')}
                 className="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-sm font-bold text-white rounded-xl shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all"
               >
                 Go to Dashboard

@@ -32,8 +32,9 @@ function errorMessage(err: unknown, fallback: string): string {
 
 export default function LiturgyPage() {
   const router = useRouter();
-  const { createNewPresentation } = usePresentationsPortal();
+  const { createNewPresentation, appendSlidesToPresentation } = usePresentationsPortal();
   const [currentUser, setCurrentUser] = useState<AuthIdentity | null>(null);
+  const [appendTo, setAppendTo] = useState<string | null>(null);
   
   // Importer State
   const [reference, setReference] = useState('');
@@ -73,6 +74,7 @@ export default function LiturgyPage() {
   const dailyReadings = getDailyLectionary(selectedDate);
 
   useEffect(() => {
+    setAppendTo(new URLSearchParams(window.location.search).get('append'));
     const checkAuth = async () => {
       const identity = await resolveAuth();
       if (!identity) {
@@ -164,6 +166,17 @@ export default function LiturgyPage() {
         content: slide.content,
         translation: slide.translation,
       }));
+
+      if (appendTo) {
+        const count = await appendSlidesToPresentation(appendTo, slides);
+        if (count === 0) {
+          throw new Error('Failed to add. Check that you are signed in and that database write access is enabled.');
+        }
+        setSuccess(true);
+        setTimeout(() => router.push(`/dashboard?pres=${appendTo}`), 600);
+        return;
+      }
+
       const newPresId = await createNewPresentation(`Scripture: ${title}`, slides);
 
       if (!newPresId) {
@@ -192,7 +205,7 @@ export default function LiturgyPage() {
       <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push(appendTo ? `/dashboard?pres=${appendTo}` : '/dashboard')}
             className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />

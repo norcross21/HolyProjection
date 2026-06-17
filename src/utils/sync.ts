@@ -332,6 +332,45 @@ export function usePresentationsPortal() {
     }
   };
 
+  // Append slides to an existing presentation (used by the importers when
+  // building a presentation rather than creating a new one).
+  const appendSlidesToPresentation = async (presId: string, slides: { content: string; translation?: string }[]) => {
+    if (slides.length === 0) return 0;
+
+    if (!IS_SUPABASE_CONFIGURED) {
+      const list = JSON.parse(localStorage.getItem('holyproj_all_pres') || '[]') as Presentation[];
+      const pres = list.find((p) => p.id === presId);
+      if (!pres) return 0;
+      const start = pres.slides.length;
+      pres.slides.push(...slides.map((s, i) => ({ id: `slide-${Date.now()}-${i}`, order_index: start + i, content: s.content, translation: s.translation })));
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(list));
+      localStorage.setItem(`holyproj_pres_${presId}`, JSON.stringify(pres));
+      return slides.length;
+    }
+
+    try {
+      const { data: existing } = await supabase
+        .from('slides')
+        .select('order_index')
+        .eq('presentation_id', presId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+      const start = existing && existing[0] ? (existing[0].order_index as number) + 1 : 0;
+      const rows = slides.map((s, i) => ({
+        presentation_id: presId,
+        order_index: start + i,
+        content: s.content,
+        translation: s.translation || null,
+      }));
+      const { error } = await supabase.from('slides').insert(rows);
+      if (error) throw error;
+      return rows.length;
+    } catch (err) {
+      console.error('Error appending slides:', errorMessage(err));
+      return 0;
+    }
+  };
+
   useEffect(() => {
     void Promise.resolve().then(fetchPresentations);
   }, []);
@@ -342,6 +381,7 @@ export function usePresentationsPortal() {
     isDemoMode,
     refresh: fetchPresentations,
     createNewPresentation,
+    appendSlidesToPresentation,
     deletePresentation,
   };
 }
