@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
-import { UploadCloud, Loader2, Trash2, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, Loader2, Trash2, CheckCircle2, Music } from 'lucide-react';
 
-export type MediaKind = 'image' | 'video';
+export type MediaKind = 'image' | 'video' | 'audio';
 
 interface MediaLibraryProps {
   onSelectMedia: (url: string, kind: MediaKind) => void;
   currentUrl?: string;
+  filter?: MediaKind; // when set, only show/accept this kind (e.g. 'audio')
 }
 
-const VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i;
-const kindOf = (url: string): MediaKind => (VIDEO_EXT.test(url) ? 'video' : 'image');
+const VIDEO_EXT = /\.(mp4|webm|mov|m4v)(\?|$)/i;
+const AUDIO_EXT = /\.(mp3|wav|m4a|aac|oga|ogg|flac)(\?|$)/i;
+const kindOf = (url: string): MediaKind => (AUDIO_EXT.test(url) ? 'audio' : VIDEO_EXT.test(url) ? 'video' : 'image');
 
 const isSupabaseConfigured =
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
@@ -24,7 +26,7 @@ function errorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
-export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibraryProps) {
+export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: MediaLibraryProps) {
   const [items, setItems] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadInfo, setUploadInfo] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
-    const kind: MediaKind = file.type.startsWith('video') ? 'video' : 'image';
+    const kind: MediaKind = file.type.startsWith('audio') ? 'audio' : file.type.startsWith('video') ? 'video' : 'image';
     const mb = file.size / (1024 * 1024);
 
     // Images: hard 500MB cap. Videos: allow larger input (we compress it down),
@@ -162,7 +164,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
-          accept="image/*,video/*"
+          accept={filter === 'audio' ? 'audio/*' : filter === 'video' ? 'video/*' : filter === 'image' ? 'image/*' : 'image/*,video/*,audio/*'}
           className="hidden"
         />
         {isUploading ? (
@@ -174,28 +176,41 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
         ) : (
           <div className="flex flex-col items-center justify-center gap-1.5">
             <UploadCloud className="h-6 w-6 text-slate-500" />
-            <span className="text-[11px] font-bold text-slate-300">Upload Image or Video</span>
-            <span className="text-[9px] text-slate-650">JPG, PNG, GIF, MP4, WebM · up to 500MB</span>
+            <span className="text-[11px] font-bold text-slate-300">{filter === 'audio' ? 'Upload audio' : 'Upload Image or Video'}</span>
+            <span className="text-[9px] text-slate-650">{filter === 'audio' ? 'MP3, WAV, M4A, OGG' : 'JPG, PNG, GIF, MP4, WebM'} · up to 500MB</span>
           </div>
         )}
       </div>
 
-      <p className="text-[9px] text-slate-600 leading-relaxed">
-        Tip: video files are large. If yours is over ~500MB or uploads slowly, compress it first
-        (free tools: HandBrake, or the &quot;compress video&quot; option in your phone/Photos app) — 1080p is plenty for projection.
-      </p>
+      {filter !== 'audio' && (
+        <p className="text-[9px] text-slate-600 leading-relaxed">
+          Tip: video files are large. If yours is over ~500MB or uploads slowly, compress it first
+          (free tools: HandBrake, or the &quot;compress video&quot; option in your phone/Photos app) — 1080p is plenty for projection.
+        </p>
+      )}
 
       <div className="space-y-2">
-        <label className="block text-[10px] uppercase font-semibold text-slate-500">Media Library</label>
-        {isLoading ? (
-          <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 text-violet-500 animate-spin" /></div>
-        ) : items.length === 0 ? (
-          <div className="text-[10px] text-slate-600 text-center py-2">No media uploaded yet.</div>
-        ) : (
-          <div className="grid grid-cols-3 gap-2.5 max-h-[160px] overflow-y-auto pr-1">
-            {items.map((url, idx) => {
+        <label className="block text-[10px] uppercase font-semibold text-slate-500">{filter === 'audio' ? 'Audio library' : 'Media Library'}</label>
+        {(() => {
+          const visible = filter ? items.filter((u) => kindOf(u) === filter) : items;
+          if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 text-violet-500 animate-spin" /></div>;
+          if (visible.length === 0) return <div className="text-[10px] text-slate-600 text-center py-2">Nothing uploaded yet.</div>;
+          return (
+          <div className={`grid gap-2.5 max-h-[160px] overflow-y-auto pr-1 ${filter === 'audio' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            {visible.map((url, idx) => {
               const isSelected = currentUrl === url;
               const kind = kindOf(url);
+              if (kind === 'audio') {
+                const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'audio').replace(/^\d+-/, '');
+                return (
+                  <div key={idx} onClick={() => onSelectMedia(url, 'audio')} className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition-all ${isSelected ? 'border-violet-500 bg-violet-950/20' : 'border-slate-800 hover:border-slate-700'}`}>
+                    <Music className={`h-4 w-4 shrink-0 ${isSelected ? 'text-violet-400' : 'text-slate-400'}`} />
+                    <span className="text-[11px] text-slate-200 truncate flex-1">{name}</span>
+                    {isSelected && <CheckCircle2 className="h-4 w-4 text-violet-400 shrink-0" />}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleRemove(url); }} className="p-1 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
+                  </div>
+                );
+              }
               return (
                 <div
                   key={idx}
@@ -228,7 +243,8 @@ export default function MediaLibrary({ onSelectMedia, currentUrl }: MediaLibrary
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

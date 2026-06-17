@@ -308,7 +308,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Add {showMedia}</span>
                 <button onClick={() => setShowMedia(null)} className="text-slate-500 hover:text-slate-200"><X className="h-4 w-4" /></button>
               </div>
-              <MediaLibrary onSelectMedia={(url, kind) => addMedia(url, showMedia === 'video' ? 'video' : kind)} />
+              <MediaLibrary onSelectMedia={(url, kind) => addMedia(url, showMedia === 'video' || kind === 'audio' ? 'video' : kind)} />
             </div>
           ) : selected ? (
             <div className="space-y-4">

@@ -7,7 +7,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon,
+  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music,
 } from 'lucide-react';
 
 interface SlideEditorProps {
@@ -22,6 +22,7 @@ interface SlideEditorProps {
   onUpdateElements: (elements: Slide['elements']) => void;
   onUpdateSettings: (partial: Partial<Presentation['settings']>) => void;
   onSetFill: (fill: boolean) => void;
+  onSetAudio: (url: string | undefined, loop: boolean) => void;
   onGoLive: () => void;
   onOpenDesigner: () => void;
   onClose: () => void;
@@ -171,7 +172,7 @@ export default function SlideEditor(props: SlideEditorProps) {
 
             {(slide.media_type === 'image' || slide.media_type === 'video') && (
               <div className="space-y-3 pt-1">
-                <MediaLibrary currentUrl={slide.media_url} onSelectMedia={(url, kind) => setMedia(url ? kind : 'none', url)} />
+                <MediaLibrary currentUrl={slide.media_url} onSelectMedia={(url, kind) => { if (kind === 'audio') return; setMedia(url ? kind : 'none', url); }} />
                 {slide.media_type === 'video' && (
                   <input
                     type="url"
@@ -188,6 +189,31 @@ export default function SlideEditor(props: SlideEditorProps) {
                   </label>
                 )}
               </div>
+            )}
+          </Section>
+
+          <Section icon={Music} title="Audio (plays when slide goes live)">
+            {slide.audio_url ? (
+              <div className="space-y-2">
+                <audio controls src={slide.audio_url} className="w-full h-9" />
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300">
+                    <input type="checkbox" checked={!!slide.audio_loop} onChange={(e) => props.onSetAudio(slide.audio_url, e.target.checked)} className="h-4 w-4 accent-violet-600" />
+                    Loop
+                  </label>
+                  <button onClick={() => props.onSetAudio(undefined, false)} className="text-[11px] font-bold text-slate-500 hover:text-red-400">Remove audio</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <MediaLibrary filter="audio" currentUrl={slide.audio_url} onSelectMedia={(url) => props.onSetAudio(url || undefined, slide.audio_loop ?? false)} />
+                <input
+                  type="url"
+                  placeholder="…or paste an audio link (https://…​.mp3)"
+                  onBlur={(e) => { if (e.target.value.trim()) props.onSetAudio(e.target.value.trim(), slide.audio_loop ?? false); }}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-650 focus:border-violet-500 focus:outline-none"
+                />
+              </>
             )}
           </Section>
 

@@ -53,6 +53,8 @@ export interface Slide {
   media_fill?: boolean; // true = media fills the screen at full brightness, text hidden (announcement slide)
   elements?: SlideElement[]; // free-placement overlay elements (Phase 2)
   settings?: { bgColor?: string }; // per-slide designer settings (jsonb column)
+  audio_url?: string; // plays when the slide goes live
+  audio_loop?: boolean;
 }
 
 export interface Presentation {
@@ -774,6 +776,35 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Set the slide's audio cue (plays when the slide goes live)
+  const setSlideAudio = (slideId: string, audio_url: string | undefined, audio_loop: boolean) => {
+    const patch = { audio_url: audio_url || undefined, audio_loop };
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, ...patch } : s)),
+    }));
+
+    if (isDemoMode) {
+      const updatedPresentation = {
+        ...presentation,
+        slides: presentation.slides.map((s) => (s.id === slideId ? { ...s, ...patch } : s)),
+      };
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+    } else {
+      supabase
+        .from('slides')
+        .update({ audio_url: audio_url || null, audio_loop, updated_at: new Date().toISOString() })
+        .eq('id', slideId)
+        .then(({ error }) => { if (error) console.error('Error updating audio:', error.message); });
+    }
+  };
+
   // Replace the free-placement elements array for a slide (Phase 2 designer)
   const updateSlideElements = (slideId: string, elements: SlideElement[]) => {
     setPresentation((prev) => ({
@@ -1133,6 +1164,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideContent,
     updateSlideElements,
     updateSlideSettings,
+    setSlideAudio,
     applyDesign,
     addSlide,
     duplicateSlide,

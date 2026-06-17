@@ -40,6 +40,8 @@ function ProjectorContent() {
   // Layout parameters
   const [displayMode, setDisplayMode] = useState<DisplayMode>(() => parseDisplayMode(langParam));
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [statusVisible, setStatusVisible] = useState(true);
 
   // Transition & Slide rendering states
@@ -191,6 +193,21 @@ function ProjectorContent() {
       }
     };
   }, [slideToShow?.media_type]);
+
+  // Play the live slide's audio cue (once the user has enabled sound).
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const url = slideToShow?.audio_url;
+    if (url && audioEnabled) {
+      if (!a.src.endsWith(url)) a.src = url;
+      a.loop = Boolean(slideToShow?.audio_loop);
+      a.play().catch(() => {});
+    } else if (!url) {
+      a.pause();
+      a.removeAttribute('src');
+    }
+  }, [slideToShow?.audio_url, slideToShow?.audio_loop, audioEnabled]);
 
   // Alignment styling helper functions
   const getVerticalAlignClass = () => {
@@ -510,6 +527,17 @@ function ProjectorContent() {
 
       {/* Free-placement elements layer (Phase 2) */}
       <SlideElementsLayer elements={slideToShow?.elements} fontFamily={fontSettings.fontFamily} />
+
+      {/* Slide audio cue */}
+      <audio ref={audioRef} />
+      {slideToShow?.audio_url && !audioEnabled && (
+        <button
+          onClick={() => { setAudioEnabled(true); audioRef.current?.play().catch(() => {}); }}
+          className="absolute bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-violet-600 hover:bg-violet-500 px-5 py-3 text-sm font-bold text-white shadow-2xl"
+        >
+          🔊 Enable sound
+        </button>
+      )}
 
       {/* Floating Status Notification Overlay */}
       {statusVisible && (

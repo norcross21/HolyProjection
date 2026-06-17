@@ -9,6 +9,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import SlideDesigner from '@/components/SlideDesigner';
 import SlideEditor from '@/components/SlideEditor';
 import SlidePreview from '@/components/SlidePreview';
+import RecorderButton from '@/components/RecorderButton';
 import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
 import { 
   Sparkles, 
@@ -94,6 +95,7 @@ function DashboardContent() {
     reorderSlides,
     deleteSlide,
     setSlideFill,
+    setSlideAudio,
     setLiveSlide,
     updateSettings,
     setBlankMode,
@@ -1018,6 +1020,7 @@ function DashboardContent() {
                       <div className="relative aspect-video bg-slate-950">
                         <SlidePreview slide={slide} settings={presentation.settings} />
                         <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white">{idx + 1}</span>
+                        {slide.audio_url && <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[9px] text-violet-300" title="Has audio">🎵</span>}
                         {isLive && (
                           <span className="absolute top-1 left-1 rounded bg-red-500 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-widest animate-pulse">Live</span>
                         )}
@@ -1082,6 +1085,12 @@ function DashboardContent() {
               <button onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'clear' ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>🔍 Clear text</button>
               <button onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')} className={`rounded-xl py-2 text-[10px] font-bold border col-span-2 transition-all ${presentation.settings.blankMode === 'logo' ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>✨ Show logo</button>
             </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">Record the service</span>
+            <RecorderButton />
+            <p className="text-[10px] text-slate-600">Captures your microphone; download the audio when you stop.</p>
           </section>
         </aside>
       </div>
@@ -1233,6 +1242,7 @@ function DashboardContent() {
             onUpdateElements={(els) => updateSlideElements(editingSlide.id, els || [])}
             onUpdateSettings={(partial) => updateSettings(partial)}
             onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
+            onSetAudio={(url, loop) => setSlideAudio(editingSlide.id, url, loop)}
             onGoLive={() => setLiveSlide(editingSlide.id)}
             onOpenDesigner={() => setDesigningSlideId(editingSlide.id)}
             onClose={() => setEditingSlideId(null)}
