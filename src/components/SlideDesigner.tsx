@@ -51,10 +51,10 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     const additions: SlideElement[] = [];
     let z = maxZ;
     if (slide.content?.trim()) {
-      additions.push({ id: uid(), type: 'text', x: 8, y: slide.translation?.trim() ? 22 : 38, w: 84, h: 28, z: ++z, text: slide.content, color: '#ffffff', fontSize: 8, align: 'center', bold: true, fontFamily: settings.fontFamily });
+      additions.push({ id: uid(), type: 'text', role: 'lyrics', x: 8, y: slide.translation?.trim() ? 22 : 38, w: 84, h: 28, z: ++z, text: slide.content, color: '#ffffff', fontSize: 8, align: 'center', bold: true, fontFamily: settings.fontFamily });
     }
     if (slide.translation?.trim()) {
-      additions.push({ id: uid(), type: 'text', x: 8, y: 56, w: 84, h: 24, z: ++z, text: slide.translation, color: '#a5b4fc', fontSize: 7, align: 'center', bold: false, fontFamily: settings.fontFamily });
+      additions.push({ id: uid(), type: 'text', role: 'translation', x: 8, y: 56, w: 84, h: 24, z: ++z, text: slide.translation, color: '#a5b4fc', fontSize: 7, align: 'center', bold: false, fontFamily: settings.fontFamily });
     }
     if (additions.length === 0) { addText(); return; }
     commit([...els, ...additions]);

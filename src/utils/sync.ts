@@ -14,6 +14,7 @@ export interface SlideElement {
   rotation?: number; // degrees
   flipH?: boolean;
   flipV?: boolean;
+  role?: 'lyrics' | 'translation'; // links the element to the slide's words/translation
   // text
   text?: string;
   color?: string;

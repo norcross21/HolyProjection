@@ -19,6 +19,7 @@ interface SlideEditorProps {
   onPrev: () => void;
   onNext: () => void;
   onUpdateContent: (content: string, translation: string | undefined, mediaType: Slide['media_type'], mediaUrl: string | undefined) => void;
+  onUpdateElements: (elements: Slide['elements']) => void;
   onUpdateSettings: (partial: Partial<Presentation['settings']>) => void;
   onSetFill: (fill: boolean) => void;
   onGoLive: () => void;
@@ -52,8 +53,15 @@ export default function SlideEditor(props: SlideEditorProps) {
   const [isTranslating, setIsTranslating] = useState(false);
   const translationLang = settings.translationLang || DEFAULT_TRANSLATION_LANG;
 
-  const setContent = (content: string) => props.onUpdateContent(content, slide.translation, slide.media_type, slide.media_url);
-  const setTranslation = (t: string) => props.onUpdateContent(slide.content, t, slide.media_type, slide.media_url);
+  // Keep any placed lyric/translation text boxes (designer elements) in sync.
+  const syncRole = (role: 'lyrics' | 'translation', value: string) => {
+    const els = slide.elements;
+    if (els && els.some((e) => e.role === role)) {
+      props.onUpdateElements(els.map((e) => (e.role === role ? { ...e, text: value } : e)));
+    }
+  };
+  const setContent = (content: string) => { props.onUpdateContent(content, slide.translation, slide.media_type, slide.media_url); syncRole('lyrics', content); };
+  const setTranslation = (t: string) => { props.onUpdateContent(slide.content, t, slide.media_type, slide.media_url); syncRole('translation', t); };
   const setMedia = (type: Slide['media_type'], url: string | undefined) => props.onUpdateContent(slide.content, slide.translation, type, url);
 
   const translate = async (lang?: string) => {

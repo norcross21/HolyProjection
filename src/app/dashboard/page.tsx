@@ -9,6 +9,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import SlideDesigner from '@/components/SlideDesigner';
 import SlideEditor from '@/components/SlideEditor';
 import SlidePreview from '@/components/SlidePreview';
+import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
 import { 
   Sparkles, 
   Tv, 
@@ -34,7 +35,8 @@ import {
   Trash2,
   Layers,
   Copy,
-  ChevronLeft
+  ChevronLeft,
+  MonitorPlay
 } from 'lucide-react';
 
 type ImportedSlideInput = {
@@ -124,6 +126,8 @@ function DashboardContent() {
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [screenTab, setScreenTab] = useState<'projector' | 'stage' | 'follow'>('follow');
+  const [screensList, setScreensList] = useState<ScreenInfo[] | null>(null);
+  const [screensChecked, setScreensChecked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -1153,13 +1157,44 @@ function DashboardContent() {
                 </button>
               </div>
 
+              {/* Open on a connected screen (projector / USB monitor) */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Open on a connected screen</span>
+                  <button
+                    onClick={async () => { setScreensList(await getScreens()); setScreensChecked(true); }}
+                    className="text-[10px] font-bold text-violet-300 hover:text-violet-200"
+                  >
+                    Detect screens
+                  </button>
+                </div>
+                {screensList && screensList.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {screensList.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => openOnScreen(active.url, s)}
+                        className="flex items-center justify-between rounded-lg bg-slate-900 border border-slate-800 hover:border-violet-500/50 px-3 py-2 text-xs font-bold text-slate-200"
+                      >
+                        <span className="flex items-center gap-1.5"><MonitorPlay className="h-3.5 w-3.5 text-violet-400" />{s.label}{s.isPrimary ? ' (main)' : ''}</span>
+                        <span className="text-[10px] text-slate-500">{s.width}×{s.height}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : screensChecked ? (
+                  <p className="text-[10px] text-slate-500">Couldn’t auto-detect screens in this browser. Use “Open on this device” below, drag the window onto your monitor, then press the fullscreen button.</p>
+                ) : (
+                  <p className="text-[10px] text-slate-600">Click “Detect screens” to send this directly to your projector / USB monitor (Chrome &amp; Edge).</p>
+                )}
+              </div>
+
               {/* Open on this device */}
               <button
                 onClick={() => window.open(active.url, '_blank')}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 py-2.5 text-xs font-bold text-indigo-300 transition-all"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                Open on this device
+                Open in a window (drag to your monitor)
               </button>
             </div>
           </div>
@@ -1182,6 +1217,7 @@ function DashboardContent() {
             onPrev={() => { const p = presentation.slides[idx - 1]; if (p) setEditingSlideId(p.id); }}
             onNext={() => { const n = presentation.slides[idx + 1]; if (n) setEditingSlideId(n.id); }}
             onUpdateContent={(c, t, mt, mu) => updateSlideContent(editingSlide.id, c, t, mt, mu)}
+            onUpdateElements={(els) => updateSlideElements(editingSlide.id, els || [])}
             onUpdateSettings={(partial) => updateSettings(partial)}
             onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
             onGoLive={() => setLiveSlide(editingSlide.id)}
