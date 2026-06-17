@@ -232,6 +232,25 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
 
         {/* Properties / media panel */}
         <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950/60 p-4 overflow-y-auto">
+          {/* Layers (stacking order) — always visible */}
+          {els.length > 0 && !showTemplates && !showMedia && (
+            <div className="mb-4 pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2 mb-2"><Layers className="h-3.5 w-3.5 text-violet-400" /><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Layers</span></div>
+              <div className="space-y-1">
+                {[...els].sort((a, b) => b.z - a.z).map((el) => (
+                  <div key={el.id} className={`flex items-center gap-1 rounded-lg px-2 py-1.5 ${selectedId === el.id ? 'bg-violet-600/20 border border-violet-500/40' : 'bg-slate-900/60 border border-slate-800'}`}>
+                    <button onClick={() => setSelectedId(el.id)} className="flex-1 flex items-center gap-2 text-left min-w-0">
+                      {el.type === 'text' ? <Type className="h-3 w-3 text-slate-400 shrink-0" /> : el.type === 'image' ? <ImageIcon className="h-3 w-3 text-slate-400 shrink-0" /> : <Film className="h-3 w-3 text-slate-400 shrink-0" />}
+                      <span className="text-[11px] text-slate-300 truncate">{el.type === 'text' ? (el.text || 'Text') : el.type === 'image' ? 'Image' : 'Video'}</span>
+                    </button>
+                    <button onClick={() => bump(el.id, 1)} title="Bring forward" className="p-1 text-slate-500 hover:text-slate-200"><ChevronUp className="h-3 w-3" /></button>
+                    <button onClick={() => bump(el.id, -1)} title="Send back" className="p-1 text-slate-500 hover:text-slate-200"><ChevronDown className="h-3 w-3" /></button>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[9px] text-slate-600">Top of the list = front. Use ↑/↓ to bring a layer forward or back (e.g. text in front of a video).</p>
+            </div>
+          )}
           {showTemplates ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">

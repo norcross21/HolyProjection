@@ -47,12 +47,35 @@ Lyrics to translate:
 ${text}
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+    // Gemini occasionally returns transient 503/overloaded errors. Retry a few
+    // times with backoff before giving up, and surface a clean message.
+    const isRetryable = (msg: string) => /\b503\b|unavailable|overloaded|high demand|\b429\b|resource_exhausted/i.test(msg);
 
-    const translatedText = response.text || '';
+    let translatedText = '';
+    let lastErr: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+        });
+        translatedText = response.text || '';
+        lastErr = null;
+        break;
+      } catch (e: unknown) {
+        lastErr = e;
+        if (!isRetryable(errorMessage(e)) || attempt === 2) break;
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+
+    if (lastErr) {
+      const friendly = isRetryable(errorMessage(lastErr))
+        ? 'The translation service is busy right now — please try again in a moment.'
+        : 'Translation failed. Please try again.';
+      console.error('Error in translate API:', errorMessage(lastErr));
+      return NextResponse.json({ error: friendly }, { status: 503 });
+    }
 
     return NextResponse.json({
       success: true,
