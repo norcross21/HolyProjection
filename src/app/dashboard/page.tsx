@@ -30,7 +30,8 @@ import {
   MessageSquare,
   X,
   Trash2,
-  Layers
+  Layers,
+  Copy
 } from 'lucide-react';
 
 function DashboardContent() {
@@ -58,6 +59,7 @@ function DashboardContent() {
     updateSlideElements,
     updateSlideSettings,
     addSlide,
+    duplicateSlide,
     deleteSlide,
     setSlideFill,
     setLiveSlide,
@@ -1225,6 +1227,18 @@ function DashboardContent() {
                           >
                             <Play className="h-3.5 w-3.5 fill-current" />
                             <span>{isLive ? 'LIVE' : 'Go Live'}</span>
+                          </button>
+
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const id = await duplicateSlide(slide.id);
+                              if (id) setSelectedSlideId(id);
+                            }}
+                            title="Duplicate slide"
+                            className="rounded-lg p-1.5 text-slate-600 hover:text-indigo-300 hover:bg-indigo-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Copy className="h-4 w-4" />
                           </button>
 
                           <button

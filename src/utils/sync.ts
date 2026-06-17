@@ -807,6 +807,49 @@ export function useRealtimePresentation(presentationId: string) {
     return data.id as string;
   };
 
+  // Duplicate a slide (copies its text, media and design) to the end.
+  const duplicateSlide = async (slideId: string) => {
+    const src = presentation.slides.find((s) => s.id === slideId);
+    if (!src) return null;
+    const nextIndex = presentation.slides.length;
+
+    if (isDemoMode) {
+      const copy: Slide = { ...src, id: `slide-${Date.now()}`, order_index: nextIndex };
+      const updatedPresentation = { ...presentation, slides: [...presentation.slides, copy] };
+      setPresentation((prev) => ({ ...prev, slides: [...prev.slides, copy] }));
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+      return copy.id;
+    }
+
+    const { data, error } = await supabase
+      .from('slides')
+      .insert({
+        presentation_id: presentationId,
+        order_index: nextIndex,
+        content: src.content,
+        translation: src.translation,
+        media_type: src.media_type,
+        media_url: src.media_url,
+        media_fill: src.media_fill,
+        elements: src.elements || [],
+        settings: src.settings || {},
+      })
+      .select()
+      .single();
+    if (error || !data) {
+      console.error('Error duplicating slide:', error?.message);
+      return null;
+    }
+    setPresentation((prev) => ({ ...prev, slides: [...prev.slides, data as Slide] }));
+    return data.id as string;
+  };
+
   // Delete a slide from the presentation
   const deleteSlide = async (slideId: string) => {
     if (isDemoMode) {
@@ -988,6 +1031,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideSettings,
     applyDesign,
     addSlide,
+    duplicateSlide,
     deleteSlide,
     setSlideFill,
     setLiveSlide,

@@ -7,7 +7,7 @@ import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { FONTS } from '@/utils/fonts';
 import {
   X, Type, Image as ImageIcon, Film, Trash2, ChevronUp, ChevronDown,
-  Bold, AlignLeft, AlignCenter, AlignRight, Layers, RotateCw, LayoutTemplate, Save,
+  Bold, AlignLeft, AlignCenter, AlignRight, Layers, RotateCw, LayoutTemplate, Save, Copy,
 } from 'lucide-react';
 
 interface SlideDesignerProps {
@@ -51,6 +51,13 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     commit([...els, el]); setSelectedId(el.id); setShowMedia(null);
   };
   const removeEl = (id: string) => { commit(els.filter((e) => e.id !== id)); if (selectedId === id) setSelectedId(null); };
+  const duplicateEl = (id: string) => {
+    const el = els.find((e) => e.id === id);
+    if (!el) return;
+    const copy: SlideElement = { ...el, id: uid(), x: Math.min(90, el.x + 4), y: Math.min(90, el.y + 4), z: maxZ + 1 };
+    commit([...els, copy]);
+    setSelectedId(copy.id);
+  };
 
   const applyTemplate = (tpl: Template) => {
     const newEls = (tpl.data.elements || []).map((e, i) => ({ ...e, id: `el-${Date.now()}-${i}` }));
@@ -115,6 +122,26 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
   });
 
+  // Keyboard: nudge selected element with arrows (Shift = bigger), delete with Del/Backspace.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!selectedId) return;
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      const el = els.find((x) => x.id === selectedId);
+      if (!el) return;
+      const step = e.shiftKey ? 5 : 1;
+      const clamp = (n: number) => Math.min(98, Math.max(0, +n.toFixed(2)));
+      if (e.key === 'ArrowLeft') { e.preventDefault(); update(selectedId, { x: clamp(el.x - step) }); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); update(selectedId, { x: clamp(el.x + step) }); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); update(selectedId, { y: clamp(el.y - step) }); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); update(selectedId, { y: clamp(el.y + step) }); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeEl(selectedId); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   const bgColor = slide.settings?.bgColor || settings.background || '#0f172a';
 
   return (
@@ -124,7 +151,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-violet-400" />
           <span className="text-sm font-bold text-slate-100">Slide Designer</span>
-          <span className="text-[10px] text-slate-500 hidden sm:inline">drag to move · drag corner to resize</span>
+          <span className="text-[10px] text-slate-500 hidden sm:inline">drag to move · corner to resize · arrows nudge · Del removes</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={addText} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Type className="h-3.5 w-3.5" />Text</button>
@@ -250,7 +277,10 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{selected.type} properties</span>
-                <button onClick={() => removeEl(selected.id)} title="Delete" className="rounded-lg p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30"><Trash2 className="h-4 w-4" /></button>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => duplicateEl(selected.id)} title="Duplicate" className="rounded-lg p-1.5 text-slate-500 hover:text-indigo-300 hover:bg-indigo-950/30"><Copy className="h-4 w-4" /></button>
+                  <button onClick={() => removeEl(selected.id)} title="Delete" className="rounded-lg p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30"><Trash2 className="h-4 w-4" /></button>
+                </div>
               </div>
 
               {selected.type === 'text' && (
