@@ -7,7 +7,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors,
+  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer,
 } from 'lucide-react';
 import { THEMES } from '@/utils/themes';
 
@@ -24,6 +24,7 @@ interface SlideEditorProps {
   onUpdateSettings: (partial: Partial<Presentation['settings']>) => void;
   onSetFill: (fill: boolean) => void;
   onSetAudio: (url: string | undefined, loop: boolean) => void;
+  onSetAutoAdvance: (secs: number) => void;
   onSplit: (chunks: string[]) => void;
   onGoLive: () => void;
   onOpenDesigner: () => void;
@@ -229,6 +230,22 @@ export default function SlideEditor(props: SlideEditorProps) {
                 />
               </>
             )}
+          </Section>
+
+          <Section icon={Timer} title="Automation">
+            <label className="flex items-center justify-between text-[11px] text-slate-300">
+              <span>Auto-advance after</span>
+              <span className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={600}
+                  value={slide.auto_advance_secs || 0}
+                  onChange={(e) => props.onSetAutoAdvance(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-16 rounded-lg border border-slate-800 bg-slate-950/60 py-1 px-2 text-slate-200 focus:outline-none"
+                />
+                <span className="text-slate-500">sec</span>
+              </span>
+            </label>
+            <p className="text-[10px] text-slate-600">0 = off. When live, the presenter view moves to the next slide after this many seconds.</p>
           </Section>
 
           <Section icon={Palette} title="Theme (whole presentation)">

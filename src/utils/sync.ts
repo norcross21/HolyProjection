@@ -55,6 +55,7 @@ export interface Slide {
   settings?: { bgColor?: string }; // per-slide designer settings (jsonb column)
   audio_url?: string; // plays when the slide goes live
   audio_loop?: boolean;
+  auto_advance_secs?: number; // >0 = auto-advance to next slide after N seconds when live
 }
 
 export interface Presentation {
@@ -837,6 +838,33 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Slide-triggered action: auto-advance after N seconds (0 = off)
+  const setSlideAutoAdvance = (slideId: string, secs: number) => {
+    setPresentation((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, auto_advance_secs: secs } : s)),
+    }));
+    if (isDemoMode) {
+      const updatedPresentation = {
+        ...presentation,
+        slides: presentation.slides.map((s) => (s.id === slideId ? { ...s, auto_advance_secs: secs } : s)),
+      };
+      localStorage.setItem(`holyproj_pres_${presentationId}`, JSON.stringify(updatedPresentation));
+      const storedList = localStorage.getItem('holyproj_all_pres');
+      if (storedList) {
+        const list = JSON.parse(storedList) as Presentation[];
+        localStorage.setItem('holyproj_all_pres', JSON.stringify(list.map((p) => (p.id === presentationId ? updatedPresentation : p))));
+      }
+      localBcRef.current?.postMessage({ type: 'STATE_UPDATE', data: { presentation: updatedPresentation } });
+    } else {
+      supabase
+        .from('slides')
+        .update({ auto_advance_secs: secs, updated_at: new Date().toISOString() })
+        .eq('id', slideId)
+        .then(({ error }) => { if (error) console.error('Error updating auto-advance:', error.message); });
+    }
+  };
+
   // Replace the free-placement elements array for a slide (Phase 2 designer)
   const updateSlideElements = (slideId: string, elements: SlideElement[]) => {
     setPresentation((prev) => ({
@@ -1216,6 +1244,7 @@ export function useRealtimePresentation(presentationId: string) {
     updateSlideElements,
     updateSlideSettings,
     setSlideAudio,
+    setSlideAutoAdvance,
     applyDesign,
     addSlide,
     duplicateSlide,

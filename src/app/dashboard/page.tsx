@@ -98,6 +98,7 @@ function DashboardContent() {
     deleteSlide,
     setSlideFill,
     setSlideAudio,
+    setSlideAutoAdvance,
     setLiveSlide,
     updateSettings,
     setBlankMode,
@@ -119,6 +120,7 @@ function DashboardContent() {
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const [looping, setLooping] = useState(false);
   const [loopSecs, setLoopSecs] = useState(8);
+  const [midiOn, setMidiOn] = useState(false);
   const dragIndexRef = useRef<number | null>(null);
 
   const handleReorderDrop = (toIndex: number) => {
@@ -222,6 +224,64 @@ function DashboardContent() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [looping, loopSecs, activeSlideId, presentation.slides]);
+
+  // Keyboard live control on the present screen (not while editing/in a field).
+  useEffect(() => {
+    if (!presId || editingSlideId || designingSlideId) return;
+    const advance = (dir: 1 | -1) => {
+      const slides = presentation.slides;
+      const idx = slides.findIndex((s) => s.id === activeSlideId);
+      const target = dir === 1 ? (slides[idx + 1] || slides[0]) : slides[idx - 1];
+      if (target) setLiveSlide(target.id);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); advance(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); advance(-1); }
+      else if (e.key.toLowerCase() === 'b') { e.preventDefault(); setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black'); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presId, editingSlideId, designingSlideId, activeSlideId, presentation.slides, presentation.settings.blankMode]);
+
+  // Web MIDI: advance on any note-on (foot pedals / controllers).
+  useEffect(() => {
+    if (!midiOn) return;
+    type MidiInput = { onmidimessage: ((e: { data: Uint8Array }) => void) | null };
+    type MidiAccess = { inputs: { forEach: (cb: (i: MidiInput) => void) => void } };
+    const req = (navigator as unknown as { requestMIDIAccess?: () => Promise<MidiAccess> }).requestMIDIAccess;
+    if (!req) { alert('Web MIDI is not supported in this browser (try Chrome).'); setMidiOn(false); return; }
+    let access: MidiAccess | null = null;
+    const onMsg = (e: { data: Uint8Array }) => {
+      const status = e.data[0]; const velocity = e.data[2];
+      if ((status & 0xf0) === 0x90 && velocity > 0) {
+        const slides = presentation.slides;
+        const idx = slides.findIndex((s) => s.id === activeSlideId);
+        const next = slides[idx + 1] || slides[0];
+        if (next) setLiveSlide(next.id);
+      }
+    };
+    req().then((a) => { access = a; a.inputs.forEach((i) => { i.onmidimessage = onMsg; }); }).catch(() => { setMidiOn(false); });
+    return () => { access?.inputs.forEach((i) => { i.onmidimessage = null; }); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiOn, activeSlideId, presentation.slides]);
+
+  // Per-slide auto-advance (slide-triggered action). Skipped while the global loop runs.
+  useEffect(() => {
+    if (looping) return;
+    const slides = presentation.slides;
+    const idx = slides.findIndex((s) => s.id === activeSlideId);
+    const secs = slides[idx]?.auto_advance_secs || 0;
+    if (idx < 0 || secs <= 0) return;
+    const id = setTimeout(() => {
+      const next = slides[idx + 1];
+      if (next) setLiveSlide(next.id);
+    }, secs * 1000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlideId, presentation.slides, looping]);
 
   if (!authUser) {
     return (
@@ -1109,6 +1169,16 @@ function DashboardContent() {
                   />
                   <span className="text-[10px] text-slate-500">sec</span>
                 </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <button
+                    onClick={() => setMidiOn((v) => !v)}
+                    className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${midiOn ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'}`}
+                    title="Advance slides from a MIDI controller / foot pedal"
+                  >
+                    🎹 MIDI {midiOn ? 'on' : 'off'}
+                  </button>
+                  <span className="text-[9px] text-slate-600">Keys: ← → / space, B = blank</span>
+                </div>
               </section>
             );
           })()}
@@ -1305,6 +1375,7 @@ function DashboardContent() {
             onUpdateSettings={(partial) => updateSettings(partial)}
             onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
             onSetAudio={(url, loop) => setSlideAudio(editingSlide.id, url, loop)}
+            onSetAutoAdvance={(secs) => setSlideAutoAdvance(editingSlide.id, secs)}
             onSplit={(chunks) => {
               updateSlideContent(editingSlide.id, chunks[0], editingSlide.translation, editingSlide.media_type, editingSlide.media_url);
               if (chunks.length > 1) appendSlidesToPresentation(presId!, chunks.slice(1).map((c) => ({ content: c })));
