@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
+import PollView from '@/components/PollView';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import { 
   Sparkles, 
@@ -31,6 +32,9 @@ function FollowContent() {
     activeSlideId: activePresSlideId,
     sendPrayerRequest: sendPresPrayer,
     activeAlert: presActiveAlert,
+    activePoll,
+    pollCounts,
+    votePoll,
   } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   // Load setlist hook
@@ -216,6 +220,13 @@ function FollowContent() {
             </button>
           ))}
         </div>
+
+        {/* Live poll */}
+        {activePoll && (
+          <section className="rounded-3xl border border-violet-500/30 bg-violet-950/20 p-6 mb-2 shadow-xl">
+            <PollView poll={activePoll} counts={pollCounts} onVote={votePoll} />
+          </section>
+        )}
 
         {/* Slide Display Container */}
         <section className={`rounded-3xl border p-8 flex-1 flex flex-col justify-center min-h-[260px] relative shadow-xl backdrop-blur-sm transition-all ${

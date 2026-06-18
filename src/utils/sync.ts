@@ -96,6 +96,12 @@ export interface LiveAlert {
   timestamp: string;
 }
 
+export interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+}
+
 type SupabaseChannel = ReturnType<typeof supabase.channel>;
 type RealtimeCleanup = () => void;
 
@@ -406,6 +412,8 @@ export function useRealtimePresentation(presentationId: string) {
   const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [prayerRequests, setPrayerRequests] = useState<{ id: string; name: string; text: string; timestamp: string }[]>([]);
   const [activeAlert, setActiveAlert] = useState<LiveAlert | null>(null);
+  const [activePoll, setActivePoll] = useState<Poll | null>(null);
+  const [pollCounts, setPollCounts] = useState<number[]>([]);
 
   // Load profile and run synchronization
   useEffect(() => {
@@ -493,6 +501,11 @@ export function useRealtimePresentation(presentationId: string) {
             setPrayerRequests((prev) => [data, ...prev]);
           } else if (type === 'LIVE_ALERT') {
             setActiveAlert(data.activeAlert);
+          } else if (type === 'POLL') {
+            setActivePoll(data.poll);
+            setPollCounts(data.poll ? new Array(data.poll.options.length).fill(0) : []);
+          } else if (type === 'POLL_VOTE') {
+            setPollCounts((prev) => { const n = [...prev]; n[data.option] = (n[data.option] || 0) + 1; return n; });
           }
         };
 
@@ -659,6 +672,21 @@ export function useRealtimePresentation(presentationId: string) {
         .on('broadcast', { event: 'live_alert' }, ({ payload }) => {
           if (payload) {
             setActiveAlert(payload.activeAlert);
+          }
+        })
+        .on('broadcast', { event: 'poll' }, ({ payload }) => {
+          const poll = (payload?.poll ?? null) as Poll | null;
+          setActivePoll(poll);
+          setPollCounts(poll ? new Array(poll.options.length).fill(0) : []);
+        })
+        .on('broadcast', { event: 'poll_vote' }, ({ payload }) => {
+          const i = payload?.option;
+          if (typeof i === 'number') {
+            setPollCounts((prev) => {
+              const next = [...prev];
+              next[i] = (next[i] || 0) + 1;
+              return next;
+            });
           }
         });
 
@@ -1158,12 +1186,31 @@ export function useRealtimePresentation(presentationId: string) {
     }
   };
 
+  // Live congregation poll (broadcast-based). sendPoll(null) closes it.
+  const sendPoll = (poll: Poll | null) => {
+    setActivePoll(poll);
+    setPollCounts(poll ? new Array(poll.options.length).fill(0) : []);
+    channelRef.current?.presenceChannel?.send({ type: 'broadcast', event: 'poll', payload: { poll } });
+    localBcRef.current?.postMessage({ type: 'POLL', data: { poll } });
+  };
+
+  const votePoll = (option: number) => {
+    if (!activePoll) return;
+    setPollCounts((prev) => { const n = [...prev]; n[option] = (n[option] || 0) + 1; return n; });
+    channelRef.current?.presenceChannel?.send({ type: 'broadcast', event: 'poll_vote', payload: { option } });
+    localBcRef.current?.postMessage({ type: 'POLL_VOTE', data: { option } });
+  };
+
   return {
     isDemoMode,
     presentation,
     activeSlideId,
     presenceUsers,
     currentUser,
+    activePoll,
+    pollCounts,
+    sendPoll,
+    votePoll,
     loading,
     updateSlideContent,
     updateSlideElements,

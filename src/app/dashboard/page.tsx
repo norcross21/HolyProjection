@@ -10,6 +10,7 @@ import SlideDesigner from '@/components/SlideDesigner';
 import SlideEditor from '@/components/SlideEditor';
 import SlidePreview from '@/components/SlidePreview';
 import RecorderButton from '@/components/RecorderButton';
+import PollControl from '@/components/PollControl';
 import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
 import { 
   Sparkles, 
@@ -105,6 +106,9 @@ function DashboardContent() {
     sendAlert,
     clearAlert,
     activeAlert,
+    activePoll,
+    pollCounts,
+    sendPoll,
   } = useRealtimePresentation(presId || '');
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
@@ -113,6 +117,8 @@ function DashboardContent() {
   const [authUser, setAuthUser] = useState<AuthIdentity | null>(null);
   const [designingSlideId, setDesigningSlideId] = useState<string | null>(null);
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
+  const [looping, setLooping] = useState(false);
+  const [loopSecs, setLoopSecs] = useState(8);
   const dragIndexRef = useRef<number | null>(null);
 
   const handleReorderDrop = (toIndex: number) => {
@@ -203,6 +209,19 @@ function DashboardContent() {
       document.head.appendChild(link);
     }
   }, []);
+
+  // Pre-service auto-loop: advance the live slide every loopSecs while on.
+  useEffect(() => {
+    if (!looping || presentation.slides.length < 2) return;
+    const id = setInterval(() => {
+      const slides = presentation.slides;
+      const idx = slides.findIndex((s) => s.id === activeSlideId);
+      const next = slides[(idx + 1) % slides.length] || slides[0];
+      if (next) setLiveSlide(next.id);
+    }, Math.max(2, loopSecs) * 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [looping, loopSecs, activeSlideId, presentation.slides]);
 
   if (!authUser) {
     return (
@@ -1075,6 +1094,21 @@ function DashboardContent() {
                     Next<ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+                <div className="mt-3 flex items-center gap-2 border-t border-slate-900 pt-3">
+                  <button
+                    onClick={() => setLooping((v) => !v)}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${looping ? 'bg-violet-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
+                  >
+                    {looping ? '⏸ Stop loop' : '🔁 Auto-loop'}
+                  </button>
+                  <span className="text-[10px] text-slate-500">every</span>
+                  <input
+                    type="number" min={2} max={120} value={loopSecs}
+                    onChange={(e) => setLoopSecs(Math.max(2, Number(e.target.value) || 8))}
+                    className="w-14 rounded-lg border border-slate-800 bg-slate-950/60 py-1 px-2 text-[11px] text-slate-200 focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-500">sec</span>
+                </div>
               </section>
             );
           })()}
@@ -1114,6 +1148,11 @@ function DashboardContent() {
               onBlur={(e) => updateSettings({ stageMessage: e.target.value })}
               className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
             />
+          </section>
+
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">Live poll</span>
+            <PollControl activePoll={activePoll} pollCounts={pollCounts} onStart={(p) => sendPoll(p)} onEnd={() => sendPoll(null)} />
           </section>
         </aside>
       </div>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist, type Presentation, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
+import PollView from '@/components/PollView';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
 
 type DisplayMode = 'primary' | 'translation' | 'bilingual';
@@ -25,6 +26,8 @@ function ProjectorContent() {
     presentation: singlePres,
     activeSlideId: activePresSlideId,
     activeAlert: presActiveAlert,
+    activePoll,
+    pollCounts,
   } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
   const {
@@ -537,6 +540,13 @@ function ProjectorContent() {
         >
           🔊 Enable sound
         </button>
+      )}
+
+      {/* Live poll overlay */}
+      {activePoll && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-[5vw]">
+          <PollView poll={activePoll} counts={pollCounts} />
+        </div>
       )}
 
       {/* Floating Status Notification Overlay */}
