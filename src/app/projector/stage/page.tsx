@@ -71,6 +71,12 @@ function StageDisplayContent() {
     translationLang = singlePres.settings?.translationLang;
   }
 
+  const ss = setlistId ? setlist?.items?.[0]?.presentation?.settings : singlePres.settings;
+  const showClock = ss?.stageShowClock !== false;
+  const showNext = ss?.stageShowNext !== false;
+  const showTranslation = ss?.stageShowTranslation !== false;
+  const stageMessage = ss?.stageMessage;
+
   return (
     <main className="min-h-screen w-screen bg-black text-white font-sans flex flex-col justify-between p-8 select-none">
       
@@ -90,10 +96,12 @@ function StageDisplayContent() {
 
         <div className="flex items-center gap-6">
           {/* Real-time Clock */}
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-900 rounded-xl px-4 py-2 text-yellow-400 font-mono font-bold text-lg shadow-inner">
-            <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
-            <span>{time || '00:00:00'}</span>
-          </div>
+          {showClock && (
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-900 rounded-xl px-4 py-2 text-yellow-400 font-mono font-bold text-lg shadow-inner">
+              <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
+              <span>{time || '00:00:00'}</span>
+            </div>
+          )}
 
           <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-[10px] text-slate-400 font-semibold">
             {isDemoMode ? (
@@ -153,7 +161,7 @@ function StageDisplayContent() {
               <div className="text-yellow-400 font-extrabold text-3xl md:text-5xl lg:text-6xl whitespace-pre-line leading-tight">
                 {currentSlide.content}
               </div>
-              {currentSlide.translation && (
+              {showTranslation && currentSlide.translation && (
                 <div dir={dirFor(translationLang)} className="text-indigo-300 font-bold text-3xl md:text-5xl lg:text-6xl whitespace-pre-line leading-tight border-l border-slate-900 md:pl-8 font-serif">
                   {currentSlide.translation}
                 </div>
@@ -164,9 +172,10 @@ function StageDisplayContent() {
           )}
         </section>
 
-        <div className="border-t border-slate-900 my-4" />
+        {showNext && <div className="border-t border-slate-900 my-4" />}
 
         {/* 2. NEXT SLIDE */}
+        {showNext && (
         <section className="space-y-2.5">
           <span className="text-slate-500 text-[10px] uppercase font-bold tracking-widest block">Next Slide</span>
           {nextSlide && (nextSlide.elements?.length ?? 0) > 0 ? (
@@ -184,7 +193,7 @@ function StageDisplayContent() {
               <div className="text-white font-bold text-xl md:text-3xl lg:text-4xl whitespace-pre-line leading-normal">
                 {nextSlide.content}
               </div>
-              {nextSlide.translation && (
+              {showTranslation && nextSlide.translation && (
                 <div dir={dirFor(translationLang)} className="text-indigo-200 font-medium text-xl md:text-3xl lg:text-4xl whitespace-pre-line leading-normal border-l border-slate-900 md:pl-8 font-serif">
                   {nextSlide.translation}
                 </div>
@@ -194,6 +203,13 @@ function StageDisplayContent() {
             <div className="text-slate-800 text-xl">[End of Presentation]</div>
           )}
         </section>
+        )}
+
+        {stageMessage && (
+          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-200 text-lg font-bold text-center">
+            {stageMessage}
+          </div>
+        )}
 
       </div>
 

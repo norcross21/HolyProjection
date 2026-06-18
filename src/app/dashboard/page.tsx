@@ -77,6 +77,7 @@ function DashboardContent() {
     loading: portalLoading,
     isDemoMode: portalDemoMode,
     createNewPresentation,
+    appendSlidesToPresentation,
     deletePresentation,
   } = usePresentationsPortal();
 
@@ -1092,6 +1093,28 @@ function DashboardContent() {
             <RecorderButton />
             <p className="text-[10px] text-slate-600">Captures your microphone; download the audio when you stop.</p>
           </section>
+
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">Stage monitor</span>
+            {([['stageShowClock', 'Show clock'], ['stageShowNext', 'Show next slide'], ['stageShowTranslation', 'Show translation']] as const).map(([key, label]) => (
+              <label key={key} className="flex items-center justify-between text-[11px] text-slate-300">
+                <span>{label}</span>
+                <input
+                  type="checkbox"
+                  checked={presentation.settings[key] !== false}
+                  onChange={(e) => updateSettings({ [key]: e.target.checked })}
+                  className="h-4 w-4 accent-violet-600"
+                />
+              </label>
+            ))}
+            <input
+              type="text"
+              placeholder="Private note to stage (e.g. 'slow down')"
+              defaultValue={presentation.settings.stageMessage || ''}
+              onBlur={(e) => updateSettings({ stageMessage: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+            />
+          </section>
         </aside>
       </div>
 
@@ -1243,6 +1266,10 @@ function DashboardContent() {
             onUpdateSettings={(partial) => updateSettings(partial)}
             onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
             onSetAudio={(url, loop) => setSlideAudio(editingSlide.id, url, loop)}
+            onSplit={(chunks) => {
+              updateSlideContent(editingSlide.id, chunks[0], editingSlide.translation, editingSlide.media_type, editingSlide.media_url);
+              if (chunks.length > 1) appendSlidesToPresentation(presId!, chunks.slice(1).map((c) => ({ content: c })));
+            }}
             onGoLive={() => setLiveSlide(editingSlide.id)}
             onOpenDesigner={() => setDesigningSlideId(editingSlide.id)}
             onClose={() => setEditingSlideId(null)}

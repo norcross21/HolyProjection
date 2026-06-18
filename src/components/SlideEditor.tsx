@@ -7,8 +7,9 @@ import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music,
+  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors,
 } from 'lucide-react';
+import { THEMES } from '@/utils/themes';
 
 interface SlideEditorProps {
   slide: Slide;
@@ -23,6 +24,7 @@ interface SlideEditorProps {
   onUpdateSettings: (partial: Partial<Presentation['settings']>) => void;
   onSetFill: (fill: boolean) => void;
   onSetAudio: (url: string | undefined, loop: boolean) => void;
+  onSplit: (chunks: string[]) => void;
   onGoLive: () => void;
   onOpenDesigner: () => void;
   onClose: () => void;
@@ -131,6 +133,18 @@ export default function SlideEditor(props: SlideEditorProps) {
               rows={5}
               className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-sm leading-relaxed text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none"
             />
+            {(() => {
+              const chunks = slide.content.split(/\n\s*\n/).map((c) => c.trim()).filter(Boolean);
+              if (chunks.length < 2) return null;
+              return (
+                <button
+                  onClick={() => props.onSplit(chunks)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 py-2 text-xs font-bold text-violet-300"
+                >
+                  <Scissors className="h-3.5 w-3.5" /> Split into {chunks.length} slides (by blank lines)
+                </button>
+              );
+            })()}
           </Section>
 
           <Section icon={Languages} title="Translation">
@@ -215,6 +229,25 @@ export default function SlideEditor(props: SlideEditorProps) {
                 />
               </>
             )}
+          </Section>
+
+          <Section icon={Palette} title="Theme (whole presentation)">
+            <div className="grid grid-cols-4 gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.name}
+                  onClick={() => props.onUpdateSettings(t.settings)}
+                  title={t.name}
+                  className={`rounded-lg border p-1.5 transition-all ${settings.background === t.settings.background && settings.fontFamily === t.settings.fontFamily ? 'border-violet-500 ring-1 ring-violet-500/40' : 'border-slate-800 hover:border-slate-600'}`}
+                >
+                  <div className="rounded h-8 w-full flex items-center justify-center" style={{ backgroundColor: t.swatch }}>
+                    <span className="text-[10px] font-bold text-white" style={{ fontFamily: t.settings.fontFamily }}>Aa</span>
+                  </div>
+                  <span className="mt-1 block text-[8px] text-slate-400 truncate text-center">{t.name}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-600">Applies background, font &amp; text style to every lyric slide.</p>
           </Section>
 
           <Section icon={Type} title="Text style">

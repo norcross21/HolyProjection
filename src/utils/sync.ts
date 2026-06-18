@@ -74,6 +74,10 @@ export interface Presentation {
     textOutline?: 'none' | 'subtle' | 'strong';
     slideTransition?: 'none' | 'fade' | 'slide' | 'zoom';
     translationLang?: string;
+    stageShowClock?: boolean;
+    stageShowNext?: boolean;
+    stageShowTranslation?: boolean;
+    stageMessage?: string;
   };
 }
 
