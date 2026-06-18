@@ -185,6 +185,53 @@ const IS_SUPABASE_CONFIGURED =
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://your-project-id.supabase.co' &&
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-project-id.supabase.co';
 
+// ---- Brand preset (per-user default look applied to new presentations) ----
+// Stored in localStorage so a church's logo/colours/text style carry over to
+// every new presentation without re-setting them each time.
+const BRAND_PRESET_KEY = 'hp_brand_preset';
+
+// The settings keys that make up a reusable "look" — branding + theme/typography.
+// Deliberately excludes per-service values (translationLang, stageMessage, blankMode).
+export type BrandPreset = Partial<Pick<Presentation['settings'],
+  | 'background' | 'fontFamily' | 'fontSize' | 'margin'
+  | 'textAlign' | 'verticalAlign' | 'textTransform' | 'textShadow' | 'textOutline' | 'slideTransition'
+  | 'brandShow' | 'brandLogoUrl' | 'brandLogoPos' | 'brandLogoSize' | 'brandLowerThird'>>;
+
+const BRAND_PRESET_KEYS: (keyof BrandPreset)[] = [
+  'background', 'fontFamily', 'fontSize', 'margin',
+  'textAlign', 'verticalAlign', 'textTransform', 'textShadow', 'textOutline', 'slideTransition',
+  'brandShow', 'brandLogoUrl', 'brandLogoPos', 'brandLogoSize', 'brandLowerThird',
+];
+
+export function getBrandPreset(): BrandPreset | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(BRAND_PRESET_KEY);
+    return raw ? (JSON.parse(raw) as BrandPreset) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Save the reusable subset of a presentation's settings as the default brand preset. */
+export function saveBrandPreset(settings: Presentation['settings']): BrandPreset {
+  const preset: BrandPreset = {};
+  for (const k of BRAND_PRESET_KEYS) {
+    const v = settings[k];
+    if (v !== undefined) (preset as Record<string, unknown>)[k] = v;
+  }
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(BRAND_PRESET_KEY, JSON.stringify(preset)); } catch { /* ignore quota */ }
+  }
+  return preset;
+}
+
+export function clearBrandPreset() {
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(BRAND_PRESET_KEY); } catch { /* ignore */ }
+  }
+}
+
 // Hook for loading and creating presentations (Portal View)
 export function usePresentationsPortal() {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
@@ -251,6 +298,7 @@ export function usePresentationsPortal() {
           background: '#0f172a',
           margin: 8,
           fontFamily: 'Inter',
+          ...(getBrandPreset() || {}),
         },
         slides: customSlides
           ? customSlides.map((s, idx) => ({
@@ -290,6 +338,7 @@ export function usePresentationsPortal() {
             background: '#0f172a',
             margin: 8,
             fontFamily: 'Inter',
+            ...(getBrandPreset() || {}),
           }
         })
         .select()

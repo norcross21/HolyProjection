@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ComponentType, type ReactNode } from 'react';
-import { Slide, Presentation } from '@/utils/sync';
+import { Slide, Presentation, saveBrandPreset, getBrandPreset, clearBrandPreset } from '@/utils/sync';
 import SlidePreview from '@/components/SlidePreview';
 import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
@@ -55,7 +55,22 @@ function Section({ icon: Icon, title, children }: SectionProps) {
 export default function SlideEditor(props: SlideEditorProps) {
   const { slide, settings, slideIndex, slideCount, isLive } = props;
   const [isTranslating, setIsTranslating] = useState(false);
+  const [presetMsg, setPresetMsg] = useState<string | null>(null);
+  const [hasPreset, setHasPreset] = useState(() => !!getBrandPreset());
   const translationLang = settings.translationLang || DEFAULT_TRANSLATION_LANG;
+
+  const handleSavePreset = () => {
+    saveBrandPreset(settings);
+    setHasPreset(true);
+    setPresetMsg('Saved — new presentations will use this look.');
+    setTimeout(() => setPresetMsg(null), 3500);
+  };
+  const handleClearPreset = () => {
+    clearBrandPreset();
+    setHasPreset(false);
+    setPresetMsg('Default cleared.');
+    setTimeout(() => setPresetMsg(null), 3500);
+  };
 
   // Keep any placed lyric/translation text boxes (designer elements) in sync.
   const syncRole = (role: 'lyrics' | 'translation', value: string) => {
@@ -314,6 +329,20 @@ export default function SlideEditor(props: SlideEditorProps) {
                 <p className="text-[10px] text-slate-600">Shows on the projector &amp; follower screens, on every slide.</p>
               </div>
             )}
+            <div className="mt-3 pt-3 border-t border-slate-800/70 space-y-2">
+              <p className="text-[10px] text-slate-500 leading-snug">Reuse this presentation&apos;s logo, colours &amp; text style on every <span className="text-slate-400 font-semibold">new</span> presentation you create.</p>
+              <div className="flex items-center gap-2">
+                <button onClick={handleSavePreset} className="rounded-lg bg-violet-600/90 hover:bg-violet-600 px-3 py-1.5 text-[11px] font-bold text-white transition-colors">
+                  Save as my default look
+                </button>
+                {hasPreset && (
+                  <button onClick={handleClearPreset} className="text-[11px] font-bold text-slate-500 hover:text-red-400 transition-colors">
+                    Clear default
+                  </button>
+                )}
+              </div>
+              {presetMsg && <p className="text-[10px] font-semibold text-emerald-400">{presetMsg}</p>}
+            </div>
           </Section>
 
           <Section icon={Type} title="Text style">
