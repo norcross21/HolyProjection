@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal } from '@/utils/sync';
+import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal, getBrandPreset } from '@/utils/sync';
 import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import MediaLibrary from '@/components/MediaLibrary';
@@ -135,6 +135,7 @@ function DashboardContent() {
   };
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
+  const [brandNudgeDismissed, setBrandNudgeDismissed] = useState(true);
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [screenTab, setScreenTab] = useState<'projector' | 'stage' | 'follow'>('follow');
@@ -201,6 +202,13 @@ function DashboardContent() {
     };
     checkSession();
   }, [router]);
+
+  useEffect(() => {
+    // First-time branding nudge: show only if no brand preset saved and not dismissed before.
+    if (!getBrandPreset() && localStorage.getItem('hp_brand_nudge_dismissed') !== '1') {
+      setBrandNudgeDismissed(false);
+    }
+  }, []);
 
   useEffect(() => {
     const linkId = 'google-fonts-dashboard';
@@ -516,8 +524,27 @@ function DashboardContent() {
             </div>
           </div>
 
+          {activeTab === 'presentations' && !brandNudgeDismissed && presentations.length > 0 && (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-violet-500/25 bg-violet-950/20 px-5 py-4 backdrop-blur-sm">
+              <Stamp className="h-5 w-5 shrink-0 text-violet-400 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-violet-100">Set your church branding once</p>
+                <p className="text-xs text-violet-300/80 mt-0.5">
+                  Add your logo, colours &amp; text style in a presentation&apos;s <span className="font-semibold">Branding</span> section, then tap <span className="font-semibold">&ldquo;Save as my default look&rdquo;</span> — every new presentation will start on-brand.
+                </p>
+              </div>
+              <button
+                onClick={() => { localStorage.setItem('hp_brand_nudge_dismissed', '1'); setBrandNudgeDismissed(true); }}
+                title="Dismiss"
+                className="shrink-0 rounded-lg p-1.5 text-violet-400/70 hover:text-violet-200 hover:bg-violet-900/40 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            
+
             {activeTab === 'presentations' ? (
               <>
                 {/* Left Column: Create & Import */}
