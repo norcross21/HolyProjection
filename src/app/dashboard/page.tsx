@@ -38,7 +38,8 @@ import {
   Layers,
   Copy,
   ChevronLeft,
-  MonitorPlay
+  MonitorPlay,
+  Stamp
 } from 'lucide-react';
 
 type ImportedSlideInput = {
@@ -620,9 +621,15 @@ function DashboardContent() {
                         className="group rounded-2xl border border-slate-900 bg-slate-900/10 p-5 hover:border-violet-500/40 hover:bg-slate-900/20 cursor-pointer shadow-lg transition-all duration-200"
                       >
                         <div className="flex justify-between items-start gap-4 mb-3">
-                          <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
-                            {pres.title}
-                          </h4>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {pres.settings?.brandShow && pres.settings?.brandLogoUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={pres.settings.brandLogoUrl} alt="" className="h-7 w-7 shrink-0 rounded object-contain bg-slate-950 border border-slate-800" />
+                            )}
+                            <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
+                              {pres.title}
+                            </h4>
+                          </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={(e) => handleDeletePresentation(e, pres.id, pres.title)}
@@ -643,6 +650,12 @@ function DashboardContent() {
                             <LayoutGrid className="h-3.5 w-3.5" />
                             Bilingual
                           </span>
+                          {pres.settings?.brandShow && (
+                            <span className="flex items-center gap-1 rounded-full bg-violet-950/40 text-violet-300 border border-violet-800/50 px-2 py-0.5 font-semibold">
+                              <Stamp className="h-3 w-3" />
+                              Branded
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))
