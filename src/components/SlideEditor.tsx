@@ -7,7 +7,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer,
+  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer, Stamp,
 } from 'lucide-react';
 import { THEMES } from '@/utils/themes';
 
@@ -265,6 +265,55 @@ export default function SlideEditor(props: SlideEditorProps) {
               ))}
             </div>
             <p className="text-[10px] text-slate-600">Applies background, font &amp; text style to every lyric slide.</p>
+          </Section>
+
+          <Section icon={Stamp} title="Branding (whole presentation)">
+            <label className="flex items-center justify-between text-[11px] text-slate-300">
+              <span>Show logo &amp; banner on every slide</span>
+              <input type="checkbox" checked={!!settings.brandShow} onChange={(e) => props.onUpdateSettings({ brandShow: e.target.checked })} className="h-4 w-4 accent-violet-600" />
+            </label>
+            {settings.brandShow && (
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Logo image</label>
+                  {settings.brandLogoUrl ? (
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={settings.brandLogoUrl} alt="" className="h-10 w-10 object-contain rounded bg-slate-900 border border-slate-800" />
+                      <button onClick={() => props.onUpdateSettings({ brandLogoUrl: undefined })} className="text-[11px] font-bold text-slate-500 hover:text-red-400">Remove</button>
+                    </div>
+                  ) : (
+                    <MediaLibrary filter="image" currentUrl={settings.brandLogoUrl} onSelectMedia={(url, kind) => { if (kind === 'image') props.onUpdateSettings({ brandLogoUrl: url || undefined }); }} />
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Position</label>
+                    <select value={settings.brandLogoPos || 'bottom-right'} onChange={(e) => props.onUpdateSettings({ brandLogoPos: e.target.value as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' })} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1.5 text-[10px] text-slate-300 focus:outline-none">
+                      <option value="top-left">Top left</option>
+                      <option value="top-right">Top right</option>
+                      <option value="bottom-left">Bottom left</option>
+                      <option value="bottom-right">Bottom right</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[10px] uppercase font-bold text-slate-500 mb-1"><span>Size</span><span>{settings.brandLogoSize || 8}</span></div>
+                    <input type="range" min={4} max={20} value={settings.brandLogoSize || 8} onChange={(e) => props.onUpdateSettings({ brandLogoSize: Number(e.target.value) })} className="w-full accent-violet-600" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Lower-third banner (optional)</label>
+                  <input
+                    type="text"
+                    defaultValue={settings.brandLowerThird || ''}
+                    onBlur={(e) => props.onUpdateSettings({ brandLowerThird: e.target.value })}
+                    placeholder="e.g. St Paul's Church · Welcome"
+                    className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-600">Shows on the projector &amp; follower screens, on every slide.</p>
+              </div>
+            )}
           </Section>
 
           <Section icon={Type} title="Text style">

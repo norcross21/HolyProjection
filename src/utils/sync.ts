@@ -79,6 +79,11 @@ export interface Presentation {
     stageShowNext?: boolean;
     stageShowTranslation?: boolean;
     stageMessage?: string;
+    brandShow?: boolean;
+    brandLogoUrl?: string;
+    brandLogoPos?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    brandLogoSize?: number; // % of screen height
+    brandLowerThird?: string;
   };
 }
 

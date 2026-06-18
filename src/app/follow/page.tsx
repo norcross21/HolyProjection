@@ -2,10 +2,11 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
+import { useRealtimePresentation, useRealtimeSetlist, type Slide, type Presentation } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import PollView from '@/components/PollView';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
+import SlideBranding from '@/components/SlideBranding';
 import { 
   Sparkles, 
   Tv, 
@@ -64,6 +65,7 @@ function FollowContent() {
   let blankMode: 'none' | 'black' | 'clear' | 'logo' = 'none';
   let title = 'HolyProjection Live';
   let translationLang: string | undefined;
+  let presSettings: Presentation['settings'] | undefined;
 
   if (setlistId) {
     if (setlist) {
@@ -75,6 +77,7 @@ function FollowContent() {
       blankMode = setlist.settings?.blankMode || 'none';
       title = setlist.title;
       translationLang = setlist.items[0]?.presentation?.settings?.translationLang;
+      presSettings = setlist.items[0]?.presentation?.settings;
     }
   } else {
     if (singlePres) {
@@ -83,6 +86,7 @@ function FollowContent() {
       blankMode = singlePres.settings?.blankMode || 'none';
       title = singlePres.title;
       translationLang = singlePres.settings?.translationLang;
+      presSettings = singlePres.settings;
     }
   }
 
@@ -258,6 +262,7 @@ function FollowContent() {
                     <video src={currentSlide.media_url} muted loop autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
                   )}
                   <SlideElementsLayer elements={currentSlide.elements} />
+                  {presSettings && <SlideBranding settings={presSettings} />}
                 </div>
               ) : currentSlide ? (
                 <>

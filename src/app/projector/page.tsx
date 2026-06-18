@@ -6,6 +6,7 @@ import { useRealtimePresentation, useRealtimeSetlist, type Presentation, type Sl
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import PollView from '@/components/PollView';
+import SlideBranding from '@/components/SlideBranding';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Camera, Sparkles } from 'lucide-react';
 
 type DisplayMode = 'primary' | 'translation' | 'bilingual';
@@ -550,6 +551,9 @@ function ProjectorContent() {
           🔊 Enable sound
         </button>
       )}
+
+      {/* Persistent branding (logo + lower-third) */}
+      {fontSettings.blankMode !== 'black' && <SlideBranding settings={fontSettings} />}
 
       {/* Live poll overlay */}
       {activePoll && (
