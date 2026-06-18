@@ -307,9 +307,15 @@ export default function LiturgyPage() {
                     className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
                   >
                     <option value="web">World English Bible (WEB)</option>
-                    <option value="kjv">King King James Version (KJV)</option>
-                    <option value="oeb">Open English Bible (OEB)</option>
-                    <option value="almeida">Almeida (Portuguese)</option>
+                    <option value="webbe">World English Bible, British (WEBBE)</option>
+                    <option value="kjv">King James Version (KJV)</option>
+                    <option value="bbe">Bible in Basic English (BBE)</option>
+                    <option value="oeb-us">Open English Bible, US (OEB)</option>
+                    <option value="oeb-cw">Open English Bible, Commonwealth</option>
+                    <option value="cherokee">Cherokee New Testament</option>
+                    <option value="clementine">Latin — Clementine Vulgate</option>
+                    <option value="almeida">Portuguese — João Ferreira de Almeida</option>
+                    <option value="rccv">Romanian — Cornilescu</option>
                   </select>
                 </div>
 
