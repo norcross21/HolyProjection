@@ -544,12 +544,13 @@ export function useRealtimePresentation(presentationId: string) {
             .eq('presentation_id', presentationId)
             .order('order_index', { ascending: true });
 
-          setPresentation({
+          const loaded = {
             id: presData.id,
             title: presData.title,
             settings: presData.settings,
             slides: slidesData || [],
-          });
+          };
+          setPresentation(loaded);
 
           // 2. Fetch active projection (maybeSingle: no row yet is normal for a
           // freshly created presentation, and should not throw)
@@ -559,13 +560,25 @@ export function useRealtimePresentation(presentationId: string) {
             .eq('presentation_id', presentationId)
             .maybeSingle();
 
-          if (activeData) {
-            setActiveSlideId(activeData.active_slide_id);
-          } else if (slidesData && slidesData.length > 0) {
-            setActiveSlideId(slidesData[0].id);
-          }
+          let active: string | null = null;
+          if (activeData) active = activeData.active_slide_id;
+          else if (slidesData && slidesData.length > 0) active = slidesData[0].id;
+          if (active) setActiveSlideId(active);
+
+          // Cache for offline reload (keeps the projector working if WiFi drops).
+          try { localStorage.setItem(`hp_cache_${presentationId}`, JSON.stringify({ presentation: loaded, activeSlideId: active })); } catch {}
         }
       } catch (err: unknown) {
+        // Offline / load failed — fall back to the last cached copy so the
+        // projector keeps showing this presentation through a dropout.
+        try {
+          const cached = localStorage.getItem(`hp_cache_${presentationId}`);
+          if (cached) {
+            const { presentation: cp, activeSlideId: ca } = JSON.parse(cached);
+            if (cp) setPresentation(cp);
+            if (ca) setActiveSlideId(ca);
+          }
+        } catch {}
         console.error('Error loading presentation sync:', errorMessage(err));
       }
       setLoading(false);

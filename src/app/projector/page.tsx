@@ -45,6 +45,15 @@ function ProjectorContent() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
+  }, []);
   const [statusVisible, setStatusVisible] = useState(true);
 
   // Transition & Slide rendering states
@@ -546,6 +555,13 @@ function ProjectorContent() {
       {activePoll && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-[5vw]">
           <PollView poll={activePoll} counts={pollCounts} />
+        </div>
+      )}
+
+      {/* Offline indicator */}
+      {!online && (
+        <div className="absolute top-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-amber-500/90 px-4 py-2 text-xs font-bold text-black shadow-xl">
+          ⚠ Offline — showing last update
         </div>
       )}
 
