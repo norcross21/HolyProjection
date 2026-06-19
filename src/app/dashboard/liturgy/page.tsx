@@ -34,7 +34,9 @@ export default function LiturgyPage() {
   const router = useRouter();
   const { createNewPresentation, appendSlidesToPresentation } = usePresentationsPortal();
   const [currentUser, setCurrentUser] = useState<AuthIdentity | null>(null);
-  const [appendTo, setAppendTo] = useState<string | null>(null);
+  const [appendTo] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('append')
+  );
   
   // Importer State
   const [reference, setReference] = useState('');
@@ -74,7 +76,6 @@ export default function LiturgyPage() {
   const dailyReadings = getDailyLectionary(selectedDate);
 
   useEffect(() => {
-    setAppendTo(new URLSearchParams(window.location.search).get('append'));
     const checkAuth = async () => {
       const identity = await resolveAuth();
       if (!identity) {

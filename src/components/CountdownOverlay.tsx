@@ -18,7 +18,6 @@ export default function CountdownOverlay({ settings }: { settings: CountdownSett
 
   useEffect(() => {
     if (!target) return;
-    setNow(Date.now());
     reachedZeroRef.current = Date.now() >= target; // don't flash for an already-finished target on mount
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);

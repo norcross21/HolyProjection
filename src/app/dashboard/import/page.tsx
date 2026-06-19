@@ -40,10 +40,11 @@ export default function ImportPage() {
   const [importedSongs, setImportedSongs] = useState<SavedImport[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [appendTo, setAppendTo] = useState<string | null>(null);
+  const [appendTo] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('append')
+  );
 
   useEffect(() => {
-    setAppendTo(new URLSearchParams(window.location.search).get('append'));
     // Require a real session in cloud mode; localStorage profile only in demo mode
     const checkAuth = async () => {
       const identity = await resolveAuth();

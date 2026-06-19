@@ -263,7 +263,7 @@ function DashboardContent() {
     type MidiInput = { onmidimessage: ((e: { data: Uint8Array }) => void) | null };
     type MidiAccess = { inputs: { forEach: (cb: (i: MidiInput) => void) => void } };
     const req = (navigator as unknown as { requestMIDIAccess?: () => Promise<MidiAccess> }).requestMIDIAccess;
-    if (!req) { alert('Web MIDI is not supported in this browser (try Chrome).'); setMidiOn(false); return; }
+    if (!req) { alert('Web MIDI is not supported in this browser (try Chrome).'); setTimeout(() => setMidiOn(false), 0); return; }
     let access: MidiAccess | null = null;
     const onMsg = (e: { data: Uint8Array }) => {
       const status = e.data[0]; const velocity = e.data[2];
