@@ -34,7 +34,8 @@ import {
   Copy,
   ChevronLeft,
   MonitorPlay,
-  Stamp
+  Stamp,
+  Printer
 } from 'lucide-react';
 
 type ImportedSlideInput = {
@@ -198,6 +199,48 @@ function DashboardContent() {
     } finally {
       setScriptureBusy(false);
     }
+  };
+
+  // Print a clean running-order handout for the team / sound desk. Opens a
+  // self-contained print window so it never touches the app's own styles.
+  const printRunningOrder = () => {
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+    const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const rows = presentation.slides.map((s, i) => {
+      const firstLine = (s.content || '').split('\n').find((l) => l.trim()) || '';
+      const media = s.media_type && s.media_type !== 'none' ? s.media_type : '';
+      const tags = [
+        media ? `<span class="tag">${esc(media)}</span>` : '',
+        s.audio_url ? '<span class="tag">audio</span>' : '',
+        s.auto_advance_secs ? `<span class="tag">auto ${s.auto_advance_secs}s</span>` : '',
+      ].join('');
+      const note = s.settings?.notes?.trim() ? `<div class="note">${esc(s.settings.notes)}</div>` : '';
+      const line = firstLine ? esc(firstLine) : (media ? `[${esc(media)} slide]` : '[blank]');
+      return `<tr><td class="num">${i + 1}</td><td><div class="line">${line}</div>${note}</td><td class="tags">${tags}</td></tr>`;
+    }).join('');
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(presentation.title)} — Running Order</title>
+<style>
+  *{box-sizing:border-box} body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;margin:0;padding:32px;}
+  h1{font-size:22px;margin:0 0 2px} .sub{color:#666;font-size:13px;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse} td{vertical-align:top;border-bottom:1px solid #e5e5e5;padding:9px 8px}
+  .num{width:34px;color:#999;font-variant-numeric:tabular-nums;font-weight:700}
+  .line{font-size:15px;font-weight:600;line-height:1.3}
+  .note{margin-top:3px;font-size:12px;color:#b45309;background:#fff7ed;border-left:3px solid #f59e0b;padding:3px 8px;border-radius:3px;white-space:pre-line}
+  .tags{width:1%;white-space:nowrap;text-align:right}
+  .tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#444;background:#f1f1f1;border:1px solid #e0e0e0;border-radius:99px;padding:2px 7px;margin-left:4px}
+  .foot{margin-top:24px;color:#999;font-size:11px}
+  @media print{body{padding:0}}
+</style></head><body>
+  <h1>${esc(presentation.title)}</h1>
+  <div class="sub">Running order · ${presentation.slides.length} slide${presentation.slides.length === 1 ? '' : 's'} · ${esc(today)}</div>
+  <table><tbody>${rows || '<tr><td colspan="3" style="color:#999">No slides yet.</td></tr>'}</tbody></table>
+  <div class="foot">HolyProjection · presenter notes shown in amber are not displayed to the congregation.</div>
+  <script>window.onload=function(){window.print()}</script>
+</body></html>`;
+    const w = window.open('', '_blank', 'width=800,height=900');
+    if (!w) { alert('Please allow pop-ups to print the running order.'); return; }
+    w.document.write(html);
+    w.document.close();
   };
 
   // Hook for Listing & Creating Setlists
@@ -1098,6 +1141,15 @@ function DashboardContent() {
                   >
                     <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
                     <span>Import scripture</span>
+                  </button>
+                  <button
+                    onClick={printRunningOrder}
+                    disabled={presentation.slides.length === 0}
+                    title="Print a running-order handout for the team"
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-40 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                  >
+                    <Printer className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>Print order</span>
                   </button>
                   <button
                     onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
