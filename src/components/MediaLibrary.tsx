@@ -153,12 +153,12 @@ export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: Medi
   return (
     <div className="space-y-4">
       {errorMsg && (
-        <div className="rounded-xl bg-red-950/40 border border-red-500/30 p-3 text-[10px] text-red-400">{errorMsg}</div>
+        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-[10px] text-red-600">{errorMsg}</div>
       )}
 
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-slate-800 hover:border-violet-500/50 rounded-2xl p-5 text-center cursor-pointer bg-slate-950/40 hover:bg-slate-950/70 transition-all duration-200"
+        className="border-2 border-dashed border-stone-200 hover:border-teal-300 rounded-2xl p-5 text-center cursor-pointer bg-white hover:bg-white/80 transition-all duration-200"
       >
         <input
           type="file"
@@ -169,32 +169,32 @@ export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: Medi
         />
         {isUploading ? (
           <div className="flex flex-col items-center justify-center gap-2">
-            <Loader2 className="h-6 w-6 text-violet-400 animate-spin" />
-            <span className="text-[10px] text-slate-400">Uploading… large videos can take a minute</span>
-            {uploadInfo && <span className="text-[9px] text-slate-600">{uploadInfo}</span>}
+            <Loader2 className="h-6 w-6 text-teal-600 animate-spin" />
+            <span className="text-[10px] text-stone-500">Uploading… large videos can take a minute</span>
+            {uploadInfo && <span className="text-[9px] text-stone-400">{uploadInfo}</span>}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-1.5">
-            <UploadCloud className="h-6 w-6 text-slate-500" />
-            <span className="text-[11px] font-bold text-slate-300">{filter === 'audio' ? 'Upload audio' : 'Upload Image or Video'}</span>
-            <span className="text-[9px] text-slate-650">{filter === 'audio' ? 'MP3, WAV, M4A, OGG' : 'JPG, PNG, GIF, MP4, WebM'} · up to 500MB</span>
+            <UploadCloud className="h-6 w-6 text-stone-500" />
+            <span className="text-[11px] font-bold text-stone-700">{filter === 'audio' ? 'Upload audio' : 'Upload Image or Video'}</span>
+            <span className="text-[9px] text-stone-400">{filter === 'audio' ? 'MP3, WAV, M4A, OGG' : 'JPG, PNG, GIF, MP4, WebM'} · up to 500MB</span>
           </div>
         )}
       </div>
 
       {filter !== 'audio' && (
-        <p className="text-[9px] text-slate-600 leading-relaxed">
+        <p className="text-[9px] text-stone-400 leading-relaxed">
           Tip: video files are large. If yours is over ~500MB or uploads slowly, compress it first
           (free tools: HandBrake, or the &quot;compress video&quot; option in your phone/Photos app) — 1080p is plenty for projection.
         </p>
       )}
 
       <div className="space-y-2">
-        <label className="block text-[10px] uppercase font-semibold text-slate-500">{filter === 'audio' ? 'Audio library' : 'Media Library'}</label>
+        <label className="block text-[10px] uppercase font-semibold text-stone-500">{filter === 'audio' ? 'Audio library' : 'Media Library'}</label>
         {(() => {
           const visible = filter ? items.filter((u) => kindOf(u) === filter) : items;
-          if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 text-violet-500 animate-spin" /></div>;
-          if (visible.length === 0) return <div className="text-[10px] text-slate-600 text-center py-2">Nothing uploaded yet.</div>;
+          if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 text-teal-600 animate-spin" /></div>;
+          if (visible.length === 0) return <div className="text-[10px] text-stone-400 text-center py-2">Nothing uploaded yet.</div>;
           return (
           <div className={`grid gap-2.5 max-h-[160px] overflow-y-auto pr-1 ${filter === 'audio' ? 'grid-cols-1' : 'grid-cols-3'}`}>
             {visible.map((url, idx) => {
@@ -203,11 +203,11 @@ export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: Medi
               if (kind === 'audio') {
                 const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'audio').replace(/^\d+-/, '');
                 return (
-                  <div key={idx} onClick={() => onSelectMedia(url, 'audio')} className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition-all ${isSelected ? 'border-violet-500 bg-violet-950/20' : 'border-slate-800 hover:border-slate-700'}`}>
-                    <Music className={`h-4 w-4 shrink-0 ${isSelected ? 'text-violet-400' : 'text-slate-400'}`} />
-                    <span className="text-[11px] text-slate-200 truncate flex-1">{name}</span>
-                    {isSelected && <CheckCircle2 className="h-4 w-4 text-violet-400 shrink-0" />}
-                    <button type="button" onClick={(e) => { e.stopPropagation(); handleRemove(url); }} className="p-1 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
+                  <div key={idx} onClick={() => onSelectMedia(url, 'audio')} className={`group relative flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition-all ${isSelected ? 'border-teal-400 bg-teal-50' : 'border-stone-200 hover:border-stone-300'}`}>
+                    <Music className={`h-4 w-4 shrink-0 ${isSelected ? 'text-teal-600' : 'text-stone-500'}`} />
+                    <span className="text-[11px] text-stone-800 truncate flex-1">{name}</span>
+                    {isSelected && <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" />}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleRemove(url); }} className="p-1 rounded text-stone-500 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 );
               }
@@ -216,7 +216,7 @@ export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: Medi
                   key={idx}
                   onClick={() => onSelectMedia(url, kind)}
                   className={`group relative rounded-xl aspect-video overflow-hidden border cursor-pointer transition-all ${
-                    isSelected ? 'border-violet-500 shadow-md shadow-violet-500/10' : 'border-slate-900 hover:border-slate-800'
+                    isSelected ? 'border-teal-400 shadow-md shadow-teal-500/10' : 'border-stone-200 hover:border-stone-300'
                   }`}
                 >
                   {kind === 'video' ? (
@@ -228,14 +228,14 @@ export default function MediaLibrary({ onSelectMedia, currentUrl, filter }: Medi
                     <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</span>
                   )}
                   {isSelected && (
-                    <div className="absolute inset-0 bg-violet-950/20 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-violet-400 drop-shadow-md" />
+                    <div className="absolute inset-0 bg-teal-50 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-teal-600 drop-shadow-md" />
                     </div>
                   )}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleRemove(url); }}
-                    className="absolute top-1 right-1 p-1 rounded-lg bg-slate-950/80 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 p-1 rounded-lg bg-white/90 text-stone-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

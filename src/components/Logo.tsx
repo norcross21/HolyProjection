@@ -12,9 +12,9 @@ export function LogoMark({ size = 32, className = '' }: { size?: number; classNa
     <svg width={size} height={size} viewBox="0 0 512 512" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="hp-tile" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#6366f1" />
-          <stop offset="0.55" stopColor="#7c5cf0" />
-          <stop offset="1" stopColor="#a855f7" />
+          <stop offset="0" stopColor="#0ea5e9" />
+          <stop offset="0.55" stopColor="#0d9aa6" />
+          <stop offset="1" stopColor="#14b8a6" />
         </linearGradient>
         <radialGradient id="hp-glow" cx="0.5" cy="0.46" r="0.55">
           <stop offset="0" stopColor="#ffffff" stopOpacity="0.9" />
@@ -49,7 +49,7 @@ export default function Logo({
       <LogoMark size={size} className="shrink-0 drop-shadow-sm" />
       {withText && (
         <span className={`font-extrabold tracking-tight leading-none ${textClassName}`} style={{ fontSize: size * 0.6 }}>
-          Holy<span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Projection</span>
+          Holy<span className="bg-gradient-to-r from-sky-500 to-teal-500 bg-clip-text text-transparent">Projection</span>
         </span>
       )}
     </span>

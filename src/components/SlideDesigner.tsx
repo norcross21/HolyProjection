@@ -177,23 +177,23 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
   const bgColor = slide.settings?.bgColor || settings.background || '#0f172a';
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-950/95 backdrop-blur-md">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-stone-50/95 backdrop-blur-md">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 gap-3 flex-wrap">
+      <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3 gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-violet-400" />
-          <span className="text-sm font-bold text-slate-100">Slide Designer</span>
-          <span className="text-[10px] text-slate-500 hidden sm:inline">drag to move · corner to resize · arrows nudge · Del removes</span>
+          <Layers className="h-4 w-4 text-teal-600" />
+          <span className="text-sm font-bold text-stone-900">Slide Designer</span>
+          <span className="text-[10px] text-stone-500 hidden sm:inline">drag to move · corner to resize · arrows nudge · Del removes</span>
         </div>
         <div className="flex items-center gap-2">
           {(slide.content?.trim() || slide.translation?.trim()) && (
-            <button onClick={addLyrics} title="Drop the slide's song words on as movable text" className="flex items-center gap-1.5 rounded-lg bg-violet-600/20 border border-violet-500/40 hover:bg-violet-600/40 px-3 py-1.5 text-xs font-bold text-violet-200"><Type className="h-3.5 w-3.5" />Add lyrics</button>
+            <button onClick={addLyrics} title="Drop the slide's song words on as movable text" className="flex items-center gap-1.5 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100 px-3 py-1.5 text-xs font-bold text-teal-700"><Type className="h-3.5 w-3.5" />Add lyrics</button>
           )}
-          <button onClick={addText} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Type className="h-3.5 w-3.5" />Text</button>
-          <button onClick={() => setShowMedia('image')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><ImageIcon className="h-3.5 w-3.5" />Image</button>
-          <button onClick={() => setShowMedia('video')} className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200"><Film className="h-3.5 w-3.5" />Video</button>
-          <button onClick={() => { setShowTemplates((v) => !v); setShowMedia(null); }} className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold ${showTemplates ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800'}`}><LayoutTemplate className="h-3.5 w-3.5" />Templates</button>
-          <button onClick={onClose} className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white"><X className="h-3.5 w-3.5" />Done</button>
+          <button onClick={addText} className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-1.5 text-xs font-bold text-stone-800"><Type className="h-3.5 w-3.5" />Text</button>
+          <button onClick={() => setShowMedia('image')} className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-1.5 text-xs font-bold text-stone-800"><ImageIcon className="h-3.5 w-3.5" />Image</button>
+          <button onClick={() => setShowMedia('video')} className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-1.5 text-xs font-bold text-stone-800"><Film className="h-3.5 w-3.5" />Video</button>
+          <button onClick={() => { setShowTemplates((v) => !v); setShowMedia(null); }} className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold ${showTemplates ? 'bg-teal-600 border-teal-400 text-white' : 'bg-stone-100 border-stone-200 text-stone-800 hover:bg-stone-200'}`}><LayoutTemplate className="h-3.5 w-3.5" />Templates</button>
+          <button onClick={onClose} className="flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 px-4 py-1.5 text-xs font-bold text-white"><X className="h-3.5 w-3.5" />Done</button>
         </div>
       </div>
 
@@ -250,7 +250,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
                   {isSel && (
                     <div
                       onPointerDown={(e) => onPointerDown(e, el.id, 'resize')}
-                      className="absolute -bottom-1.5 -right-1.5 h-4 w-4 rounded-full bg-violet-400 border-2 border-white cursor-se-resize"
+                      className="absolute -bottom-1.5 -right-1.5 h-4 w-4 rounded-full bg-teal-400 border-2 border-white cursor-se-resize"
                     />
                   )}
                 </div>
@@ -258,7 +258,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
             })}
 
             {els.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center text-stone-500 text-sm pointer-events-none">
                 Add text, an image or a video from the toolbar.
               </div>
             )}
@@ -266,52 +266,52 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
         </div>
 
         {/* Properties / media panel */}
-        <aside className="w-72 shrink-0 border-l border-slate-800 bg-slate-950/60 p-4 overflow-y-auto">
+        <aside className="w-72 shrink-0 border-l border-stone-200 bg-white p-4 overflow-y-auto">
           {/* Layers (stacking order) — always visible */}
           {els.length > 0 && !showTemplates && !showMedia && (
-            <div className="mb-4 pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2 mb-2"><Layers className="h-3.5 w-3.5 text-violet-400" /><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Layers</span></div>
+            <div className="mb-4 pb-4 border-b border-stone-200">
+              <div className="flex items-center gap-2 mb-2"><Layers className="h-3.5 w-3.5 text-teal-600" /><span className="text-xs font-bold uppercase tracking-wider text-stone-500">Layers</span></div>
               <div className="space-y-1">
                 {[...els].sort((a, b) => b.z - a.z).map((el) => (
-                  <div key={el.id} className={`flex items-center gap-1 rounded-lg px-2 py-1.5 ${selectedId === el.id ? 'bg-violet-600/20 border border-violet-500/40' : 'bg-slate-900/60 border border-slate-800'}`}>
+                  <div key={el.id} className={`flex items-center gap-1 rounded-lg px-2 py-1.5 ${selectedId === el.id ? 'bg-teal-50 border border-teal-200' : 'bg-white border border-stone-200'}`}>
                     <button onClick={() => setSelectedId(el.id)} className="flex-1 flex items-center gap-2 text-left min-w-0">
-                      {el.type === 'text' ? <Type className="h-3 w-3 text-slate-400 shrink-0" /> : el.type === 'image' ? <ImageIcon className="h-3 w-3 text-slate-400 shrink-0" /> : <Film className="h-3 w-3 text-slate-400 shrink-0" />}
-                      <span className="text-[11px] text-slate-300 truncate">{el.type === 'text' ? (el.text || 'Text') : el.type === 'image' ? 'Image' : 'Video'}</span>
+                      {el.type === 'text' ? <Type className="h-3 w-3 text-stone-500 shrink-0" /> : el.type === 'image' ? <ImageIcon className="h-3 w-3 text-stone-500 shrink-0" /> : <Film className="h-3 w-3 text-stone-500 shrink-0" />}
+                      <span className="text-[11px] text-stone-700 truncate">{el.type === 'text' ? (el.text || 'Text') : el.type === 'image' ? 'Image' : 'Video'}</span>
                     </button>
-                    <button onClick={() => bump(el.id, 1)} title="Bring forward" className="p-1 text-slate-500 hover:text-slate-200"><ChevronUp className="h-3 w-3" /></button>
-                    <button onClick={() => bump(el.id, -1)} title="Send back" className="p-1 text-slate-500 hover:text-slate-200"><ChevronDown className="h-3 w-3" /></button>
+                    <button onClick={() => bump(el.id, 1)} title="Bring forward" className="p-1 text-stone-500 hover:text-stone-800"><ChevronUp className="h-3 w-3" /></button>
+                    <button onClick={() => bump(el.id, -1)} title="Send back" className="p-1 text-stone-500 hover:text-stone-800"><ChevronDown className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
-              <p className="mt-1.5 text-[9px] text-slate-600">Top of the list = front. Use ↑/↓ to bring a layer forward or back (e.g. text in front of a video).</p>
+              <p className="mt-1.5 text-[9px] text-stone-400">Top of the list = front. Use ↑/↓ to bring a layer forward or back (e.g. text in front of a video).</p>
             </div>
           )}
           {showTemplates ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Templates</span>
-                <button onClick={() => setShowTemplates(false)} className="text-slate-500 hover:text-slate-200"><X className="h-4 w-4" /></button>
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Templates</span>
+                <button onClick={() => setShowTemplates(false)} className="text-stone-500 hover:text-stone-800"><X className="h-4 w-4" /></button>
               </div>
-              <button onClick={saveCurrentAsTemplate} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 py-2 text-xs font-bold text-violet-300">
+              <button onClick={saveCurrentAsTemplate} className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 py-2 text-xs font-bold text-teal-700">
                 <Save className="h-3.5 w-3.5" />Save current design
               </button>
               <div className="space-y-2.5">
                 {templates.length === 0 && (
-                  <p className="text-[10px] text-slate-600 text-center py-3">No templates yet. Design a slide and save it.</p>
+                  <p className="text-[10px] text-stone-400 text-center py-3">No templates yet. Design a slide and save it.</p>
                 )}
                 {templates.map((t) => (
                   <div key={t.id} className="group relative">
-                    <button onClick={() => applyTemplate(t)} className="block w-full text-left rounded-xl border border-slate-800 hover:border-violet-500/50 overflow-hidden bg-slate-950/40 transition-colors">
+                    <button onClick={() => applyTemplate(t)} className="block w-full text-left rounded-xl border border-stone-200 hover:border-teal-300 overflow-hidden bg-white transition-colors">
                       <div className="relative w-full aspect-video" style={{ backgroundColor: t.data.bgColor || '#0f172a', containerType: 'size' } as React.CSSProperties}>
                         <SlideElementsLayer elements={t.data.elements} />
                       </div>
                       <div className="px-2.5 py-1.5 flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-200 truncate">{t.name}</span>
-                        {t.is_starter && <span className="text-[8px] text-slate-500 uppercase tracking-wider">starter</span>}
+                        <span className="text-[11px] font-bold text-stone-800 truncate">{t.name}</span>
+                        {t.is_starter && <span className="text-[8px] text-stone-500 uppercase tracking-wider">starter</span>}
                       </div>
                     </button>
                     {!t.is_starter && (
-                      <button onClick={() => deleteTemplate(t.id)} title="Delete template" className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-slate-950/80 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => deleteTemplate(t.id)} title="Delete template" className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-white/90 text-stone-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 className="h-3 w-3" />
                       </button>
                     )}
@@ -322,18 +322,18 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
           ) : showMedia ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Add {showMedia}</span>
-                <button onClick={() => setShowMedia(null)} className="text-slate-500 hover:text-slate-200"><X className="h-4 w-4" /></button>
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Add {showMedia}</span>
+                <button onClick={() => setShowMedia(null)} className="text-stone-500 hover:text-stone-800"><X className="h-4 w-4" /></button>
               </div>
               <MediaLibrary onSelectMedia={(url, kind) => addMedia(url, showMedia === 'video' || kind === 'audio' ? 'video' : kind)} />
             </div>
           ) : selected ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{selected.type} properties</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">{selected.type} properties</span>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => duplicateEl(selected.id)} title="Duplicate" className="rounded-lg p-1.5 text-slate-500 hover:text-indigo-300 hover:bg-indigo-950/30"><Copy className="h-4 w-4" /></button>
-                  <button onClick={() => removeEl(selected.id)} title="Delete" className="rounded-lg p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => duplicateEl(selected.id)} title="Duplicate" className="rounded-lg p-1.5 text-stone-500 hover:text-sky-600 hover:bg-teal-100"><Copy className="h-4 w-4" /></button>
+                  <button onClick={() => removeEl(selected.id)} title="Delete" className="rounded-lg p-1.5 text-stone-500 hover:text-red-600 hover:bg-red-100"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
 
@@ -343,33 +343,33 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
                     value={selected.text || ''}
                     onChange={(e) => update(selected.id, { text: e.target.value })}
                     rows={3}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 text-xs text-slate-100 focus:border-violet-500 focus:outline-none resize-none"
+                    className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs text-stone-900 focus:border-teal-400 focus:outline-none resize-none"
                   />
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Font size</label>
+                    <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1.5">Font size</label>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => update(selected.id, { fontSize: Math.max(2, (selected.fontSize || 7) - 1) })} className="rounded-lg bg-slate-900 border border-slate-800 px-2.5 py-1 text-sm font-bold text-slate-300">−</button>
-                      <span className="text-xs text-slate-400 w-8 text-center">{selected.fontSize || 7}</span>
-                      <button onClick={() => update(selected.id, { fontSize: Math.min(40, (selected.fontSize || 7) + 1) })} className="rounded-lg bg-slate-900 border border-slate-800 px-2.5 py-1 text-sm font-bold text-slate-300">+</button>
+                      <button onClick={() => update(selected.id, { fontSize: Math.max(2, (selected.fontSize || 7) - 1) })} className="rounded-lg bg-stone-100 border border-stone-200 px-2.5 py-1 text-sm font-bold text-stone-700">−</button>
+                      <span className="text-xs text-stone-500 w-8 text-center">{selected.fontSize || 7}</span>
+                      <button onClick={() => update(selected.id, { fontSize: Math.min(40, (selected.fontSize || 7) + 1) })} className="rounded-lg bg-stone-100 border border-stone-200 px-2.5 py-1 text-sm font-bold text-stone-700">+</button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Colour</label>
-                    <input type="color" value={selected.color || '#ffffff'} onChange={(e) => update(selected.id, { color: e.target.value })} className="h-7 w-10 rounded border border-slate-800 bg-transparent cursor-pointer" />
-                    <button onClick={() => update(selected.id, { bold: !selected.bold })} className={`rounded-lg border px-2 py-1 ${selected.bold ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'}`}><Bold className="h-3.5 w-3.5" /></button>
+                    <label className="text-[10px] uppercase font-bold text-stone-500">Colour</label>
+                    <input type="color" value={selected.color || '#ffffff'} onChange={(e) => update(selected.id, { color: e.target.value })} className="h-7 w-10 rounded border border-stone-200 bg-transparent cursor-pointer" />
+                    <button onClick={() => update(selected.id, { bold: !selected.bold })} className={`rounded-lg border px-2 py-1 ${selected.bold ? 'bg-teal-600 border-teal-400 text-white' : 'bg-stone-100 border-stone-200 text-stone-700'}`}><Bold className="h-3.5 w-3.5" /></button>
                   </div>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                  <div className="grid grid-cols-3 gap-1 bg-white p-1 rounded-xl border border-stone-200">
                     {([['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight]] as const).map(([a, Icon]) => (
-                      <button key={a} onClick={() => update(selected.id, { align: a })} className={`flex items-center justify-center rounded-lg py-1.5 ${ (selected.align || 'center') === a ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}><Icon className="h-3.5 w-3.5" /></button>
+                      <button key={a} onClick={() => update(selected.id, { align: a })} className={`flex items-center justify-center rounded-lg py-1.5 ${ (selected.align || 'center') === a ? 'bg-teal-600 text-white' : 'text-stone-500 hover:text-stone-800'}`}><Icon className="h-3.5 w-3.5" /></button>
                     ))}
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Font</label>
+                    <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1.5">Font</label>
                     <select
                       value={selected.fontFamily || ''}
                       onChange={(e) => update(selected.id, { fontFamily: e.target.value || undefined })}
                       style={{ fontFamily: selected.fontFamily || 'inherit' }}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:border-violet-500 focus:outline-none"
+                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-700 focus:border-teal-400 focus:outline-none"
                     >
                       <option value="">Default</option>
                       {FONTS.map((f) => (
@@ -382,16 +382,16 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
 
               {(selected.type === 'image' || selected.type === 'video') && (
                 <>
-                  <div className="grid grid-cols-2 gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                  <div className="grid grid-cols-2 gap-1 bg-white p-1 rounded-xl border border-stone-200">
                     {(['contain', 'cover'] as const).map((f) => (
-                      <button key={f} onClick={() => update(selected.id, { fit: f })} className={`rounded-lg py-1.5 text-[10px] font-bold capitalize ${ (selected.fit || 'contain') === f ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>{f === 'contain' ? 'Fit (whole)' : 'Fill (crop)'}</button>
+                      <button key={f} onClick={() => update(selected.id, { fit: f })} className={`rounded-lg py-1.5 text-[10px] font-bold capitalize ${ (selected.fit || 'contain') === f ? 'bg-teal-600 text-white' : 'text-stone-500 hover:text-stone-800'}`}>{f === 'contain' ? 'Fit (whole)' : 'Fill (crop)'}</button>
                     ))}
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Crop edges (%)</label>
+                    <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1.5">Crop edges (%)</label>
                     <div className="grid grid-cols-2 gap-2">
                       {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
-                        <label key={side} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                        <label key={side} className="flex items-center gap-1.5 text-[10px] text-stone-500">
                           <span className="w-9 capitalize">{side}</span>
                           <input
                             type="number" min={0} max={90}
@@ -401,7 +401,7 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
                               const c = { top: 0, right: 0, bottom: 0, left: 0, ...(selected.crop || {}) };
                               update(selected.id, { crop: { ...c, [side]: v } });
                             }}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950/60 px-2 py-1 text-slate-200 focus:outline-none"
+                            className="w-full rounded-lg border border-stone-200 bg-white px-2 py-1 text-stone-800 focus:outline-none"
                           />
                         </label>
                       ))}
@@ -411,37 +411,37 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
               )}
 
               {/* Rotate & flip (all element types) */}
-              <div className="border-t border-slate-900 pt-3 space-y-2">
-                <label className="block text-[10px] uppercase font-bold text-slate-500">Rotate &amp; flip</label>
+              <div className="border-t border-stone-200 pt-3 space-y-2">
+                <label className="block text-[10px] uppercase font-bold text-stone-500">Rotate &amp; flip</label>
                 <div className="flex items-center gap-2">
-                  <RotateCw className="h-3.5 w-3.5 text-slate-500" />
-                  <input type="range" min={-180} max={180} value={selected.rotation || 0} onChange={(e) => update(selected.id, { rotation: Number(e.target.value) })} className="flex-1 accent-violet-600" />
-                  <span className="text-[10px] text-slate-400 w-9 text-right">{selected.rotation || 0}°</span>
+                  <RotateCw className="h-3.5 w-3.5 text-stone-500" />
+                  <input type="range" min={-180} max={180} value={selected.rotation || 0} onChange={(e) => update(selected.id, { rotation: Number(e.target.value) })} className="flex-1 accent-teal-600" />
+                  <span className="text-[10px] text-stone-500 w-9 text-right">{selected.rotation || 0}°</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => update(selected.id, { flipH: !selected.flipH })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipH ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'}`}>Flip H</button>
-                  <button onClick={() => update(selected.id, { flipV: !selected.flipV })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipV ? 'bg-violet-600 border-violet-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-300'}`}>Flip V</button>
+                  <button onClick={() => update(selected.id, { flipH: !selected.flipH })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipH ? 'bg-teal-600 border-teal-400 text-white' : 'bg-stone-100 border-stone-200 text-stone-700'}`}>Flip H</button>
+                  <button onClick={() => update(selected.id, { flipV: !selected.flipV })} className={`flex-1 rounded-lg border py-1.5 text-[10px] font-bold ${selected.flipV ? 'bg-teal-600 border-teal-400 text-white' : 'bg-stone-100 border-stone-200 text-stone-700'}`}>Flip V</button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 border-t border-slate-900 pt-3">
-                <span className="text-[10px] uppercase font-bold text-slate-500">Layer</span>
-                <button onClick={() => bump(selected.id, 1)} title="Bring forward" className="rounded-lg bg-slate-900 border border-slate-800 p-1.5 text-slate-300 hover:bg-slate-800"><ChevronUp className="h-3.5 w-3.5" /></button>
-                <button onClick={() => bump(selected.id, -1)} title="Send back" className="rounded-lg bg-slate-900 border border-slate-800 p-1.5 text-slate-300 hover:bg-slate-800"><ChevronDown className="h-3.5 w-3.5" /></button>
+              <div className="flex items-center gap-2 border-t border-stone-200 pt-3">
+                <span className="text-[10px] uppercase font-bold text-stone-500">Layer</span>
+                <button onClick={() => bump(selected.id, 1)} title="Bring forward" className="rounded-lg bg-stone-100 border border-stone-200 p-1.5 text-stone-700 hover:bg-stone-200"><ChevronUp className="h-3.5 w-3.5" /></button>
+                <button onClick={() => bump(selected.id, -1)} title="Send back" className="rounded-lg bg-stone-100 border border-stone-200 p-1.5 text-stone-700 hover:bg-stone-200"><ChevronDown className="h-3.5 w-3.5" /></button>
               </div>
             </div>
           ) : (
-            <div className="text-xs text-slate-500 leading-relaxed space-y-5">
+            <div className="text-xs text-stone-500 leading-relaxed space-y-5">
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Slide background colour</label>
+                <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1.5">Slide background colour</label>
                 <div className="flex items-center gap-2">
-                  <input type="color" value={bgColor} onChange={(e) => onBgChange(e.target.value)} className="h-8 w-12 rounded border border-slate-800 bg-transparent cursor-pointer" />
-                  <code className="text-[10px] text-slate-400">{bgColor}</code>
+                  <input type="color" value={bgColor} onChange={(e) => onBgChange(e.target.value)} className="h-8 w-12 rounded border border-stone-200 bg-transparent cursor-pointer" />
+                  <code className="text-[10px] text-stone-500">{bgColor}</code>
                 </div>
-                <p className="mt-1 text-[10px] text-slate-600">Used when the slide has no background image/video.</p>
+                <p className="mt-1 text-[10px] text-stone-400">Used when the slide has no background image/video.</p>
               </div>
               <div>
-                <p className="font-bold text-slate-300 mb-2">Free-placement designer</p>
+                <p className="font-bold text-stone-700 mb-2">Free-placement designer</p>
                 <p>Add text boxes, images and videos from the toolbar, then drag them around and resize from the corner. Click an element to edit it — colour, font, rotate/flip, crop and layer order.</p>
               </div>
             </div>

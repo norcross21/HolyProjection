@@ -122,17 +122,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-50 font-sans text-slate-900">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-stone-50 font-sans text-stone-900">
       {/* Soft ambient colour wash */}
-      <div className="absolute top-[-20%] left-[-20%] h-[60vw] w-[60vw] rounded-full bg-indigo-200/40 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] h-[60vw] w-[60vw] rounded-full bg-violet-200/40 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-20%] h-[60vw] w-[60vw] rounded-full bg-sky-200/40 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] h-[60vw] w-[60vw] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
 
       {/* Main card */}
       <div className="relative w-full max-w-md px-6 py-12">
         {/* Logo Header */}
         <div className="flex flex-col items-center mb-8 text-center">
           <Logo size={42} />
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-stone-500">
             Dual-view real-time church presentation engine
           </p>
         </div>
@@ -151,8 +151,8 @@ export default function LoginPage() {
         )}
 
         {/* Auth Form Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">
+        <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-xl shadow-stone-200/60">
+          <h2 className="text-lg font-bold text-stone-900 mb-6">
             {isSignUp ? 'Create your presenter account' : 'Sign in to dashboard'}
           </h2>
 
@@ -171,54 +171,54 @@ export default function LoginPage() {
 
             {(isSignUp || isDemo) && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
                   Display Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Pastor Stephen"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 py-3 pl-10 pr-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
                 <input
                   type="email"
                   required
                   placeholder="name@church.org"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-50 py-3 pl-10 pr-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all"
                 />
               </div>
             </div>
 
             {(!isDemo) && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
                   <input
                     type="password"
                     required
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 py-3 pl-10 pr-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all"
                   />
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 py-3 font-semibold text-white shadow-lg shadow-teal-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
               {isLoading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -249,7 +249,7 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-all"
+                className="text-xs text-teal-600 hover:text-teal-500 font-medium transition-all"
               >
                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
               </button>
@@ -259,16 +259,16 @@ export default function LoginPage() {
           {isDemo && (
             <div className="mt-6 flex flex-col items-center">
               <div className="flex items-center w-full my-4">
-                <div className="flex-1 border-t border-slate-200"></div>
-                <span className="px-3 text-xs text-slate-400 font-medium">OR</span>
-                <div className="flex-1 border-t border-slate-200"></div>
+                <div className="flex-1 border-t border-stone-200"></div>
+                <span className="px-3 text-xs text-stone-400 font-medium">OR</span>
+                <div className="flex-1 border-t border-stone-200"></div>
               </div>
 
               <button
                 onClick={handleBypassDemo}
-                className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-all"
+                className="flex items-center gap-2 text-xs font-medium text-stone-500 hover:text-stone-800 transition-all"
               >
-                <MonitorPlay className="h-4 w-4 text-indigo-400" />
+                <MonitorPlay className="h-4 w-4 text-teal-500" />
                 <span>Quick-bypass using default credentials</span>
               </button>
             </div>
@@ -276,7 +276,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer info */}
-        <p className="mt-8 text-center text-xs text-slate-400">
+        <p className="mt-8 text-center text-xs text-stone-400">
           Designed for houses of worship. Supported by Google DeepMind and Vercel.
         </p>
       </div>

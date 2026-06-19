@@ -51,7 +51,7 @@ export default function RecorderButton() {
       {!recording ? (
         <button
           onClick={start}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-red-500/50 py-2 text-xs font-bold text-slate-300 hover:text-red-300 transition-all"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:border-red-500/50 py-2 text-xs font-bold text-stone-700 hover:text-red-700 transition-all"
         >
           <Mic className="h-3.5 w-3.5" /> Record service
         </button>
@@ -67,7 +67,7 @@ export default function RecorderButton() {
         <a
           href={url}
           download={`service-recording.webm`}
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/40 px-3 py-2 text-xs font-bold text-emerald-300 transition-all"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/20 border border-emerald-200 hover:bg-emerald-600/40 px-3 py-2 text-xs font-bold text-emerald-700 transition-all"
         >
           <Download className="h-3.5 w-3.5" /> Save
         </a>

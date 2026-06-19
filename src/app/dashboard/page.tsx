@@ -11,6 +11,7 @@ import RecorderButton from '@/components/RecorderButton';
 import PollControl from '@/components/PollControl';
 import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
 import { LANGUAGES, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
+import Logo from '@/components/Logo';
 import { 
   Sparkles,
   Tv,
@@ -360,8 +361,8 @@ function DashboardContent() {
 
   if (!authUser) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50 text-stone-800">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
       </div>
     );
   }
@@ -494,39 +495,34 @@ function DashboardContent() {
   // ----------------------------------------------------
   if (!presId) {
     return (
-      <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col relative overflow-hidden">
+      <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col relative overflow-hidden">
         {/* Glow effects */}
-        <div className="absolute top-0 right-0 h-[600px] w-[600px] rounded-full bg-indigo-900/10 blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-violet-900/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-0 right-0 h-[600px] w-[600px] rounded-full bg-sky-200/40 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
 
-        <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/20">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg leading-none">HolyProjection</h1>
-              <span className="text-xs text-slate-500 font-medium">Presenter Portal</span>
-            </div>
+            <Logo size={36} />
+            <span className="hidden sm:inline text-xs text-stone-400 font-medium border-l border-stone-200 pl-3">Presenter Portal</span>
           </div>
 
           <div className="flex items-center gap-4">
             {portalDemoMode && (
-              <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">
+              <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-600">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Demo Mode</span>
               </div>
             )}
 
-            <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
+            <div className="flex items-center gap-3 border-l border-stone-200 pl-4">
               <div className="text-right">
-                <p className="text-xs font-bold text-slate-200">{authUser.displayName}</p>
-                <p className="text-[10px] text-slate-500">{authUser.email}</p>
+                <p className="text-xs font-bold text-stone-800">{authUser.displayName}</p>
+                <p className="text-[10px] text-stone-500">{authUser.email}</p>
               </div>
               <button
                 onClick={handleLogout}
                 title="Sign Out"
-                className="rounded-xl p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400 hover:bg-red-950/20 hover:border-red-900/30 transition-all"
+                className="rounded-xl p-2 bg-stone-100 border border-stone-200 text-stone-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -535,23 +531,23 @@ function DashboardContent() {
         </header>
 
         <main className="flex-1 max-w-5xl w-full mx-auto p-6 md:py-12 flex flex-col gap-8 z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-stone-900 to-stone-600 bg-clip-text text-transparent">
                 Worship Portal
               </h2>
-              <p className="text-slate-400 text-sm mt-1">Manage individual song presentations or plan full service setlists.</p>
+              <p className="text-stone-500 text-sm mt-1">Manage individual song presentations or plan full service setlists.</p>
             </div>
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               {/* Tab Toggles */}
-              <div className="flex items-center gap-1.5 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-stone-200">
                 <button
                   onClick={() => setActiveTab('presentations')}
                   className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
                     activeTab === 'presentations'
-                      ? 'bg-violet-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
                   Songs / Readings
@@ -560,8 +556,8 @@ function DashboardContent() {
                   onClick={() => setActiveTab('setlists')}
                   className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
                     activeTab === 'setlists'
-                      ? 'bg-violet-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
                   Service Setlists
@@ -572,17 +568,17 @@ function DashboardContent() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => router.push('/dashboard/liturgy')}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-600/20 px-4 py-2.5 text-xs font-bold text-indigo-300 transition-all active:scale-[0.98]"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-teal-600/10 border border-teal-200 hover:bg-teal-600/20 px-4 py-2.5 text-xs font-bold text-sky-600 transition-all active:scale-[0.98]"
                   >
-                    <BookOpen className="h-4 w-4 text-indigo-400" />
+                    <BookOpen className="h-4 w-4 text-sky-600" />
                     <span>Liturgy Importer</span>
                   </button>
 
                   <button
                     onClick={() => router.push('/dashboard/import')}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-600/10 border border-violet-500/20 hover:bg-violet-600/20 px-4 py-2.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98]"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-teal-600/10 border border-teal-200 hover:bg-teal-50 px-4 py-2.5 text-xs font-bold text-teal-700 transition-all active:scale-[0.98]"
                   >
-                    <Sparkles className="h-4 w-4 text-violet-400" />
+                    <Sparkles className="h-4 w-4 text-teal-600" />
                     <span>AI Bulk Importer</span>
                   </button>
                 </div>
@@ -591,18 +587,18 @@ function DashboardContent() {
           </div>
 
           {activeTab === 'presentations' && !brandNudgeDismissed && presentations.length > 0 && (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-violet-500/25 bg-violet-950/20 px-5 py-4 backdrop-blur-sm">
-              <Stamp className="h-5 w-5 shrink-0 text-violet-400 mt-0.5" />
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-teal-400/25 bg-teal-50 px-5 py-4 backdrop-blur-sm">
+              <Stamp className="h-5 w-5 shrink-0 text-teal-600 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-violet-100">Set your church branding once</p>
-                <p className="text-xs text-violet-300/80 mt-0.5">
+                <p className="text-sm font-bold text-teal-50">Set your church branding once</p>
+                <p className="text-xs text-teal-700/80 mt-0.5">
                   Add your logo, colours &amp; text style in a presentation&apos;s <span className="font-semibold">Branding</span> section, then tap <span className="font-semibold">&ldquo;Save as my default look&rdquo;</span> — every new presentation will start on-brand.
                 </p>
               </div>
               <button
                 onClick={() => { localStorage.setItem('hp_brand_nudge_dismissed', '1'); setBrandNudgeDismissed(true); }}
                 title="Dismiss"
-                className="shrink-0 rounded-lg p-1.5 text-violet-400/70 hover:text-violet-200 hover:bg-violet-900/40 transition-colors"
+                className="shrink-0 rounded-lg p-1.5 text-teal-600/70 hover:text-teal-700 hover:bg-teal-100 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -616,15 +612,15 @@ function DashboardContent() {
                 {/* Left Column: Create & Import */}
                 <div className="md:col-span-1 flex flex-col gap-6">
                   {/* Create Presentation Form Card */}
-                  <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl">
+                  <section className="rounded-2xl border border-stone-200 bg-white p-6 backdrop-blur-xl ring-1 ring-black/5 shadow-xl">
                     <div className="flex items-center gap-2 mb-4">
-                      <Plus className="h-5 w-5 text-violet-400" />
-                      <h3 className="font-bold text-white text-base">New Presentation</h3>
+                      <Plus className="h-5 w-5 text-teal-600" />
+                      <h3 className="font-bold text-stone-900 text-base">New Presentation</h3>
                     </div>
                     
                     <form onSubmit={handleCreatePres} className="space-y-4">
                       <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
                           Title / Song Name
                         </label>
                         <input
@@ -633,14 +629,14 @@ function DashboardContent() {
                           placeholder="e.g. Amazing Grace"
                           value={newPresTitle}
                           onChange={(e) => setNewPresTitle(e.target.value)}
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 px-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                          className="w-full rounded-xl border border-stone-200 bg-white py-3 px-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-300 transition-all"
                         />
                       </div>
 
                       <button
                         type="submit"
                         disabled={isCreating}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 py-3 font-semibold text-white shadow-lg shadow-teal-500/15 active:scale-[0.98] transition-all disabled:opacity-50"
                       >
                         {isCreating ? (
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -652,10 +648,10 @@ function DashboardContent() {
                   </section>
 
                   {/* Legacy Presentation Importer Card */}
-                  <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl">
+                  <section className="rounded-2xl border border-stone-200 bg-white p-6 backdrop-blur-xl ring-1 ring-black/5 shadow-xl">
                     <div className="flex items-center gap-2 mb-4">
-                      <Upload className="h-5 w-5 text-indigo-400" />
-                      <h3 className="font-bold text-white text-base">Legacy Importer</h3>
+                      <Upload className="h-5 w-5 text-sky-600" />
+                      <h3 className="font-bold text-stone-900 text-base">Legacy Importer</h3>
                     </div>
 
                     <div
@@ -665,8 +661,8 @@ function DashboardContent() {
                       onClick={() => document.getElementById('legacy-file-input')?.click()}
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 ${
                         isLegacyDragging
-                          ? 'border-violet-500 bg-violet-950/15 shadow-md shadow-violet-500/10'
-                          : 'border-slate-800 hover:border-violet-500/40 bg-slate-950/40 hover:bg-slate-950/60'
+                          ? 'border-teal-400 bg-teal-50 shadow-md shadow-teal-500/10'
+                          : 'border-stone-200 hover:border-teal-300 bg-white hover:bg-white'
                       }`}
                     >
                       <input
@@ -678,16 +674,16 @@ function DashboardContent() {
                       />
                       {isCreating ? (
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-                          <span className="text-[10px] text-slate-400">Importing presentation...</span>
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" />
+                          <span className="text-[10px] text-stone-500">Importing presentation...</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <FileText className={`h-8 w-8 transition-colors ${isLegacyDragging ? 'text-violet-400' : 'text-slate-500'}`} />
-                          <span className="text-xs font-bold text-slate-300">
+                          <FileText className={`h-8 w-8 transition-colors ${isLegacyDragging ? 'text-teal-600' : 'text-stone-500'}`} />
+                          <span className="text-xs font-bold text-stone-700">
                             {isLegacyDragging ? 'Drop it here!' : 'Import .TXT or .JSON file'}
                           </span>
-                          <span className="text-[9px] text-slate-500 max-w-[180px] mx-auto">
+                          <span className="text-[9px] text-stone-500 max-w-[180px] mx-auto">
                             Drag and drop or click to browse. TXT songs are split by double-newlines.
                           </span>
                         </div>
@@ -700,10 +696,10 @@ function DashboardContent() {
                 <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {portalLoading ? (
                     <div className="col-span-2 py-20 flex justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
                     </div>
                   ) : presentations.length === 0 ? (
-                    <div className="col-span-2 border border-dashed border-slate-800 rounded-2xl py-16 text-center text-slate-500 text-sm">
+                    <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-16 text-center text-stone-500 text-sm">
                       No presentations created yet. Use the sidebar to create one!
                     </div>
                   ) : (
@@ -711,15 +707,15 @@ function DashboardContent() {
                       <div
                         key={pres.id}
                         onClick={() => router.push(`/dashboard?pres=${pres.id}`)}
-                        className="group rounded-2xl border border-slate-900 bg-slate-900/10 p-5 hover:border-violet-500/40 hover:bg-slate-900/20 cursor-pointer shadow-lg transition-all duration-200"
+                        className="group rounded-2xl border border-stone-200 bg-white p-5 hover:border-teal-300 hover:bg-stone-50 cursor-pointer shadow-lg transition-all duration-200"
                       >
                         <div className="flex justify-between items-start gap-4 mb-3">
                           <div className="flex items-center gap-2.5 min-w-0">
                             {pres.settings?.brandShow && pres.settings?.brandLogoUrl && (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={pres.settings.brandLogoUrl} alt="" className="h-7 w-7 shrink-0 rounded object-contain bg-slate-950 border border-slate-800" />
+                              <img src={pres.settings.brandLogoUrl} alt="" className="h-7 w-7 shrink-0 rounded object-contain bg-stone-50 border border-stone-200" />
                             )}
-                            <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
+                            <h4 className="font-bold text-stone-900 group-hover:text-stone-900 transition-colors truncate">
                               {pres.title}
                             </h4>
                           </div>
@@ -727,24 +723,24 @@ function DashboardContent() {
                             <button
                               onClick={(e) => handleDeletePresentation(e, pres.id, pres.title)}
                               title="Delete presentation"
-                              className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
-                            <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                            <ChevronRight className="h-4 w-4 text-stone-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span className="bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800">
+                        <div className="flex items-center gap-3 text-xs text-stone-500">
+                          <span className="bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
                             {pres.slides.length} {pres.slides.length === 1 ? 'slide' : 'slides'}
                           </span>
-                          <span className="flex items-center gap-1.5 font-medium text-slate-500">
+                          <span className="flex items-center gap-1.5 font-medium text-stone-500">
                             <LayoutGrid className="h-3.5 w-3.5" />
                             Bilingual
                           </span>
                           {pres.settings?.brandShow && (
-                            <span className="flex items-center gap-1 rounded-full bg-violet-950/40 text-violet-300 border border-violet-800/50 px-2 py-0.5 font-semibold">
+                            <span className="flex items-center gap-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 font-semibold">
                               <Stamp className="h-3 w-3" />
                               Branded
                             </span>
@@ -759,15 +755,15 @@ function DashboardContent() {
               <>
                 {/* Left Column: Create Setlist */}
                 <div className="md:col-span-1 flex flex-col gap-6">
-                  <section className="rounded-2xl border border-slate-900 bg-slate-900/35 p-6 backdrop-blur-xl ring-1 ring-white/5 shadow-xl">
+                  <section className="rounded-2xl border border-stone-200 bg-white p-6 backdrop-blur-xl ring-1 ring-black/5 shadow-xl">
                     <div className="flex items-center gap-2 mb-4">
-                      <Plus className="h-5 w-5 text-indigo-400" />
-                      <h3 className="font-bold text-white text-base">New Service Setlist</h3>
+                      <Plus className="h-5 w-5 text-sky-600" />
+                      <h3 className="font-bold text-stone-900 text-base">New Service Setlist</h3>
                     </div>
                     
                     <form onSubmit={handleCreateSetlist} className="space-y-4">
                       <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
                           Setlist Title / Event Date
                         </label>
                         <input
@@ -776,14 +772,14 @@ function DashboardContent() {
                           placeholder="e.g. Sunday Morning - June 14"
                           value={newSetlistTitle}
                           onChange={(e) => setNewSetlistTitle(e.target.value)}
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 px-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                          className="w-full rounded-xl border border-stone-200 bg-white py-3 px-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-300 transition-all"
                         />
                       </div>
 
                       <button
                         type="submit"
                         disabled={isCreating}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 py-3 font-semibold text-white shadow-lg shadow-teal-500/15 active:scale-[0.98] transition-all disabled:opacity-50"
                       >
                         {isCreating ? (
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -799,10 +795,10 @@ function DashboardContent() {
                 <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {setlistsLoading ? (
                     <div className="col-span-2 py-20 flex justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
                     </div>
                   ) : setlists.length === 0 ? (
-                    <div className="col-span-2 border border-dashed border-slate-800 rounded-2xl py-16 text-center text-slate-500 text-sm">
+                    <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-16 text-center text-stone-500 text-sm">
                       No service setlists created yet. Use the sidebar to create your first setlist!
                     </div>
                   ) : (
@@ -810,29 +806,29 @@ function DashboardContent() {
                       <div
                         key={slist.id}
                         onClick={() => router.push(`/dashboard/setlist?id=${slist.id}`)}
-                        className="group rounded-2xl border border-slate-900 bg-slate-900/10 p-5 hover:border-violet-500/40 hover:bg-slate-900/20 cursor-pointer shadow-lg transition-all duration-200"
+                        className="group rounded-2xl border border-stone-200 bg-white p-5 hover:border-teal-300 hover:bg-stone-50 cursor-pointer shadow-lg transition-all duration-200"
                       >
                         <div className="flex justify-between items-start gap-4 mb-3">
-                          <h4 className="font-bold text-slate-100 group-hover:text-white transition-colors truncate">
+                          <h4 className="font-bold text-stone-900 group-hover:text-stone-900 transition-colors truncate">
                             {slist.title}
                           </h4>
                           <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={(e) => handleDeleteSetlist(e, slist.id, slist.title)}
                               title="Delete setlist"
-                              className="rounded-lg p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
-                            <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
+                            <ChevronRight className="h-4 w-4 text-stone-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span className="bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800">
+                        <div className="flex items-center gap-3 text-xs text-stone-500">
+                          <span className="bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
                             Setlist
                           </span>
-                          <span className="font-medium text-slate-400">
+                          <span className="font-medium text-stone-500">
                             {new Date(slist.created_at || '').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         </div>
@@ -853,38 +849,31 @@ function DashboardContent() {
   // Dashboard Panel View (Presentation Selected)
   // ----------------------------------------------------
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col">
-      <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-indigo-900/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-violet-900/5 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col">
+      <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-sky-200/40 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
+      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/80 backdrop-blur-md px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors"
+            className="flex items-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-2 text-xs font-bold text-stone-500 hover:text-stone-800 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Portal</span>
           </button>
           
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="h-4 w-px bg-stone-100" />
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-md shadow-indigo-500/20">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-sm leading-none">HolyProjection</h1>
-              <span className="text-[10px] text-slate-500 font-medium">Presenter Dashboard</span>
-            </div>
-          </div>
+          <Logo size={30} />
+          <span className="hidden sm:inline text-[10px] text-stone-400 font-medium">Presenter Dashboard</span>
         </div>
 
         {/* Action controls */}
         <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {isDemoMode && (
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-400">
+            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-600">
               <AlertTriangle className="h-3.5 w-3.5" />
               <span>Demo Mode</span>
             </div>
@@ -892,7 +881,7 @@ function DashboardContent() {
 
           <button
             onClick={openProjectorWindow}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-indigo-300 transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-4 py-2 text-xs font-bold text-sky-600 transition-all active:scale-[0.98]"
           >
             <Tv className="h-4 w-4" />
             <span>Projector</span>
@@ -901,7 +890,7 @@ function DashboardContent() {
 
           <button
             onClick={() => window.open(`/projector/stage?pres=${presId}`, '_blank')}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-yellow-400 transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-4 py-2 text-xs font-bold text-yellow-400 transition-all active:scale-[0.98]"
           >
             <LayoutGrid className="h-4 w-4" />
             <span>Stage Monitor</span>
@@ -910,7 +899,7 @@ function DashboardContent() {
 
           <button
             onClick={() => window.open(`/dashboard/remote?pres=${presId}`, '_blank')}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-violet-400 transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-4 py-2 text-xs font-bold text-teal-600 transition-all active:scale-[0.98]"
           >
             <Smartphone className="h-4 w-4" />
             <span>Mobile Remote</span>
@@ -919,21 +908,21 @@ function DashboardContent() {
 
           <button
             onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-tr from-pink-600/20 to-violet-600/20 border border-pink-500/30 hover:bg-pink-600/10 px-4 py-2 text-xs font-bold text-pink-300 transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-tr from-pink-600/20 to-teal-600/20 border border-pink-500/30 hover:bg-pink-600/10 px-4 py-2 text-xs font-bold text-pink-300 transition-all active:scale-[0.98]"
           >
             <Users className="h-4 w-4 text-pink-400" />
             <span>Connect a Screen</span>
           </button>
 
-          <div className="flex items-center gap-3 border-l border-slate-900 pl-4">
+          <div className="flex items-center gap-3 border-l border-stone-200 pl-4">
             <div className="text-right">
-              <p className="text-xs font-bold text-slate-200">{authUser.displayName}</p>
-              <p className="text-[10px] text-slate-500">{authUser.email}</p>
+              <p className="text-xs font-bold text-stone-800">{authUser.displayName}</p>
+              <p className="text-[10px] text-stone-500">{authUser.email}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Sign Out"
-              className="rounded-xl p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400 hover:bg-red-950/20 hover:border-red-900/30 transition-all"
+              className="rounded-xl p-2 bg-stone-100 border border-stone-200 text-stone-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -948,18 +937,18 @@ function DashboardContent() {
         <aside className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto lg:pr-2 order-2 lg:order-1">
           
           {/* Active Presentation Title */}
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Active Presentation</h2>
-            <h3 className="text-xl font-bold text-white mb-2">{presentation.title}</h3>
-            <p className="text-xs text-slate-400">ID: <code className="bg-slate-950 px-1 py-0.5 rounded text-indigo-400">{presentation.id}</code></p>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-3">Active Presentation</h2>
+            <h3 className="text-xl font-bold text-stone-900 mb-2">{presentation.title}</h3>
+            <p className="text-xs text-stone-500">ID: <code className="bg-stone-50 px-1 py-0.5 rounded text-sky-600">{presentation.id}</code></p>
           </section>
 
           {/* Live Alerts Section */}
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md">
             <div className="flex items-center gap-2 mb-4 justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Live View Alerts</h2>
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Live View Alerts</h2>
               </div>
               {activeAlert && (
                 <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
@@ -969,14 +958,14 @@ function DashboardContent() {
             <div className="space-y-4">
               {/* Nursery quick preset call */}
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Quick Nursery Call</label>
+                <label className="block text-xs text-stone-500 mb-1.5 font-medium">Quick Nursery Call</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="e.g. #304"
                     value={nurseryNumber}
                     onChange={(e) => setNurseryNumber(e.target.value)}
-                    className="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-stone-200 bg-white py-2 px-3 text-xs text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -995,22 +984,22 @@ function DashboardContent() {
 
               {/* Custom alert banner */}
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Custom Alert Message</label>
+                <label className="block text-xs text-stone-500 mb-1.5 font-medium">Custom Alert Message</label>
                 <textarea
                   placeholder="e.g. Please move vehicle with plate XYZ-123..."
                   value={alertText}
                   onChange={(e) => setAlertText(e.target.value)}
-                  className="w-full h-16 rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none resize-none"
+                  className="w-full h-16 rounded-xl border border-stone-200 bg-white p-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Alert Type</label>
+                  <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1">Alert Type</label>
                   <select
                     value={alertType}
                     onChange={(e) => setAlertType(e.target.value as AlertType)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-[10px] font-bold text-stone-600 focus:outline-none"
                   >
                     <option value="general">General (Slate)</option>
                     <option value="nursery">Nursery (Amber)</option>
@@ -1019,11 +1008,11 @@ function DashboardContent() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Position</label>
+                  <label className="block text-[10px] uppercase font-bold text-stone-500 mb-1">Position</label>
                   <select
                     value={alertPosition}
                     onChange={(e) => setAlertPosition(e.target.value as AlertPosition)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-[10px] font-bold text-slate-350 focus:outline-none"
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-[10px] font-bold text-stone-600 focus:outline-none"
                   >
                     <option value="top">Top Screen</option>
                     <option value="bottom">Bottom Screen</option>
@@ -1031,7 +1020,7 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-slate-900/80 pt-3 mt-1">
+              <div className="flex gap-2 border-t border-stone-200 pt-3 mt-1">
                 {activeAlert && (
                   <button
                     type="button"
@@ -1039,7 +1028,7 @@ function DashboardContent() {
                       clearAlert();
                       setAlertText('');
                     }}
-                    className="flex-1 rounded-xl border border-red-500/20 hover:border-red-500/30 bg-red-950/20 text-red-400 py-2 text-xs font-bold transition-all active:scale-[0.98]"
+                    className="flex-1 rounded-xl border border-red-500/20 hover:border-red-200 bg-red-50 text-red-600 py-2 text-xs font-bold transition-all active:scale-[0.98]"
                   >
                     Clear Alert
                   </button>
@@ -1051,7 +1040,7 @@ function DashboardContent() {
                     sendAlert(alertText, alertType, alertPosition);
                     setAlertText('');
                   }}
-                  className="flex-[2] rounded-xl bg-violet-600 hover:bg-violet-500 text-white py-2 text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none shadow-md shadow-violet-600/10"
+                  className="flex-[2] rounded-xl bg-teal-600 hover:bg-teal-500 text-white py-2 text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none shadow-md shadow-teal-500/10"
                 >
                   Broadcast Alert
                 </button>
@@ -1060,10 +1049,10 @@ function DashboardContent() {
               {activeAlert && (
                 <div className={`mt-2 rounded-xl p-3 text-[10px] flex flex-col gap-1 border border-dashed ${
                   activeAlert.type === 'nursery' 
-                    ? 'bg-amber-500/5 border-amber-500/30 text-amber-400' 
+                    ? 'bg-amber-500/5 border-amber-500/30 text-amber-600' 
                     : activeAlert.type === 'warning'
-                      ? 'bg-red-500/5 border-red-500/30 text-red-400'
-                      : 'bg-slate-950/40 border-slate-800 text-slate-400'
+                      ? 'bg-red-500/5 border-red-200 text-red-600'
+                      : 'bg-white border-stone-200 text-stone-500'
                 }`}>
                   <div className="flex justify-between items-center font-extrabold uppercase tracking-wide">
                     <span>Active Alert ({activeAlert.type})</span>
@@ -1078,11 +1067,11 @@ function DashboardContent() {
           </section>
 
           {/* Collaborator Presence indicator */}
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex-1">
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex-1">
             <div className="flex items-center gap-2 mb-4 justify-between">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-emerald-400" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Collaborators</h2>
+                <Users className="h-4 w-4 text-emerald-600" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Collaborators</h2>
               </div>
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
@@ -1091,34 +1080,34 @@ function DashboardContent() {
               {presenceUsers.map((user) => (
                 <div 
                   key={user.id} 
-                  className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-950/40 border border-slate-900/30 hover:border-slate-800/40 transition-colors"
+                  className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-stone-200/30 hover:border-stone-300 transition-colors"
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600/30 to-indigo-600/30 text-[10px] font-bold text-indigo-300 border border-indigo-500/20">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-sky-500/30 to-teal-600/30 text-[10px] font-bold text-sky-600 border border-teal-200">
                     {user.displayName.substring(0, 2).toUpperCase()}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-xs font-bold truncate text-slate-200">{user.displayName}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                    <p className="text-xs font-bold truncate text-stone-800">{user.displayName}</p>
+                    <p className="text-[10px] text-stone-500 truncate">{user.email}</p>
                   </div>
                 </div>
               ))}
               {presenceUsers.length === 0 && (
-                <p className="text-xs text-slate-600 text-center py-4">No other presenters online.</p>
+                <p className="text-xs text-stone-400 text-center py-4">No other presenters online.</p>
               )}
             </div>
           </section>
 
           {/* Live Congregation Requests card */}
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md flex-1 flex flex-col overflow-hidden min-h-[220px]">
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex-1 flex flex-col overflow-hidden min-h-[220px]">
             <div className="flex items-center gap-2 mb-4 justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-pink-400" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Congregation Feed</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Congregation Feed</h2>
               </div>
               {prayerRequests.length > 0 && (
                 <button
                   onClick={clearPrayerRequests}
-                  className="text-[9px] font-bold text-slate-500 hover:text-red-400 transition-colors"
+                  className="text-[9px] font-bold text-stone-500 hover:text-red-600 transition-colors"
                 >
                   Clear Feed
                 </button>
@@ -1129,19 +1118,19 @@ function DashboardContent() {
               {prayerRequests.map((req) => (
                 <div 
                   key={req.id} 
-                  className="p-3 rounded-xl bg-slate-950/50 border border-pink-950/20 hover:border-pink-900/30 transition-all text-xs"
+                  className="p-3 rounded-xl bg-white border border-pink-950/20 hover:border-pink-900/30 transition-all text-xs"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-extrabold text-pink-400 truncate">{req.name}</span>
-                    <span className="text-[9px] text-slate-550">
+                    <span className="text-[9px] text-stone-400">
                       {new Date(req.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-slate-350 leading-normal font-medium whitespace-pre-line">{req.text}</p>
+                  <p className="text-stone-600 leading-normal font-medium whitespace-pre-line">{req.text}</p>
                 </div>
               ))}
               {prayerRequests.length === 0 && (
-                <p className="text-[10px] text-slate-600 text-center py-8">No live messages or prayer requests yet.</p>
+                <p className="text-[10px] text-stone-400 text-center py-8">No live messages or prayer requests yet.</p>
               )}
             </div>
           </section>
@@ -1151,39 +1140,39 @@ function DashboardContent() {
         <section className="lg:col-span-6 flex flex-col gap-4 lg:overflow-y-auto lg:pr-2 order-1 lg:order-2">
           {presLoading ? (
             <div className="flex-1 flex items-center justify-center py-20">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Running order · {presentation.slides.length} {presentation.slides.length === 1 ? 'slide' : 'slides'}</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">Running order · {presentation.slides.length} {presentation.slides.length === 1 ? 'slide' : 'slides'}</h2>
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => router.push(`/dashboard/import?append=${presId}`)}
-                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                    className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-1.5 text-xs font-bold text-stone-700 transition-all"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                    <Sparkles className="h-3.5 w-3.5 text-teal-600" />
                     <span>Import songs</span>
                   </button>
                   <button
                     onClick={() => router.push(`/dashboard/liturgy?append=${presId}`)}
-                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                    className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-1.5 text-xs font-bold text-stone-700 transition-all"
                   >
-                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
+                    <BookOpen className="h-3.5 w-3.5 text-sky-600" />
                     <span>Import scripture</span>
                   </button>
                   <button
                     onClick={printRunningOrder}
                     disabled={presentation.slides.length === 0}
                     title="Print a running-order handout for the team"
-                    className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-40 px-3 py-1.5 text-xs font-bold text-slate-300 transition-all"
+                    className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 disabled:opacity-40 px-3 py-1.5 text-xs font-bold text-stone-700 transition-all"
                   >
-                    <Printer className="h-3.5 w-3.5 text-emerald-400" />
+                    <Printer className="h-3.5 w-3.5 text-emerald-600" />
                     <span>Print order</span>
                   </button>
                   <button
                     onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
-                    className="flex items-center gap-1.5 rounded-lg bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 px-3 py-1.5 text-xs font-bold text-violet-300 transition-all active:scale-[0.98]"
+                    className="flex items-center gap-1.5 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100 px-3 py-1.5 text-xs font-bold text-teal-700 transition-all active:scale-[0.98]"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     <span>Add Slide</span>
@@ -1193,26 +1182,26 @@ function DashboardContent() {
 
               <form
                 onSubmit={(e) => { e.preventDefault(); handleQuickScripture(); }}
-                className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2"
+                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2"
               >
-                <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
+                <BookOpen className="h-4 w-4 shrink-0 text-sky-600" />
                 <input
                   type="text"
                   value={scriptureRef}
                   onChange={(e) => setScriptureRef(e.target.value)}
                   placeholder="Quick scripture — type a reference like “John 3:16” and press Add"
-                  className="flex-1 bg-transparent text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                  className="flex-1 bg-transparent text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={scriptureBusy || !scriptureRef.trim()}
-                  className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-[11px] font-bold text-white transition-all"
+                  className="rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-40 px-3 py-1 text-[11px] font-bold text-white transition-all"
                 >
                   {scriptureBusy ? 'Adding…' : 'Add'}
                 </button>
               </form>
 
-              <p className="text-[11px] text-slate-500 -mt-1">Drag thumbnails to reorder. Click a slide to edit it; double-click to open the designer.</p>
+              <p className="text-[11px] text-stone-500 -mt-1">Drag thumbnails to reorder. Click a slide to edit it; double-click to open the designer.</p>
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
                 {presentation.slides.map((slide, idx) => {
                   const isLive = activeSlideId === slide.id;
@@ -1229,22 +1218,22 @@ function DashboardContent() {
                         isLive
                           ? 'border-red-500/60 ring-2 ring-red-500/30'
                           : isSelected
-                            ? 'border-violet-500/60 ring-1 ring-violet-500/30'
-                            : 'border-slate-800 hover:border-slate-700'
+                            ? 'border-teal-400/60 ring-1 ring-teal-400/30'
+                            : 'border-stone-200 hover:border-stone-300'
                       }`}
                     >
-                      <div className="relative aspect-video bg-slate-950">
+                      <div className="relative aspect-video bg-stone-50">
                         <SlidePreview slide={slide} settings={presentation.settings} />
                         <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white">{idx + 1}</span>
-                        {slide.audio_url && <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[9px] text-violet-300" title="Has audio">🎵</span>}
+                        {slide.audio_url && <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[9px] text-teal-700" title="Has audio">🎵</span>}
                         {isLive && (
                           <span className="absolute top-1 left-1 rounded bg-red-500 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-widest animate-pulse">Live</span>
                         )}
                         <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/85 to-transparent pt-6 pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => { e.stopPropagation(); setLiveSlide(slide.id); }} title="Go Live" className={`rounded-md p-1.5 text-white ${isLive ? 'bg-red-500 pointer-events-none' : 'bg-indigo-600 hover:bg-indigo-500'}`}><Play className="h-3 w-3 fill-current" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedSlideId(slide.id); setDesigningSlideId(slide.id); }} title="Design" className="rounded-md p-1.5 bg-slate-800 hover:bg-slate-700 text-violet-300"><Layers className="h-3 w-3" /></button>
-                          <button onClick={async (e) => { e.stopPropagation(); const id = await duplicateSlide(slide.id); if (id) setSelectedSlideId(id); }} title="Duplicate" className="rounded-md p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200"><Copy className="h-3 w-3" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); if (presentation.slides.length <= 1) { alert('A presentation needs at least one slide.'); return; } if (confirm(`Delete slide ${idx + 1}?`)) deleteSlide(slide.id); }} title="Delete" className="rounded-md p-1.5 bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setLiveSlide(slide.id); }} title="Go Live" className={`rounded-md p-1.5 text-white ${isLive ? 'bg-red-500 pointer-events-none' : 'bg-teal-600 hover:bg-teal-500'}`}><Play className="h-3 w-3 fill-current" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedSlideId(slide.id); setDesigningSlideId(slide.id); }} title="Design" className="rounded-md p-1.5 bg-stone-100 hover:bg-stone-200 text-teal-700"><Layers className="h-3 w-3" /></button>
+                          <button onClick={async (e) => { e.stopPropagation(); const id = await duplicateSlide(slide.id); if (id) setSelectedSlideId(id); }} title="Duplicate" className="rounded-md p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800"><Copy className="h-3 w-3" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); if (presentation.slides.length <= 1) { alert('A presentation needs at least one slide.'); return; } if (confirm(`Delete slide ${idx + 1}?`)) deleteSlide(slide.id); }} title="Delete" className="rounded-md p-1.5 bg-stone-100 hover:bg-red-100 text-stone-700 hover:text-red-600"><Trash2 className="h-3 w-3" /></button>
                         </div>
                       </div>
                     </div>
@@ -1252,7 +1241,7 @@ function DashboardContent() {
                 })}
                 <button
                   onClick={async () => { const id = await addSlide(); if (id) setSelectedSlideId(id); }}
-                  className="aspect-video rounded-xl border-2 border-dashed border-slate-800 hover:border-violet-500/50 hover:bg-slate-900/30 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-violet-300 transition-all"
+                  className="aspect-video rounded-xl border-2 border-dashed border-stone-200 hover:border-teal-300 hover:bg-stone-100/30 flex flex-col items-center justify-center gap-1 text-stone-500 hover:text-teal-700 transition-all"
                 >
                   <Plus className="h-5 w-5" />
                   <span className="text-[10px] font-bold">Add slide</span>
@@ -1271,84 +1260,84 @@ function DashboardContent() {
             const blank = presentation.settings.blankMode;
             const goTo = (i: number) => { const s = presentation.slides[i]; if (s) setLiveSlide(s.id); };
             return (
-              <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
+              <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider ${liveSlide ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                  <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider ${liveSlide ? 'bg-red-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full bg-white ${liveSlide ? 'animate-pulse' : ''}`} />LIVE
                   </span>
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">On screen now</h2>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">On screen now</h2>
                 </div>
                 {/* Mirrors exactly what the audience sees, including blank/blackout/logo states */}
-                <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 mb-3 bg-slate-950">
+                <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 mb-3 bg-stone-50">
                   {liveSlide ? (
                     <>
                       <div style={{ opacity: blank === 'clear' ? 0.05 : 1 }} className="absolute inset-0">
                         <SlidePreview slide={liveSlide} settings={presentation.settings} />
                       </div>
-                      {blank === 'black' && <div className="absolute inset-0 bg-black flex items-center justify-center text-[10px] font-bold tracking-widest text-slate-600">BLACKOUT</div>}
-                      {blank === 'logo' && <div className="absolute inset-0 bg-slate-950 flex items-center justify-center text-2xl">✨</div>}
+                      {blank === 'black' && <div className="absolute inset-0 bg-black flex items-center justify-center text-[10px] font-bold tracking-widest text-stone-400">BLACKOUT</div>}
+                      {blank === 'logo' && <div className="absolute inset-0 bg-stone-50 flex items-center justify-center text-2xl">✨</div>}
                     </>
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-[11px] text-slate-600 px-4 text-center">Nothing live yet — press Go Live on a slide.</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-[11px] text-stone-400 px-4 text-center">Nothing live yet — press Go Live on a slide.</div>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => goTo(liveIdx - 1)} disabled={liveIdx <= 0} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 py-2 text-xs font-bold text-slate-300 disabled:opacity-30">
+                  <button onClick={() => goTo(liveIdx - 1)} disabled={liveIdx <= 0} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 py-2 text-xs font-bold text-stone-700 disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />Prev
                   </button>
-                  <span className="text-[10px] text-slate-500 w-14 text-center">{liveIdx >= 0 ? `${liveIdx + 1} / ${presentation.slides.length}` : '—'}</span>
-                  <button onClick={() => goTo(liveIdx < 0 ? 0 : liveIdx + 1)} disabled={liveIdx >= presentation.slides.length - 1} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2 text-xs font-bold text-white disabled:opacity-30">
+                  <span className="text-[10px] text-stone-500 w-14 text-center">{liveIdx >= 0 ? `${liveIdx + 1} / ${presentation.slides.length}` : '—'}</span>
+                  <button onClick={() => goTo(liveIdx < 0 ? 0 : liveIdx + 1)} disabled={liveIdx >= presentation.slides.length - 1} className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-teal-600 hover:bg-teal-500 py-2 text-xs font-bold text-white disabled:opacity-30">
                     Next<ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
                 {nextSlide && (
                   <div className="mt-3 flex items-center gap-2.5">
-                    <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500 shrink-0">Next&nbsp;up</span>
-                    <button onClick={() => goTo(liveIdx + 1)} className="relative w-28 aspect-video rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-indigo-500/60 transition-all">
+                    <span className="text-[9px] uppercase font-bold tracking-widest text-stone-500 shrink-0">Next&nbsp;up</span>
+                    <button onClick={() => goTo(liveIdx + 1)} className="relative w-28 aspect-video rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-teal-400/60 transition-all">
                       <SlidePreview slide={nextSlide} settings={presentation.settings} />
                     </button>
                   </div>
                 )}
-                <div className="mt-3 flex items-center gap-2 border-t border-slate-900 pt-3">
+                <div className="mt-3 flex items-center gap-2 border-t border-stone-200 pt-3">
                   <button
                     onClick={() => setLooping((v) => !v)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${looping ? 'bg-violet-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${looping ? 'bg-teal-600 text-white' : 'bg-stone-100 border border-stone-200 text-stone-700 hover:bg-stone-200'}`}
                   >
                     {looping ? '⏸ Stop loop' : '🔁 Auto-loop'}
                   </button>
-                  <span className="text-[10px] text-slate-500">every</span>
+                  <span className="text-[10px] text-stone-500">every</span>
                   <input
                     type="number" min={2} max={120} value={loopSecs}
                     onChange={(e) => setLoopSecs(Math.max(2, Number(e.target.value) || 8))}
-                    className="w-14 rounded-lg border border-slate-800 bg-slate-950/60 py-1 px-2 text-[11px] text-slate-200 focus:outline-none"
+                    className="w-14 rounded-lg border border-stone-200 bg-white py-1 px-2 text-[11px] text-stone-800 focus:outline-none"
                   />
-                  <span className="text-[10px] text-slate-500">sec</span>
+                  <span className="text-[10px] text-stone-500">sec</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <button
                     onClick={() => setMidiOn((v) => !v)}
-                    className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${midiOn ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'}`}
+                    className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all ${midiOn ? 'bg-emerald-600 text-white' : 'bg-stone-100 border border-stone-200 text-stone-500 hover:text-stone-800'}`}
                     title="Advance slides from a MIDI controller / foot pedal"
                   >
                     🎹 MIDI {midiOn ? 'on' : 'off'}
                   </button>
-                  <span className="text-[9px] text-slate-600">Keys: ← → / space, B = blank</span>
+                  <span className="text-[9px] text-stone-400">Keys: ← → / space, B = blank</span>
                 </div>
               </section>
             );
           })()}
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">Quick screen overlays</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">Quick screen overlays</span>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'black' ? 'bg-red-950/40 border-red-500/50 text-red-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>⚫ Blackout</button>
-              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'clear' ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>🔍 Clear text</button>
-              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')} className={`rounded-xl py-2 text-[10px] font-bold border col-span-2 transition-all ${presentation.settings.blankMode === 'logo' ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>✨ Show logo</button>
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'black' ? 'bg-red-50 border-red-500/50 text-red-600' : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'}`}>⚫ Blackout</button>
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'clear' ? 'bg-teal-50 border-teal-300 text-sky-600' : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'}`}>🔍 Clear text</button>
+              <button onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')} className={`rounded-xl py-2 text-[10px] font-bold border col-span-2 transition-all ${presentation.settings.blankMode === 'logo' ? 'bg-emerald-50 border-emerald-500/50 text-emerald-600' : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'}`}>✨ Show logo</button>
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">⏱ Pre-service countdown</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">⏱ Pre-service countdown</span>
             {presentation.settings.countdownTarget ? (
               <div className="flex items-center gap-2">
                 <button
@@ -1356,13 +1345,13 @@ function DashboardContent() {
                     const base = Math.max(Date.now(), new Date(presentation.settings.countdownTarget as string).getTime());
                     updateSettings({ countdownTarget: new Date(base + 60000).toISOString() });
                   }}
-                  className="rounded-xl bg-slate-950/60 border border-slate-800 py-2 px-3 text-[11px] font-bold text-slate-200 hover:border-indigo-500/50 transition-all"
+                  className="rounded-xl bg-white border border-stone-200 py-2 px-3 text-[11px] font-bold text-stone-800 hover:border-teal-300 transition-all"
                 >
                   +1 min
                 </button>
                 <button
                   onClick={() => updateSettings({ countdownTarget: null })}
-                  className="flex-1 rounded-xl bg-red-950/40 border border-red-500/40 py-2 text-[11px] font-bold text-red-300 hover:bg-red-950/60 transition-all"
+                  className="flex-1 rounded-xl bg-red-50 border border-red-200 py-2 text-[11px] font-bold text-red-700 hover:bg-red-100 transition-all"
                 >
                   ✕ Clear countdown (running)
                 </button>
@@ -1372,12 +1361,12 @@ function DashboardContent() {
                 <input
                   type="number" min={1} max={120} value={countdownMins}
                   onChange={(e) => setCountdownMins(Math.min(120, Math.max(1, Number(e.target.value) || 5)))}
-                  className="w-14 rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2 text-[11px] text-slate-200 focus:outline-none"
+                  className="w-14 rounded-lg border border-stone-200 bg-white py-1.5 px-2 text-[11px] text-stone-800 focus:outline-none"
                 />
-                <span className="text-[10px] text-slate-500">min</span>
+                <span className="text-[10px] text-stone-500">min</span>
                 <button
                   onClick={() => updateSettings({ countdownTarget: new Date(Date.now() + countdownMins * 60000).toISOString() })}
-                  className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-1.5 text-[11px] font-bold text-white transition-all"
+                  className="flex-1 rounded-xl bg-teal-600 hover:bg-teal-500 py-1.5 text-[11px] font-bold text-white transition-all"
                 >
                   Start countdown
                 </button>
@@ -1388,48 +1377,48 @@ function DashboardContent() {
               defaultValue={presentation.settings.countdownMessage ?? ''}
               onBlur={(e) => updateSettings({ countdownMessage: e.target.value })}
               placeholder="Heading (default: “Service begins in”)"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none"
+              className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-2.5 text-[11px] text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none"
             />
           </section>
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">🌐 Translate whole presentation</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">🌐 Translate whole presentation</span>
             <div className="flex items-center gap-2">
               <select
                 value={bulkLang || presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG}
                 onChange={(e) => setBulkLang(e.target.value)}
                 disabled={!!bulkProgress}
-                className="flex-1 rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2 text-[11px] text-slate-200 focus:outline-none disabled:opacity-50"
+                className="flex-1 rounded-lg border border-stone-200 bg-white py-1.5 px-2 text-[11px] text-stone-800 focus:outline-none disabled:opacity-50"
               >
                 {LANGUAGES.map((l) => <option key={l.name} value={l.name}>{l.name}{l.rtl ? ' (RTL)' : ''}</option>)}
               </select>
               <button
                 onClick={translateAllSlides}
                 disabled={!!bulkProgress || presentation.slides.length === 0}
-                className="rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-3 py-1.5 text-[11px] font-bold text-white transition-all"
+                className="rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-40 px-3 py-1.5 text-[11px] font-bold text-white transition-all"
               >
                 {bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}…` : 'Translate all'}
               </button>
             </div>
-            <p className="text-[10px] text-slate-600">Re-translates every slide&apos;s text to the chosen language and sets it as the default.</p>
+            <p className="text-[10px] text-stone-400">Re-translates every slide&apos;s text to the chosen language and sets it as the default.</p>
           </section>
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">Record the service</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">Record the service</span>
             <RecorderButton />
-            <p className="text-[10px] text-slate-600">Captures your microphone; download the audio when you stop.</p>
+            <p className="text-[10px] text-stone-400">Captures your microphone; download the audio when you stop.</p>
           </section>
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">Stage monitor</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">Stage monitor</span>
             {([['stageShowClock', 'Show clock'], ['stageShowNext', 'Show next slide'], ['stageShowTranslation', 'Show translation']] as const).map(([key, label]) => (
-              <label key={key} className="flex items-center justify-between text-[11px] text-slate-300">
+              <label key={key} className="flex items-center justify-between text-[11px] text-stone-700">
                 <span>{label}</span>
                 <input
                   type="checkbox"
                   checked={presentation.settings[key] !== false}
                   onChange={(e) => updateSettings({ [key]: e.target.checked })}
-                  className="h-4 w-4 accent-violet-600"
+                  className="h-4 w-4 accent-teal-600"
                 />
               </label>
             ))}
@@ -1438,12 +1427,12 @@ function DashboardContent() {
               placeholder="Private note to stage (e.g. 'slow down')"
               defaultValue={presentation.settings.stageMessage || ''}
               onBlur={(e) => updateSettings({ stageMessage: e.target.value })}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+              className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-2.5 text-[11px] text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none"
             />
           </section>
 
-          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
-            <span className="block text-xs text-slate-400 font-medium">Live poll</span>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-stone-500 font-medium">Live poll</span>
             <PollControl activePoll={activePoll} pollCounts={pollCounts} onStart={(p) => sendPoll(p)} onEnd={() => sendPoll(null)} />
           </section>
         </aside>
@@ -1461,23 +1450,23 @@ function DashboardContent() {
         const ActiveIcon = active.icon;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in p-4">
-            <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl relative ring-1 ring-white/10 max-h-[92vh] overflow-y-auto">
+            <div className="w-full max-w-md rounded-3xl border border-stone-200 bg-stone-50 p-6 shadow-2xl relative ring-1 ring-white/10 max-h-[92vh] overflow-y-auto">
               <button
                 onClick={() => setIsShareModalOpen(false)}
-                className="absolute top-4 right-4 rounded-full p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 rounded-full p-1.5 bg-stone-100 border border-stone-200 text-stone-500 hover:text-stone-900 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
 
               <div className="text-center mb-5">
-                <h3 className="font-extrabold text-base text-white">Connect a Screen</h3>
-                <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto">
+                <h3 className="font-extrabold text-base text-stone-900">Connect a Screen</h3>
+                <p className="text-stone-500 text-xs mt-1 max-w-xs mx-auto">
                   Open the link (or scan the code) on any device on your network — an iPad, a smart TV browser, or a laptop plugged into the projector. It stays in sync live.
                 </p>
               </div>
 
               {/* Screen type tabs */}
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 mb-4">
+              <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 rounded-xl border border-stone-200 mb-4">
                 {(['projector', 'stage', 'follow'] as const).map((k) => {
                   const Icon = screens[k].icon;
                   return (
@@ -1485,7 +1474,7 @@ function DashboardContent() {
                       key={k}
                       onClick={() => { setScreenTab(k); setCopied(false); }}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-[11px] font-bold transition-all ${
-                        screenTab === k ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+                        screenTab === k ? 'bg-teal-600 text-white shadow-md' : 'text-stone-500 hover:text-stone-800'
                       }`}
                     >
                       <Icon className="h-3.5 w-3.5" />
@@ -1495,14 +1484,14 @@ function DashboardContent() {
                 })}
               </div>
 
-              <p className="text-center text-xs text-slate-400 mb-4 flex items-center justify-center gap-1.5">
-                <ActiveIcon className="h-3.5 w-3.5 text-violet-400" />
+              <p className="text-center text-xs text-stone-500 mb-4 flex items-center justify-center gap-1.5">
+                <ActiveIcon className="h-3.5 w-3.5 text-teal-600" />
                 {active.desc}
               </p>
 
               {/* QR Code */}
               <div className="flex justify-center mb-4">
-                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-inner">
+                <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-inner">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=7c3aed&data=${encodeURIComponent(active.url)}`}
                     alt={`Scan to open ${active.label}`}
@@ -1518,7 +1507,7 @@ function DashboardContent() {
                   readOnly
                   value={active.url}
                   onFocus={(e) => e.target.select()}
-                  className="flex-1 rounded-xl border border-slate-850 bg-slate-900/60 py-2.5 px-3.5 text-xs text-indigo-300 font-medium focus:outline-none"
+                  className="flex-1 rounded-xl border border-stone-200 bg-white py-2.5 px-3.5 text-xs text-sky-600 font-medium focus:outline-none"
                 />
                 <button
                   onClick={() => {
@@ -1526,7 +1515,7 @@ function DashboardContent() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
                   }}
-                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 text-xs font-bold text-white transition-colors"
+                  className="flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 px-4 text-xs font-bold text-white transition-colors"
                 >
                   {copied ? <Check className="h-3.5 w-3.5" /> : null}
                   {copied ? 'Copied' : 'Copy'}
@@ -1534,12 +1523,12 @@ function DashboardContent() {
               </div>
 
               {/* Open on a connected screen (projector / USB monitor) */}
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 space-y-2">
+              <div className="rounded-xl border border-stone-200 bg-white p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Open on a connected screen</span>
+                  <span className="text-[10px] uppercase font-bold text-stone-500">Open on a connected screen</span>
                   <button
                     onClick={async () => { setScreensList(await getScreens()); setScreensChecked(true); }}
-                    className="text-[10px] font-bold text-violet-300 hover:text-violet-200"
+                    className="text-[10px] font-bold text-teal-700 hover:text-teal-700"
                   >
                     Detect screens
                   </button>
@@ -1550,24 +1539,24 @@ function DashboardContent() {
                       <button
                         key={s.id}
                         onClick={() => openOnScreen(active.url, s)}
-                        className="flex items-center justify-between rounded-lg bg-slate-900 border border-slate-800 hover:border-violet-500/50 px-3 py-2 text-xs font-bold text-slate-200"
+                        className="flex items-center justify-between rounded-lg bg-stone-100 border border-stone-200 hover:border-teal-300 px-3 py-2 text-xs font-bold text-stone-800"
                       >
-                        <span className="flex items-center gap-1.5"><MonitorPlay className="h-3.5 w-3.5 text-violet-400" />{s.label}{s.isPrimary ? ' (main)' : ''}</span>
-                        <span className="text-[10px] text-slate-500">{s.width}×{s.height}</span>
+                        <span className="flex items-center gap-1.5"><MonitorPlay className="h-3.5 w-3.5 text-teal-600" />{s.label}{s.isPrimary ? ' (main)' : ''}</span>
+                        <span className="text-[10px] text-stone-500">{s.width}×{s.height}</span>
                       </button>
                     ))}
                   </div>
                 ) : screensChecked ? (
-                  <p className="text-[10px] text-slate-500">Couldn’t auto-detect screens in this browser. Use “Open on this device” below, drag the window onto your monitor, then press the fullscreen button.</p>
+                  <p className="text-[10px] text-stone-500">Couldn’t auto-detect screens in this browser. Use “Open on this device” below, drag the window onto your monitor, then press the fullscreen button.</p>
                 ) : (
-                  <p className="text-[10px] text-slate-600">Click “Detect screens” to send this directly to your projector / USB monitor (Chrome &amp; Edge).</p>
+                  <p className="text-[10px] text-stone-400">Click “Detect screens” to send this directly to your projector / USB monitor (Chrome &amp; Edge).</p>
                 )}
               </div>
 
               {/* Open on this device */}
               <button
                 onClick={() => window.open(active.url, '_blank')}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 py-2.5 text-xs font-bold text-indigo-300 transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 py-2.5 text-xs font-bold text-sky-600 transition-all"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Open in a window (drag to your monitor)
@@ -1634,8 +1623,8 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+        <div className="flex min-h-screen items-center justify-center bg-stone-50 text-stone-800">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
         </div>
       }
     >

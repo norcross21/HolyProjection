@@ -60,8 +60,8 @@ function RemoteContent() {
   // singlePres always has a value, so only gate on the client being ready.
   if (!authReady || (setlistId ? !setlist : false)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50 text-stone-800">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
       </div>
     );
   }
@@ -120,25 +120,25 @@ function RemoteContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col justify-between select-none">
+    <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col justify-between select-none">
       
       {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-950/70 backdrop-blur-md px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+      <header className="border-b border-stone-200 bg-white/80 backdrop-blur-md px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <button
           onClick={() => router.push(setlistId ? `/dashboard/setlist?id=${setlistId}` : `/dashboard?pres=${presId}`)}
-          className="flex items-center gap-1.5 rounded-lg bg-slate-900 border border-slate-800 px-3 py-1.5 text-xs text-slate-400 font-bold"
+          className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 px-3 py-1.5 text-xs text-stone-500 font-bold"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Exit</span>
         </button>
 
         <div className="text-center overflow-hidden max-w-[50%]">
-          <h1 className="font-extrabold text-xs text-white truncate">{title}</h1>
-          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold block">Live Touch Remote</span>
+          <h1 className="font-extrabold text-xs text-stone-900 truncate">{title}</h1>
+          <span className="text-[9px] text-stone-500 uppercase tracking-widest font-semibold block">Live Touch Remote</span>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-2.5 py-1 text-[9px] text-slate-400 font-bold">
-          {isDemoMode ? <span>Demo</span> : <span className="text-emerald-400">Live</span>}
+        <div className="flex items-center gap-1.5 rounded-full bg-stone-100 border border-stone-200 px-2.5 py-1 text-[9px] text-stone-500 font-bold">
+          {isDemoMode ? <span>Demo</span> : <span className="text-emerald-600">Live</span>}
         </div>
       </header>
 
@@ -146,48 +146,48 @@ function RemoteContent() {
       <main className="flex-1 px-4 py-4 flex flex-col justify-center gap-4">
         
         {/* Current Slide Display */}
-        <section className="rounded-2xl border border-slate-900 bg-slate-900/10 p-5 backdrop-blur-md flex-1 flex flex-col justify-center min-h-[160px] relative">
-          <span className="absolute top-3 left-4 text-[9px] text-slate-550 uppercase tracking-widest font-bold">Current Slide ({activeIdx + 1}/{slides.length})</span>
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex-1 flex flex-col justify-center min-h-[160px] relative">
+          <span className="absolute top-3 left-4 text-[9px] text-stone-400 uppercase tracking-widest font-bold">Current Slide ({activeIdx + 1}/{slides.length})</span>
           {currentSlide ? (
             <div className="space-y-4 text-center mt-2">
-              <p className="text-lg font-bold text-white leading-relaxed whitespace-pre-line">{currentSlide.content}</p>
+              <p className="text-lg font-bold text-stone-900 leading-relaxed whitespace-pre-line">{currentSlide.content}</p>
               {currentSlide.translation && (
-                <p dir={dirFor(translationLang)} className="text-base font-bold text-indigo-300 leading-relaxed font-serif whitespace-pre-line border-t border-slate-900 pt-2">{currentSlide.translation}</p>
+                <p dir={dirFor(translationLang)} className="text-base font-bold text-sky-600 leading-relaxed font-serif whitespace-pre-line border-t border-stone-200 pt-2">{currentSlide.translation}</p>
               )}
             </div>
           ) : (
-            <p className="text-slate-650 text-center text-sm">No slide active.</p>
+            <p className="text-stone-400 text-center text-sm">No slide active.</p>
           )}
         </section>
 
         {/* Next Slide Preview */}
-        <section className="rounded-2xl border border-slate-900 bg-slate-900/10 p-4 backdrop-blur-md min-h-[90px] relative opacity-60">
-          <span className="absolute top-3 left-4 text-[8px] text-slate-600 uppercase tracking-widest font-bold">Next Slide Preview</span>
+        <section className="rounded-2xl border border-stone-200 bg-white p-4 backdrop-blur-md min-h-[90px] relative opacity-60">
+          <span className="absolute top-3 left-4 text-[8px] text-stone-400 uppercase tracking-widest font-bold">Next Slide Preview</span>
           {nextSlide ? (
             <div className="text-center mt-2.5">
-              <p className="text-xs font-semibold text-slate-350 truncate">{nextSlide.content.split('\n')[0]}</p>
+              <p className="text-xs font-semibold text-stone-600 truncate">{nextSlide.content.split('\n')[0]}</p>
               {nextSlide.translation && (
-                <p dir={dirFor(translationLang)} className="text-xs font-semibold text-indigo-400 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
+                <p dir={dirFor(translationLang)} className="text-xs font-semibold text-sky-600 font-serif truncate mt-0.5">{nextSlide.translation.split('\n')[0]}</p>
               )}
             </div>
           ) : (
-            <p className="text-[10px] text-slate-700 text-center mt-3 uppercase tracking-wider font-bold">End of Presentation</p>
+            <p className="text-[10px] text-stone-500 text-center mt-3 uppercase tracking-wider font-bold">End of Presentation</p>
           )}
         </section>
 
       </main>
 
       {/* Emergency Overlay Controls */}
-      <section className="px-4 py-3 bg-slate-950 border-t border-slate-900">
-        <span className="text-[8px] text-slate-650 uppercase tracking-widest font-bold block mb-2 text-center">Projector Display Mode</span>
+      <section className="px-4 py-3 bg-stone-50 border-t border-stone-200">
+        <span className="text-[8px] text-stone-400 uppercase tracking-widest font-bold block mb-2 text-center">Projector Display Mode</span>
         
         <div className="grid grid-cols-4 gap-2">
           <button
             onClick={() => toggleBlankMode('none')}
             className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-[10px] font-bold gap-1 transition-all active:scale-95 ${
               blankMode === 'none'
-                ? 'bg-violet-600/10 border-violet-500 text-violet-400'
-                : 'bg-slate-900/40 border-slate-900 text-slate-400 hover:border-slate-800'
+                ? 'bg-teal-600/10 border-teal-400 text-teal-600'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
             }`}
           >
             <Tv className="h-4 w-4" />
@@ -198,8 +198,8 @@ function RemoteContent() {
             onClick={() => toggleBlankMode('black')}
             className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-[10px] font-bold gap-1 transition-all active:scale-95 ${
               blankMode === 'black'
-                ? 'bg-red-650/15 border-red-500 text-red-400'
-                : 'bg-slate-900/40 border-slate-900 text-slate-400 hover:border-slate-800'
+                ? 'bg-red-650/15 border-red-500 text-red-600'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
             }`}
           >
             <XOctagon className="h-4 w-4" />
@@ -210,8 +210,8 @@ function RemoteContent() {
             onClick={() => toggleBlankMode('clear')}
             className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-[10px] font-bold gap-1 transition-all active:scale-95 ${
               blankMode === 'clear'
-                ? 'bg-indigo-650/15 border-indigo-500 text-indigo-400'
-                : 'bg-slate-900/40 border-slate-900 text-slate-400 hover:border-slate-800'
+                ? 'bg-teal-50 border-teal-400 text-sky-600'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
             }`}
           >
             <EyeOff className="h-4 w-4" />
@@ -222,8 +222,8 @@ function RemoteContent() {
             onClick={() => toggleBlankMode('logo')}
             className={`flex flex-col items-center justify-center py-2.5 rounded-xl border text-[10px] font-bold gap-1 transition-all active:scale-95 ${
               blankMode === 'logo'
-                ? 'bg-emerald-650/15 border-emerald-500 text-emerald-400'
-                : 'bg-slate-900/40 border-slate-900 text-slate-400 hover:border-slate-800'
+                ? 'bg-emerald-650/15 border-emerald-500 text-emerald-600'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
             }`}
           >
             <Sparkles className="h-4 w-4" />
@@ -233,11 +233,11 @@ function RemoteContent() {
       </section>
 
       {/* Massive Navigation Buttons */}
-      <section className="p-4 bg-slate-950 flex gap-4 border-t border-slate-900">
+      <section className="p-4 bg-stone-50 flex gap-4 border-t border-stone-200">
         <button
           onClick={handlePrev}
           disabled={activeIdx <= 0}
-          className="flex-1 flex items-center justify-center gap-1.5 py-5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 font-bold active:bg-slate-800 disabled:opacity-35 transition-all"
+          className="flex-1 flex items-center justify-center gap-1.5 py-5 rounded-2xl bg-stone-100 border border-stone-200 text-stone-700 font-bold active:bg-stone-100 disabled:opacity-35 transition-all"
         >
           <ChevronLeft className="h-5 w-5" />
           <span>PREVIOUS</span>
@@ -246,7 +246,7 @@ function RemoteContent() {
         <button
           onClick={handleNext}
           disabled={activeIdx >= slides.length - 1}
-          className="flex-[2] flex items-center justify-center gap-1.5 py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold shadow-lg shadow-indigo-500/25 active:scale-[0.98] disabled:opacity-35 transition-all"
+          className="flex-[2] flex items-center justify-center gap-1.5 py-5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold shadow-lg shadow-teal-500/20 active:scale-[0.98] disabled:opacity-35 transition-all"
         >
           <span>NEXT SLIDE</span>
           <ChevronRight className="h-5 w-5" />
@@ -261,8 +261,8 @@ export default function RemotePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent" />
+        <div className="flex min-h-screen items-center justify-center bg-stone-50 text-stone-800">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
         </div>
       }
     >
