@@ -792,19 +792,25 @@ export function useRealtimePresentation(presentationId: string) {
     media_type?: Slide['media_type'], 
     media_url?: string
   ) => {
-    const updatedSlides = presentation.slides.map((s) => {
-      if (s.id === slideId) return { ...s, content, translation, media_type, media_url };
-      return s;
-    });
+    // Only touch the media columns when the caller actually passed media_type.
+    // A pure text/translation edit leaves media_type undefined and must NOT blank
+    // out media that another action (or writer) set on the slide.
+    const patch: Partial<Slide> = { content, translation };
+    if (media_type !== undefined) {
+      patch.media_type = media_type;
+      patch.media_url = media_url; // may be undefined → clears the media
+    }
+
+    const updatedSlides = presentation.slides.map((s) =>
+      s.id === slideId ? { ...s, ...patch } : s
+    );
 
     // Functional update so a concurrent settings change (e.g. switching the
     // translation language, which also re-translates this slide) is not
     // clobbered by a stale `presentation` snapshot.
     setPresentation((prev) => ({
       ...prev,
-      slides: prev.slides.map((s) =>
-        s.id === slideId ? { ...s, content, translation, media_type, media_url } : s
-      ),
+      slides: prev.slides.map((s) => (s.id === slideId ? { ...s, ...patch } : s)),
     }));
 
     const updatedPresentation = { ...presentation, slides: updatedSlides };
@@ -833,15 +839,17 @@ export function useRealtimePresentation(presentationId: string) {
         clearTimeout(saveTimersRef.current[slideId]);
       }
       saveTimersRef.current[slideId] = setTimeout(() => {
+        // Build the DB payload from the same patch: omit media columns on a pure
+        // text edit; when media IS being set, send null (not undefined) so a
+        // removal actually clears the column rather than being silently dropped.
+        const dbPatch: Record<string, unknown> = { content, translation, updated_at: new Date().toISOString() };
+        if (media_type !== undefined) {
+          dbPatch.media_type = media_type;
+          dbPatch.media_url = media_url ?? null;
+        }
         supabase
           .from('slides')
-          .update({
-            content,
-            translation,
-            media_type,
-            media_url,
-            updated_at: new Date().toISOString()
-          })
+          .update(dbPatch)
           .eq('id', slideId)
           .then(({ error }) => {
             if (error) console.error('Error updating slide:', error.message);
