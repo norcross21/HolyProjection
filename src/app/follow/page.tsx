@@ -8,14 +8,12 @@ import PollView from '@/components/PollView';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import SlideBranding from '@/components/SlideBranding';
 import { 
-  Sparkles, 
-  Tv, 
-  MessageSquare, 
-  Moon, 
-  Sun, 
-  Type, 
-  Languages, 
-  Check, 
+  Sparkles,
+  MessageSquare,
+  Moon,
+  Sun,
+  Type,
+  Check,
   Send, 
   X,
   HeartHandshake,

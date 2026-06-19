@@ -236,7 +236,7 @@ export function clearBrandPreset() {
 export function usePresentationsPortal() {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
+  const [isDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
 
   const fetchPresentations = async () => {
     setLoading(true);
@@ -455,7 +455,7 @@ export function usePresentationsPortal() {
 
 // Hook for a single presentation realtime dashboard / projector sync
 export function useRealtimePresentation(presentationId: string) {
-  const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
+  const [isDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
   const [presentation, setPresentation] = useState<Presentation>(DEFAULT_PRESENTATION);
   const [activeSlideId, setActiveSlideId] = useState<string | null>(null);
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
@@ -1372,7 +1372,7 @@ export interface Setlist {
 export function useSetlistsPortal() {
   const [setlists, setSetlists] = useState<Setlist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
+  const [isDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
 
   const fetchSetlists = async () => {
     setLoading(true);
@@ -1499,7 +1499,7 @@ export function useSetlistsPortal() {
 }
 
 export function useRealtimeSetlist(setlistId: string) {
-  const [isDemoMode, setIsDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
+  const [isDemoMode] = useState(!IS_SUPABASE_CONFIGURED);
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [activeSlideId, setActiveSlideId] = useState<string | null>(null);
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);

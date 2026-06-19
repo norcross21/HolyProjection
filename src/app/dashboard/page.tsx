@@ -4,8 +4,6 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, usePresentationsPortal, useSetlistsPortal, getBrandPreset } from '@/utils/sync';
 import { resolveAuth, signOut, AuthIdentity } from '@/utils/auth';
-import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
-import MediaLibrary from '@/components/MediaLibrary';
 import SlideDesigner from '@/components/SlideDesigner';
 import SlideEditor from '@/components/SlideEditor';
 import SlidePreview from '@/components/SlidePreview';
@@ -13,20 +11,17 @@ import RecorderButton from '@/components/RecorderButton';
 import PollControl from '@/components/PollControl';
 import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
 import { 
-  Sparkles, 
-  Tv, 
-  Settings, 
-  Users, 
-  Edit3, 
-  ExternalLink, 
-  Play, 
-  Check, 
+  Sparkles,
+  Tv,
+  Users,
+  ExternalLink,
+  Play,
+  Check,
   AlertTriangle,
   LogOut,
   Plus,
   ArrowLeft,
   ChevronRight,
-  Languages,
   LayoutGrid,
   BookOpen,
   FileText,
@@ -120,9 +115,11 @@ function DashboardContent() {
   const slidesRef = useRef<typeof presentation.slides>(presentation.slides);
   const activeSlideIdRef = useRef<string | null>(activeSlideId);
   const blankModeRef = useRef(presentation.settings.blankMode);
-  slidesRef.current = presentation.slides;
-  activeSlideIdRef.current = activeSlideId;
-  blankModeRef.current = presentation.settings.blankMode;
+  useEffect(() => {
+    slidesRef.current = presentation.slides;
+    activeSlideIdRef.current = activeSlideId;
+    blankModeRef.current = presentation.settings.blankMode;
+  });
   const advanceLive = (dir: 1 | -1 = 1, wrap = true) => {
     const slides = slidesRef.current;
     const idx = slides.findIndex((s) => s.id === activeSlideIdRef.current);
@@ -152,52 +149,23 @@ function DashboardContent() {
   };
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
-  const [brandNudgeDismissed, setBrandNudgeDismissed] = useState(true);
+  const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
+    // Hidden unless this browser has no brand preset and hasn't dismissed it before.
+    // The banner also gates on presentations.length (client-only) so there's no SSR mismatch.
+    if (typeof window === 'undefined') return true;
+    return !!getBrandPreset() || localStorage.getItem('hp_brand_nudge_dismissed') === '1';
+  });
   const [newSetlistTitle, setNewSetlistTitle] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [screenTab, setScreenTab] = useState<'projector' | 'stage' | 'follow'>('follow');
   const [screensList, setScreensList] = useState<ScreenInfo[] | null>(null);
   const [screensChecked, setScreensChecked] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-
   // Live Alert States
   const [alertText, setAlertText] = useState('');
   const [alertType, setAlertType] = useState<AlertType>('general');
   const [alertPosition, setAlertPosition] = useState<AlertPosition>('bottom');
   const [nurseryNumber, setNurseryNumber] = useState('');
-
-  const translationLang = presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG;
-
-  const handleTranslateSlide = async (langOverride?: string) => {
-    if (!selectedSlide || !selectedSlide.content.trim()) return;
-    const target = langOverride || translationLang;
-    setIsTranslating(true);
-    try {
-      const response = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: selectedSlide.content, targetLang: target }),
-      });
-      const data = await response.json();
-      if (data.success && data.translation) {
-        updateSlideContent(
-          selectedSlide.id,
-          selectedSlide.content,
-          data.translation,
-          selectedSlide.media_type,
-          selectedSlide.media_url
-        );
-      } else {
-        alert(data.error || 'Failed to translate lyrics.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Translation failed. Please try again.');
-    } finally {
-      setIsTranslating(false);
-    }
-  };
 
   // Hook for Listing & Creating Setlists
   const {
@@ -219,13 +187,6 @@ function DashboardContent() {
     };
     checkSession();
   }, [router]);
-
-  useEffect(() => {
-    // First-time branding nudge: show only if no brand preset saved and not dismissed before.
-    if (!getBrandPreset() && localStorage.getItem('hp_brand_nudge_dismissed') !== '1') {
-      setBrandNudgeDismissed(false);
-    }
-  }, []);
 
   useEffect(() => {
     const linkId = 'google-fonts-dashboard';

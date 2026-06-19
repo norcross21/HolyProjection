@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Sparkles, Tv, ArrowRight, PlayCircle, ShieldCheck, Zap, Layers, RefreshCw } from 'lucide-react';
+import { Sparkles, Tv, ArrowRight, ShieldCheck, Layers, RefreshCw } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();

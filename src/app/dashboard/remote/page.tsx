@@ -6,17 +6,13 @@ import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils
 import { resolveAuth } from '@/utils/auth';
 import { dirFor } from '@/utils/languages';
 import { 
-  ArrowLeft, 
-  Play, 
-  Sparkles, 
-  Tv, 
-  ChevronLeft, 
-  ChevronRight, 
-  EyeOff, 
-  Image as ImageIcon, 
-  XOctagon, 
-  RefreshCw,
-  LayoutGrid
+  ArrowLeft,
+  Sparkles,
+  Tv,
+  ChevronLeft,
+  ChevronRight,
+  EyeOff,
+  XOctagon,
 } from 'lucide-react';
 
 function RemoteContent() {
@@ -31,7 +27,6 @@ function RemoteContent() {
     presentation: singlePres,
     activeSlideId: activePresSlideId,
     setLiveSlide: setPresLiveSlide,
-    updateSettings: updatePresSettings,
     setBlankMode: setPresBlankMode
   } = useRealtimePresentation(setlistId ? '' : (presId || ''));
 
