@@ -6,6 +6,8 @@ import SlidePreview from '@/components/SlidePreview';
 import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
+import { splitLyricsIntoSlides } from '@/utils/lyrics';
+import { BACKGROUNDS } from '@/utils/backgrounds';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer, Stamp, StickyNote,
 } from 'lucide-react';
@@ -26,6 +28,7 @@ interface SlideEditorProps {
   onSetAudio: (url: string | undefined, loop: boolean) => void;
   onSetAutoAdvance: (secs: number) => void;
   onSetNotes: (notes: string) => void;
+  onSetSlideBg: (value: string | undefined) => void;
   onSplit: (chunks: string[]) => void;
   onGoLive: () => void;
   onOpenDesigner: () => void;
@@ -154,14 +157,15 @@ export default function SlideEditor(props: SlideEditorProps) {
               className="w-full rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-sm leading-relaxed text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none resize-none"
             />
             {(() => {
-              const chunks = slide.content.split(/\n\s*\n/).map((c) => c.trim()).filter(Boolean);
+              // Smart split: by verse/chorus (blank lines) then by length (max 4 lines).
+              const chunks = splitLyricsIntoSlides(slide.content, { maxLinesPerSlide: 4 });
               if (chunks.length < 2) return null;
               return (
                 <button
                   onClick={() => props.onSplit(chunks)}
                   className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-violet-600/15 border border-violet-500/30 hover:bg-violet-600/25 py-2 text-xs font-bold text-violet-300"
                 >
-                  <Scissors className="h-3.5 w-3.5" /> Split into {chunks.length} slides (by blank lines)
+                  <Scissors className="h-3.5 w-3.5" /> Auto-split into {chunks.length} slides (by verse &amp; length)
                 </button>
               );
             })()}
@@ -198,11 +202,37 @@ export default function SlideEditor(props: SlideEditorProps) {
               onChange={(e) => setMedia(e.target.value as Slide['media_type'], slide.media_url)}
               className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 focus:border-violet-500 focus:outline-none"
             >
-              <option value="none">Colour theme (default)</option>
+              <option value="none">Colour / background (default)</option>
               <option value="image">Image (upload)</option>
               <option value="video">Video (upload or link)</option>
               <option value="camera">Live camera</option>
             </select>
+
+            {(!slide.media_type || slide.media_type === 'none') && (
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-500">Built-in backgrounds</span>
+                  {slide.settings?.bgColor && (
+                    <button onClick={() => props.onSetSlideBg(undefined)} className="text-[10px] font-bold text-slate-500 hover:text-red-400">Reset to theme</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {BACKGROUNDS.map((bg) => {
+                    const active = slide.settings?.bgColor === bg.value;
+                    return (
+                      <button
+                        key={bg.id}
+                        title={bg.name}
+                        onClick={() => props.onSetSlideBg(bg.value)}
+                        style={{ background: bg.value }}
+                        className={`aspect-square rounded-md border transition-all ${active ? 'border-violet-400 ring-2 ring-violet-500/50' : 'border-slate-700/60 hover:border-slate-500'}`}
+                      />
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-slate-600">Applies to this slide. Use the Theme section to set one for the whole presentation.</p>
+              </div>
+            )}
 
             {(slide.media_type === 'image' || slide.media_type === 'video') && (
               <div className="space-y-3 pt-1">
@@ -297,6 +327,20 @@ export default function SlideEditor(props: SlideEditorProps) {
               ))}
             </div>
             <p className="text-[10px] text-slate-600">Applies background, font &amp; text style to every lyric slide.</p>
+            <div className="pt-2 space-y-1.5">
+              <span className="text-[10px] uppercase font-bold text-slate-500">Background for whole presentation</span>
+              <div className="grid grid-cols-6 gap-1.5">
+                {BACKGROUNDS.map((bg) => (
+                  <button
+                    key={bg.id}
+                    title={bg.name}
+                    onClick={() => props.onUpdateSettings({ background: bg.value })}
+                    style={{ background: bg.value }}
+                    className={`aspect-square rounded-md border transition-all ${settings.background === bg.value ? 'border-violet-400 ring-2 ring-violet-500/50' : 'border-slate-700/60 hover:border-slate-500'}`}
+                  />
+                ))}
+              </div>
+            </div>
           </Section>
 
           <Section icon={Stamp} title="Branding (whole presentation)">

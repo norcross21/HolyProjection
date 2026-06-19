@@ -10,6 +10,7 @@ import SlidePreview from '@/components/SlidePreview';
 import RecorderButton from '@/components/RecorderButton';
 import PollControl from '@/components/PollControl';
 import { getScreens, openOnScreen, type ScreenInfo } from '@/utils/screens';
+import { LANGUAGES, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { 
   Sparkles,
   Tv,
@@ -153,6 +154,8 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [scriptureRef, setScriptureRef] = useState('');
   const [scriptureBusy, setScriptureBusy] = useState(false);
+  const [bulkLang, setBulkLang] = useState<string>('');
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
     // Hidden unless this browser has no brand preset and hasn't dismissed it before.
     // The banner also gates on presentations.length (client-only) so there's no SSR mismatch.
@@ -241,6 +244,33 @@ function DashboardContent() {
     if (!w) { alert('Please allow pop-ups to print the running order.'); return; }
     w.document.write(html);
     w.document.close();
+  };
+
+  // Translate every slide in the presentation to one language in a single action.
+  // Runs sequentially (gentle on the API) with visible progress, and stores the
+  // chosen language as the presentation default.
+  const translateAllSlides = async () => {
+    const lang = bulkLang || presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG;
+    const targets = presentation.slides.filter((s) => s.content.trim());
+    if (!targets.length || bulkProgress) return;
+    updateSettings({ translationLang: lang });
+    setBulkProgress({ done: 0, total: targets.length });
+    for (let i = 0; i < targets.length; i++) {
+      const s = targets[i];
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: s.content, targetLang: lang }),
+        });
+        const data = await res.json();
+        if (data.success && data.translation) {
+          updateSlideContent(s.id, s.content, data.translation, s.media_type, s.media_url);
+        }
+      } catch { /* skip a failed slide, keep going */ }
+      setBulkProgress({ done: i + 1, total: targets.length });
+    }
+    setBulkProgress(null);
   };
 
   // Hook for Listing & Creating Setlists
@@ -1237,16 +1267,27 @@ function DashboardContent() {
           {(() => {
             const liveIdx = presentation.slides.findIndex((s) => s.id === activeSlideId);
             const liveSlide = presentation.slides[liveIdx];
+            const nextSlide = liveIdx >= 0 ? presentation.slides[liveIdx + 1] : undefined;
+            const blank = presentation.settings.blankMode;
             const goTo = (i: number) => { const s = presentation.slides[i]; if (s) setLiveSlide(s.id); };
             return (
               <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-3">
-                  <Play className="h-4 w-4 text-red-400 fill-current" />
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Now Live</h2>
+                  <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black tracking-wider ${liveSlide ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full bg-white ${liveSlide ? 'animate-pulse' : ''}`} />LIVE
+                  </span>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">On screen now</h2>
                 </div>
+                {/* Mirrors exactly what the audience sees, including blank/blackout/logo states */}
                 <div className="relative aspect-video rounded-xl overflow-hidden ring-1 ring-white/10 mb-3 bg-slate-950">
                   {liveSlide ? (
-                    <SlidePreview slide={liveSlide} settings={presentation.settings} />
+                    <>
+                      <div style={{ opacity: blank === 'clear' ? 0.05 : 1 }} className="absolute inset-0">
+                        <SlidePreview slide={liveSlide} settings={presentation.settings} />
+                      </div>
+                      {blank === 'black' && <div className="absolute inset-0 bg-black flex items-center justify-center text-[10px] font-bold tracking-widest text-slate-600">BLACKOUT</div>}
+                      {blank === 'logo' && <div className="absolute inset-0 bg-slate-950 flex items-center justify-center text-2xl">✨</div>}
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-[11px] text-slate-600 px-4 text-center">Nothing live yet — press Go Live on a slide.</div>
                   )}
@@ -1260,6 +1301,14 @@ function DashboardContent() {
                     Next<ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+                {nextSlide && (
+                  <div className="mt-3 flex items-center gap-2.5">
+                    <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500 shrink-0">Next&nbsp;up</span>
+                    <button onClick={() => goTo(liveIdx + 1)} className="relative w-28 aspect-video rounded-lg overflow-hidden ring-1 ring-white/10 hover:ring-indigo-500/60 transition-all">
+                      <SlidePreview slide={nextSlide} settings={presentation.settings} />
+                    </button>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center gap-2 border-t border-slate-900 pt-3">
                   <button
                     onClick={() => setLooping((v) => !v)}
@@ -1341,6 +1390,28 @@ function DashboardContent() {
               placeholder="Heading (default: “Service begins in”)"
               className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none"
             />
+          </section>
+
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">🌐 Translate whole presentation</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={bulkLang || presentation.settings.translationLang || DEFAULT_TRANSLATION_LANG}
+                onChange={(e) => setBulkLang(e.target.value)}
+                disabled={!!bulkProgress}
+                className="flex-1 rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2 text-[11px] text-slate-200 focus:outline-none disabled:opacity-50"
+              >
+                {LANGUAGES.map((l) => <option key={l.name} value={l.name}>{l.name}{l.rtl ? ' (RTL)' : ''}</option>)}
+              </select>
+              <button
+                onClick={translateAllSlides}
+                disabled={!!bulkProgress || presentation.slides.length === 0}
+                className="rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-3 py-1.5 text-[11px] font-bold text-white transition-all"
+              >
+                {bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}…` : 'Translate all'}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-600">Re-translates every slide&apos;s text to the chosen language and sets it as the default.</p>
           </section>
 
           <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
@@ -1528,6 +1599,7 @@ function DashboardContent() {
             onSetAudio={(url, loop) => setSlideAudio(editingSlide.id, url, loop)}
             onSetAutoAdvance={(secs) => setSlideAutoAdvance(editingSlide.id, secs)}
             onSetNotes={(notes) => updateSlideSettings(editingSlide.id, { notes })}
+            onSetSlideBg={(value) => updateSlideSettings(editingSlide.id, { bgColor: value })}
             onSplit={(chunks) => {
               updateSlideContent(editingSlide.id, chunks[0], editingSlide.translation, editingSlide.media_type, editingSlide.media_url);
               if (chunks.length > 1) appendSlidesToPresentation(presId!, chunks.slice(1).map((c) => ({ content: c })));

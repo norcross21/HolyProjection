@@ -369,6 +369,12 @@ function ProjectorContent() {
   useEffect(() => {
     adjustFontSizes();
 
+    // Re-fit once web fonts finish loading — text metrics change when the custom
+    // font swaps in, which would otherwise leave the first slide mis-sized.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => adjustFontSizes()).catch(() => {});
+    }
+
     const container = containerRef.current;
     if (!container) return;
 
@@ -426,7 +432,7 @@ function ProjectorContent() {
     <main
       className="relative flex h-screen w-screen flex-col items-center justify-center overflow-hidden transition-all duration-300"
       style={{
-        backgroundColor: slideToShow?.settings?.bgColor || fontSettings.background || '#0f172a',
+        background: slideToShow?.settings?.bgColor || fontSettings.background || '#0f172a',
         fontFamily: fontSettings.fontFamily || 'sans-serif',
       }}
     >

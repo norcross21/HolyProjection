@@ -15,10 +15,18 @@ export default function SlidePreview({ slide, settings }: { slide: Slide; settin
   const fill = Boolean(slide.media_fill && slide.media_url);
   const dimmed = !fill && !hasElements;
 
+  // Shrink-to-fit heuristic so long verses don't overflow the thumbnail — mirrors
+  // the projector's auto-fit so the preview is faithful. More/longer lines → smaller.
+  const lines = (slide.content || '').split('\n');
+  const lineCount = Math.max(lines.length, 1);
+  const longest = lines.reduce((m, l) => Math.max(m, l.length), 0);
+  const primarySize = Math.max(4, Math.min(11, 11 - Math.max(0, lineCount - 2) * 1.15 - Math.max(0, longest - 24) * 0.16));
+  const translationSize = Math.max(3.4, primarySize * 0.8);
+
   return (
     <div
       className="relative w-full h-full overflow-hidden"
-      style={{ backgroundColor: bg, containerType: 'size', fontFamily: settings.fontFamily || 'Inter' } as React.CSSProperties}
+      style={{ background: bg, containerType: 'size', fontFamily: settings.fontFamily || 'Inter' } as React.CSSProperties}
     >
       {slide.media_type === 'image' && slide.media_url && (
         <img src={slide.media_url} alt="" className={`absolute inset-0 w-full h-full object-cover ${dimmed ? 'brightness-[0.5]' : ''}`} />
@@ -34,17 +42,17 @@ export default function SlidePreview({ slide, settings }: { slide: Slide; settin
           <div className="w-full">
             <div
               className="text-white font-bold leading-tight whitespace-pre-line break-words"
-              style={{ fontSize: '10cqh', textAlign: settings.textAlign || 'center' }}
+              style={{ fontSize: `${primarySize}cqh`, textAlign: settings.textAlign || 'center' }}
             >
-              {(slide.content || '').split('\n').slice(0, 4).join('\n') || ' '}
+              {slide.content || ' '}
             </div>
             {slide.translation && (
               <div
                 dir={dirFor(settings.translationLang)}
                 className="text-indigo-300 font-semibold whitespace-pre-line break-words"
-                style={{ fontSize: '8cqh', marginTop: '2cqh' }}
+                style={{ fontSize: `${translationSize}cqh`, marginTop: '2cqh' }}
               >
-                {slide.translation.split('\n').slice(0, 3).join('\n')}
+                {slide.translation}
               </div>
             )}
           </div>
