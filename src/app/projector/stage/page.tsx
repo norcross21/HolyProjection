@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils/sync';
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
+import CountdownOverlay from '@/components/CountdownOverlay';
 import { Clock, Tv, AlertTriangle, CheckCircle } from 'lucide-react';
 
 function StageDisplayContent() {
@@ -77,9 +78,21 @@ function StageDisplayContent() {
   const showTranslation = ss?.stageShowTranslation !== false;
   const stageMessage = ss?.stageMessage;
 
+  // Countdown is controlled at the setlist level in setlist mode, on the presentation otherwise.
+  const cdSource = setlistId ? setlist?.settings : ss;
+  const countdownSettings = {
+    countdownTarget: cdSource?.countdownTarget ?? null,
+    countdownMessage: cdSource?.countdownMessage,
+    countdownEndMessage: cdSource?.countdownEndMessage,
+    fontFamily: ss?.fontFamily,
+  };
+
   return (
-    <main className="min-h-screen w-screen bg-black text-white font-sans flex flex-col justify-between p-8 select-none">
-      
+    <main className="relative min-h-screen w-screen bg-black text-white font-sans flex flex-col justify-between p-8 select-none">
+
+      {/* Pre-service countdown (full-screen) — same synced timer the band & projector share */}
+      <CountdownOverlay settings={countdownSettings} />
+
       {/* Top Header Row */}
       <header className="flex justify-between items-center border-b border-slate-900 pb-4">
         <div className="flex items-center gap-3">

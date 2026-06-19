@@ -8,7 +8,9 @@ import { Presentation } from '@/utils/sync';
  * target timestamp in settings (countdownTarget), so every connected screen ticks
  * down in lockstep with no per-device drift. Renders nothing once cleared.
  */
-export default function CountdownOverlay({ settings }: { settings: Presentation['settings'] }) {
+type CountdownSettings = Pick<Presentation['settings'], 'countdownTarget' | 'countdownMessage' | 'countdownEndMessage'> & { fontFamily?: string };
+
+export default function CountdownOverlay({ settings }: { settings: CountdownSettings }) {
   const target = settings.countdownTarget ? new Date(settings.countdownTarget).getTime() : 0;
   const [now, setNow] = useState<number>(() => Date.now());
 
