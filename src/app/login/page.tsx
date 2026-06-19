@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
-import { Sparkles, ArrowRight, User, Mail, ShieldAlert, MonitorPlay, KeyRound } from 'lucide-react';
+import { ArrowRight, User, Mail, ShieldAlert, MonitorPlay, KeyRound } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const isSupabaseConfigured =
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
@@ -121,61 +122,56 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-950 font-sans text-slate-100">
-      {/* Background glow spheres */}
-      <div className="absolute top-[-20%] left-[-20%] h-[70vw] w-[70vw] rounded-full bg-violet-900/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] h-[70vw] w-[70vw] rounded-full bg-indigo-900/15 blur-[120px] pointer-events-none" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-50 font-sans text-slate-900">
+      {/* Soft ambient colour wash */}
+      <div className="absolute top-[-20%] left-[-20%] h-[60vw] w-[60vw] rounded-full bg-indigo-200/40 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] h-[60vw] w-[60vw] rounded-full bg-violet-200/40 blur-[120px] pointer-events-none" />
 
       {/* Main card */}
       <div className="relative w-full max-w-md px-6 py-12">
         {/* Logo Header */}
-        <div className="flex flex-col items-center mb-8 text-center animate-fade-in">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-lg shadow-indigo-500/25 mb-4 ring-1 ring-white/10">
-            <Sparkles className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-            HolyProjection
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
+        <div className="flex flex-col items-center mb-8 text-center">
+          <Logo size={42} />
+          <p className="mt-3 text-sm text-slate-500">
             Dual-view real-time church presentation engine
           </p>
         </div>
 
         {/* Demo Mode Notice */}
         {isDemo && (
-          <div className="mb-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-300 backdrop-blur-md shadow-md animate-slide-up">
+          <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 shadow-sm">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <span className="font-semibold block mb-0.5">Demo Mode Active</span>
-                No Supabase URL detected in <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-200">.env.local</code>. Realtime sync will run locally via <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-200">BroadcastChannel</code>.
+                No Supabase URL detected in <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900">.env.local</code>. Realtime sync will run locally via <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900">BroadcastChannel</code>.
               </div>
             </div>
           </div>
         )}
 
         {/* Auth Form Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-2xl backdrop-blur-xl ring-1 ring-white/5 animate-slide-up">
-          <h2 className="text-lg font-bold text-white mb-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
+          <h2 className="text-lg font-bold text-slate-900 mb-6">
             {isSignUp ? 'Create your presenter account' : 'Sign in to dashboard'}
           </h2>
 
           <form onSubmit={handleAuth} className="space-y-5">
             {errorMsg && (
-              <div className="rounded-xl bg-red-950/40 border border-red-500/30 p-3.5 text-xs text-red-400">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700">
                 {errorMsg}
               </div>
             )}
-            
+
             {successMsg && (
-              <div className="rounded-xl bg-emerald-950/40 border border-emerald-500/30 p-3.5 text-xs text-emerald-400">
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 text-xs text-emerald-700">
                 {successMsg}
               </div>
             )}
 
             {(isSignUp || isDemo) && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                   Display Name
                 </label>
                 <div className="relative">
@@ -186,14 +182,14 @@ export default function LoginPage() {
                     placeholder="e.g. Pastor Stephen"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -204,14 +200,14 @@ export default function LoginPage() {
                   placeholder="name@church.org"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
                 />
               </div>
             </div>
 
             {(!isDemo) && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -222,7 +218,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 py-3 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
                   />
                 </div>
               </div>
@@ -253,7 +249,7 @@ export default function LoginPage() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-all"
+                className="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-all"
               >
                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
               </button>
@@ -263,14 +259,14 @@ export default function LoginPage() {
           {isDemo && (
             <div className="mt-6 flex flex-col items-center">
               <div className="flex items-center w-full my-4">
-                <div className="flex-1 border-t border-slate-800"></div>
-                <span className="px-3 text-xs text-slate-600 font-medium">OR</span>
-                <div className="flex-1 border-t border-slate-800"></div>
+                <div className="flex-1 border-t border-slate-200"></div>
+                <span className="px-3 text-xs text-slate-400 font-medium">OR</span>
+                <div className="flex-1 border-t border-slate-200"></div>
               </div>
 
               <button
                 onClick={handleBypassDemo}
-                className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-all"
+                className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition-all"
               >
                 <MonitorPlay className="h-4 w-4 text-indigo-400" />
                 <span>Quick-bypass using default credentials</span>
@@ -280,7 +276,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer info */}
-        <p className="mt-8 text-center text-xs text-slate-600">
+        <p className="mt-8 text-center text-xs text-slate-400">
           Designed for houses of worship. Supported by Google DeepMind and Vercel.
         </p>
       </div>
