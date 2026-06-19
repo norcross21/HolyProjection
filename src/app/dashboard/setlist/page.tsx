@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimeSetlist, usePresentationsPortal } from '@/utils/sync';
+import QuickFind, { type QuickItem } from '@/components/QuickFind';
 import { resolveAuth, signOut } from '@/utils/auth';
 import { dirFor } from '@/utils/languages';
 import { 
@@ -69,6 +70,15 @@ function SetlistContent() {
   } = usePresentationsPortal();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setQuickAddOpen((v) => !v); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     // Require a real session in cloud mode; localStorage profile only in demo mode
@@ -121,6 +131,10 @@ function SetlistContent() {
   const availablePres = presentations.filter(
     (pres) => !addedPresIds.has(pres.id) && pres.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  // Everything addable (ignoring the inline filter) for the Quick Find palette.
+  const addableItems: QuickItem[] = presentations
+    .filter((pres) => !addedPresIds.has(pres.id))
+    .map((pres) => ({ id: pres.id, title: pres.title, subtitle: `${pres.slides.length} slide${pres.slides.length === 1 ? '' : 's'}`, badge: (pres.settings?.tags || [])[0] }));
 
   // Compile all slides from all presentations in setlist order
   const allSlidesWithMeta = setlist.items.flatMap((item, itemIdx) => {
@@ -288,10 +302,28 @@ function SetlistContent() {
 
           {/* Add songs area */}
           <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center gap-2 mb-4">
-              <Plus className="h-4 w-4 text-teal-600" />
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Add Songs to Setlist</h2>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4 text-teal-600" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Add Songs to Setlist</h2>
+              </div>
+              <button
+                onClick={() => setQuickAddOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-stone-100 border border-stone-200 hover:bg-stone-200 px-2.5 py-1.5 text-[11px] font-bold text-stone-600 transition-all"
+              >
+                <Search className="h-3.5 w-3.5" />Quick add
+                <kbd className="hidden sm:inline text-[10px] font-bold text-stone-400 border border-stone-300 rounded px-1">⌘K</kbd>
+              </button>
             </div>
+
+            <QuickFind
+              open={quickAddOpen}
+              onClose={() => setQuickAddOpen(false)}
+              onSelect={(id) => addPresentationToSetlist(id)}
+              items={addableItems}
+              placeholder="Search songs to add…"
+              hint="add"
+            />
 
             <div className="relative mb-3.5">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />

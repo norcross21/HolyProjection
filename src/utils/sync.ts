@@ -87,6 +87,7 @@ export interface Presentation {
     countdownTarget?: string | null; // ISO timestamp the countdown reaches zero at (absolute, so all screens sync)
     countdownMessage?: string; // e.g. "Service begins in"
     countdownEndMessage?: string; // shown when it hits zero, e.g. "Welcome!"
+    tags?: string[]; // library organisation labels, e.g. ["Christmas", "Communion"]
   };
 }
 
@@ -441,6 +442,79 @@ export function usePresentationsPortal() {
     }
   };
 
+  // Clone a presentation with all its slides (content, media, elements, audio,
+  // per-slide settings) and its presentation-level settings — for tweaking a
+  // song without touching the original.
+  const duplicatePresentation = async (id: string) => {
+    const src = presentations.find((p) => p.id === id);
+    if (!src) return null;
+    const newTitle = `${src.title} (copy)`;
+    const copySlide = (s: Slide, idx: number) => ({
+      order_index: idx,
+      content: s.content,
+      translation: s.translation ?? null,
+      media_type: s.media_type ?? null,
+      media_url: s.media_url ?? null,
+      media_fill: s.media_fill ?? null,
+      elements: s.elements ?? null,
+      settings: s.settings ?? null,
+      audio_url: s.audio_url ?? null,
+      audio_loop: s.audio_loop ?? null,
+      auto_advance_secs: s.auto_advance_secs ?? null,
+    });
+
+    if (!IS_SUPABASE_CONFIGURED) {
+      const now = Date.now();
+      const newPres: Presentation = {
+        id: `demo-presentation-${now}`,
+        title: newTitle,
+        settings: { ...src.settings },
+        slides: src.slides.map((s, i) => ({ ...s, id: `slide-${now}-${i}`, order_index: i })),
+      };
+      const updated = [newPres, ...presentations];
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(updated));
+      setPresentations(updated);
+      return newPres.id;
+    }
+
+    try {
+      const { data: userSession } = await supabase.auth.getSession();
+      const userId = userSession?.session?.user?.id || null;
+      const { data: presData, error: presErr } = await supabase
+        .from('presentations')
+        .insert({ title: newTitle, created_by: userId, settings: src.settings })
+        .select()
+        .single();
+      if (presErr) throw presErr;
+
+      if (src.slides.length) {
+        const rows = src.slides.map((s, i) => ({ presentation_id: presData.id, ...copySlide(s, i) }));
+        const { error: slideErr } = await supabase.from('slides').insert(rows);
+        if (slideErr) throw slideErr;
+      }
+      await fetchPresentations();
+      return presData.id as string;
+    } catch (err) {
+      console.error('Error duplicating presentation:', errorMessage(err));
+      return null;
+    }
+  };
+
+  // Merge into a presentation's settings jsonb from the portal (e.g. tags),
+  // updating local state optimistically.
+  const updatePresentationSettings = async (id: string, partial: Partial<Presentation['settings']>) => {
+    const src = presentations.find((p) => p.id === id);
+    const merged = { ...(src?.settings || {}), ...partial } as Presentation['settings'];
+    setPresentations((prev) => prev.map((p) => (p.id === id ? { ...p, settings: merged } : p)));
+    if (!IS_SUPABASE_CONFIGURED) {
+      const list = (JSON.parse(localStorage.getItem('holyproj_all_pres') || '[]') as Presentation[]).map((p) => (p.id === id ? { ...p, settings: merged } : p));
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(list));
+      return;
+    }
+    const { error } = await supabase.from('presentations').update({ settings: merged }).eq('id', id);
+    if (error) console.error('Error updating presentation settings:', error.message);
+  };
+
   useEffect(() => {
     void Promise.resolve().then(fetchPresentations);
   }, []);
@@ -453,6 +527,8 @@ export function usePresentationsPortal() {
     createNewPresentation,
     appendSlidesToPresentation,
     deletePresentation,
+    duplicatePresentation,
+    updatePresentationSettings,
   };
 }
 

@@ -38,7 +38,8 @@ import {
   MonitorPlay,
   Stamp,
   Printer,
-  Search
+  Search,
+  Tag
 } from 'lucide-react';
 import QuickFind, { type QuickItem } from '@/components/QuickFind';
 
@@ -82,6 +83,8 @@ function DashboardContent() {
     createNewPresentation,
     appendSlidesToPresentation,
     deletePresentation,
+    duplicatePresentation,
+    updatePresentationSettings,
   } = usePresentationsPortal();
 
   // Hook for Active Presentation Sync (Only runs if presId is set)
@@ -160,6 +163,26 @@ function DashboardContent() {
   const [scriptureBusy, setScriptureBusy] = useState(false);
   const [quickFindOpen, setQuickFindOpen] = useState(false);
   const [recents, setRecents] = useState<{ id: string; title: string }[]>([]);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+
+  // Library tags: edit (prompt-based) and the set of all tags in use.
+  const editTags = async (e: React.MouseEvent, presId: string, current: string[]) => {
+    e.stopPropagation();
+    const input = prompt('Tags for this presentation (comma-separated):', current.join(', '));
+    if (input === null) return;
+    const tags = Array.from(new Set(input.split(',').map((t) => t.trim()).filter(Boolean)));
+    await updatePresentationSettings(presId, { tags });
+  };
+  const handleDuplicate = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDuplicatingId(id);
+    const newId = await duplicatePresentation(id);
+    setDuplicatingId(null);
+    if (newId) router.push(`/dashboard?pres=${newId}`);
+  };
+  const allTags = Array.from(new Set(presentations.flatMap((p) => p.settings?.tags || []))).sort();
+  const visiblePresentations = tagFilter ? presentations.filter((p) => (p.settings?.tags || []).includes(tagFilter)) : presentations;
   const [bulkLang, setBulkLang] = useState<string>('');
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
@@ -325,17 +348,19 @@ function DashboardContent() {
 
   // Load recently-opened presentations for the Quick Find empty state.
   useEffect(() => {
-    try { setRecents(JSON.parse(localStorage.getItem('hp_recent_pres') || '[]')); } catch { /* ignore */ }
+    queueMicrotask(() => {
+      try { setRecents(JSON.parse(localStorage.getItem('hp_recent_pres') || '[]')); } catch { /* ignore */ }
+    });
   }, []);
 
   // Remember this presentation as recently opened (most-recent first, max 8).
   useEffect(() => {
     if (!presId || !presentation.title) return;
-    setRecents((prev) => {
+    queueMicrotask(() => setRecents((prev) => {
       const next = [{ id: presId, title: presentation.title }, ...prev.filter((r) => r.id !== presId)].slice(0, 8);
       try { localStorage.setItem('hp_recent_pres', JSON.stringify(next)); } catch { /* ignore */ }
       return next;
-    });
+    }));
   }, [presId, presentation.title]);
 
   // Honour a ?go=<slideId> deep-link (used by Quick Find to jump into a song):
@@ -343,9 +368,11 @@ function DashboardContent() {
   useEffect(() => {
     if (!presId || !goSlideParam) return;
     if (!presentation.slides.some((s) => s.id === goSlideParam)) return;
-    setLiveSlide(goSlideParam);
-    setSelectedSlideId(goSlideParam);
-    router.replace(`/dashboard?pres=${presId}`);
+    queueMicrotask(() => {
+      setLiveSlide(goSlideParam);
+      setSelectedSlideId(goSlideParam);
+      router.replace(`/dashboard?pres=${presId}`);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presId, goSlideParam, presentation.slides]);
 
@@ -800,7 +827,24 @@ function DashboardContent() {
                 </div>
 
                 {/* Presentations list */}
-                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="md:col-span-2 space-y-4">
+                  {allTags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Filter</span>
+                      <button
+                        onClick={() => setTagFilter(null)}
+                        className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${!tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
+                      >All</button>
+                      {allTags.map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTagFilter(t === tagFilter ? null : t)}
+                          className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${t === tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
+                        >{t}</button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {portalLoading ? (
                     <div className="col-span-2 py-20 flex justify-center">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
@@ -809,8 +853,12 @@ function DashboardContent() {
                     <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-16 text-center text-stone-500 text-sm">
                       No presentations created yet. Use the sidebar to create one!
                     </div>
+                  ) : visiblePresentations.length === 0 ? (
+                    <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-12 text-center text-stone-500 text-sm">
+                      No presentations tagged “{tagFilter}”.
+                    </div>
                   ) : (
-                    presentations.map((pres) => (
+                    visiblePresentations.map((pres) => (
                       <div
                         key={pres.id}
                         onClick={() => router.push(`/dashboard?pres=${pres.id}`)}
@@ -828,6 +876,21 @@ function DashboardContent() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <button
+                              onClick={(e) => editTags(e, pres.id, pres.settings?.tags || [])}
+                              title="Edit tags"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Tag className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDuplicate(e, pres.id)}
+                              disabled={duplicatingId === pres.id}
+                              title="Duplicate presentation"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-100"
+                            >
+                              {duplicatingId === pres.id ? <span className="block h-4 w-4 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" /> : <Copy className="h-4 w-4" />}
+                            </button>
+                            <button
                               onClick={(e) => handleDeletePresentation(e, pres.id, pres.title)}
                               title="Delete presentation"
                               className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
@@ -838,13 +901,9 @@ function DashboardContent() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 text-xs text-stone-500">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
                           <span className="bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
                             {pres.slides.length} {pres.slides.length === 1 ? 'slide' : 'slides'}
-                          </span>
-                          <span className="flex items-center gap-1.5 font-medium text-stone-500">
-                            <LayoutGrid className="h-3.5 w-3.5" />
-                            Bilingual
                           </span>
                           {pres.settings?.brandShow && (
                             <span className="flex items-center gap-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 font-semibold">
@@ -852,10 +911,20 @@ function DashboardContent() {
                               Branded
                             </span>
                           )}
+                          {(pres.settings?.tags || []).map((t) => (
+                            <button
+                              key={t}
+                              onClick={(e) => { e.stopPropagation(); setTagFilter(t); }}
+                              className="flex items-center gap-1 rounded-full bg-stone-100 text-stone-600 border border-stone-200 px-2 py-0.5 font-semibold hover:border-teal-300 hover:text-teal-700 transition-colors"
+                            >
+                              <Tag className="h-2.5 w-2.5" />{t}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     ))
                   )}
+                  </div>
                 </div>
               </>
             ) : (

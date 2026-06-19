@@ -42,13 +42,10 @@ export default function QuickFind({
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setActive(0);
-      // focus after the element is mounted/painted
-      const t = setTimeout(() => inputRef.current?.focus(), 30);
-      return () => clearTimeout(t);
-    }
+    if (!open) return;
+    // Reset + focus after mount/paint (deferred so we don't setState synchronously).
+    const t = setTimeout(() => { setQuery(''); setActive(0); inputRef.current?.focus(); }, 20);
+    return () => clearTimeout(t);
   }, [open]);
 
   const results = useMemo(() => {
@@ -59,8 +56,6 @@ export default function QuickFind({
       .slice(0, 50);
   }, [items, emptyStateItems, query]);
   const showingEmptyState = !query.trim() && !!emptyStateItems?.length;
-
-  useEffect(() => { setActive(0); }, [query]);
 
   // Keep the active row in view.
   useEffect(() => {
@@ -94,7 +89,7 @@ export default function QuickFind({
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setActive(0); }}
             placeholder={placeholder}
             className="flex-1 bg-transparent py-3.5 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none"
           />
