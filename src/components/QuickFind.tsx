@@ -22,6 +22,8 @@ export default function QuickFind({
   onClose,
   onSelect,
   items,
+  emptyStateItems,
+  emptyStateLabel,
   placeholder = 'Search…',
   hint = 'to select',
 }: {
@@ -29,6 +31,8 @@ export default function QuickFind({
   onClose: () => void;
   onSelect: (id: string) => void;
   items: QuickItem[];
+  emptyStateItems?: QuickItem[];
+  emptyStateLabel?: string;
   placeholder?: string;
   hint?: string;
 }) {
@@ -49,11 +53,12 @@ export default function QuickFind({
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 50);
+    if (!q) return (emptyStateItems && emptyStateItems.length ? emptyStateItems : items).slice(0, 50);
     return items
       .filter((it) => `${it.title} ${it.subtitle ?? ''}`.toLowerCase().includes(q))
       .slice(0, 50);
-  }, [items, query]);
+  }, [items, emptyStateItems, query]);
+  const showingEmptyState = !query.trim() && !!emptyStateItems?.length;
 
   useEffect(() => { setActive(0); }, [query]);
 
@@ -97,6 +102,9 @@ export default function QuickFind({
         </div>
 
         <div ref={listRef} className="max-h-[50vh] overflow-y-auto py-1.5">
+          {showingEmptyState && (
+            <p className="px-4 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-400">{emptyStateLabel || 'Recent'}</p>
+          )}
           {results.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-stone-400">No matches.</p>
           ) : (

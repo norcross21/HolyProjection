@@ -72,6 +72,7 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const presId = searchParams.get('pres');
+  const goSlideParam = searchParams.get('go');
 
   // Hook for Listing & Creating Presentations
   const {
@@ -158,6 +159,7 @@ function DashboardContent() {
   const [scriptureRef, setScriptureRef] = useState('');
   const [scriptureBusy, setScriptureBusy] = useState(false);
   const [quickFindOpen, setQuickFindOpen] = useState(false);
+  const [recents, setRecents] = useState<{ id: string; title: string }[]>([]);
   const [bulkLang, setBulkLang] = useState<string>('');
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
@@ -320,6 +322,32 @@ function DashboardContent() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Load recently-opened presentations for the Quick Find empty state.
+  useEffect(() => {
+    try { setRecents(JSON.parse(localStorage.getItem('hp_recent_pres') || '[]')); } catch { /* ignore */ }
+  }, []);
+
+  // Remember this presentation as recently opened (most-recent first, max 8).
+  useEffect(() => {
+    if (!presId || !presentation.title) return;
+    setRecents((prev) => {
+      const next = [{ id: presId, title: presentation.title }, ...prev.filter((r) => r.id !== presId)].slice(0, 8);
+      try { localStorage.setItem('hp_recent_pres', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, [presId, presentation.title]);
+
+  // Honour a ?go=<slideId> deep-link (used by Quick Find to jump into a song):
+  // take that slide live, select it, then strip the param so it doesn't re-fire.
+  useEffect(() => {
+    if (!presId || !goSlideParam) return;
+    if (!presentation.slides.some((s) => s.id === goSlideParam)) return;
+    setLiveSlide(goSlideParam);
+    setSelectedSlideId(goSlideParam);
+    router.replace(`/dashboard?pres=${presId}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presId, goSlideParam, presentation.slides]);
 
   // Pre-service auto-loop: advance the live slide every loopSecs while on.
   // Reads slides/active from refs so the interval keeps a steady cadence and isn't
@@ -521,11 +549,30 @@ function DashboardContent() {
     : [
         ...presentations.map((p) => ({ id: `pres:${p.id}`, title: p.title, subtitle: `${p.slides.length} slide${p.slides.length === 1 ? '' : 's'}`, group: 'Presentations' })),
         ...setlists.map((sl) => ({ id: `setlist:${sl.id}`, title: sl.title, badge: 'Setlist', group: 'Setlists' })),
+        // Every slide across the whole library, so you can search by any lyric and
+        // jump straight into the right song at the right slide.
+        ...presentations.flatMap((p) =>
+          p.slides
+            .map((s, i) => {
+              const line = firstLineOf(s);
+              if (line.startsWith('[')) return null; // skip blank/media-only slides
+              return { id: `slide:${p.id}:${s.id}`, title: line, subtitle: `${p.title} · slide ${i + 1}`, group: 'Slides' } as QuickItem;
+            })
+            .filter(Boolean) as QuickItem[]
+        ),
       ];
+  const recentItems: QuickItem[] = recents
+    .filter((r) => presentations.some((p) => p.id === r.id))
+    .map((r) => ({ id: `pres:${r.id}`, title: r.title, badge: 'Recent' }));
   const onQuickSelect = (id: string) => {
     if (presId) { setLiveSlide(id); setSelectedSlideId(id); }
     else if (id.startsWith('pres:')) router.push(`/dashboard?pres=${id.slice(5)}`);
     else if (id.startsWith('setlist:')) router.push(`/dashboard/setlist?id=${id.slice(8)}`);
+    else if (id.startsWith('slide:')) {
+      const rest = id.slice(6);
+      const sep = rest.indexOf(':');
+      router.push(`/dashboard?pres=${rest.slice(0, sep)}&go=${rest.slice(sep + 1)}`);
+    }
   };
   const quickFindEl = (
     <QuickFind
@@ -533,7 +580,9 @@ function DashboardContent() {
       onClose={() => setQuickFindOpen(false)}
       onSelect={onQuickSelect}
       items={quickItems}
-      placeholder={presId ? 'Jump to a slide by its words…' : 'Search presentations & setlists…'}
+      emptyStateItems={presId ? undefined : recentItems}
+      emptyStateLabel="Recent"
+      placeholder={presId ? 'Jump to a slide by its words…' : 'Search songs, slides & setlists…'}
       hint={presId ? 'go live' : 'open'}
     />
   );
