@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { useState, useRef, type ComponentType, type ReactNode } from 'react';
 import { Slide, Presentation, saveBrandPreset, getBrandPreset, clearBrandPreset } from '@/utils/sync';
 import SlidePreview from '@/components/SlidePreview';
 import MediaLibrary from '@/components/MediaLibrary';
@@ -83,9 +83,11 @@ export default function SlideEditor(props: SlideEditorProps) {
   const setTranslation = (t: string) => { props.onUpdateContent(slide.content, t, slide.media_type, slide.media_url); syncRole('translation', t); };
   const setMedia = (type: Slide['media_type'], url: string | undefined) => props.onUpdateContent(slide.content, slide.translation, type, url);
 
+  const translateSeq = useRef(0);
   const translate = async (lang?: string) => {
     if (!slide.content.trim()) return;
     const target = lang || translationLang;
+    const seq = ++translateSeq.current; // guard: only the latest request may apply its result
     setIsTranslating(true);
     try {
       const res = await fetch('/api/translate', {
@@ -94,12 +96,13 @@ export default function SlideEditor(props: SlideEditorProps) {
         body: JSON.stringify({ text: slide.content, targetLang: target }),
       });
       const data = (await res.json()) as TranslateResponse;
+      if (seq !== translateSeq.current) return; // a newer translation was requested; drop this stale one
       if (data.success && data.translation) setTranslation(data.translation);
       else alert(data.error || 'Translation failed.');
     } catch {
-      alert('Translation failed. Please try again.');
+      if (seq === translateSeq.current) alert('Translation failed. Please try again.');
     } finally {
-      setIsTranslating(false);
+      if (seq === translateSeq.current) setIsTranslating(false);
     }
   };
 
@@ -205,6 +208,7 @@ export default function SlideEditor(props: SlideEditorProps) {
                 <MediaLibrary currentUrl={slide.media_url} onSelectMedia={(url, kind) => { if (kind === 'audio') return; setMedia(url ? kind : 'none', url); }} />
                 {slide.media_type === 'video' && (
                   <input
+                    key={slide.id}
                     type="url"
                     placeholder="…or paste a video link (https://…​.mp4)"
                     defaultValue={slide.media_url || ''}

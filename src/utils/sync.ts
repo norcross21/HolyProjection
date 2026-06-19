@@ -721,14 +721,6 @@ export function useRealtimePresentation(presentationId: string) {
           });
           setPresenceUsers(users);
         })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await presenceChannel.track({
-              displayName: userDetails.displayName,
-              onlineAt: new Date().toISOString(),
-            });
-          }
-        })
         .on('broadcast', { event: 'prayer_request' }, ({ payload }) => {
           if (payload) {
             setPrayerRequests((prev) => {
@@ -754,6 +746,16 @@ export function useRealtimePresentation(presentationId: string) {
               const next = [...prev];
               next[i] = (next[i] || 0) + 1;
               return next;
+            });
+          }
+        })
+        // .subscribe() must come AFTER all .on() bindings — bindings added after
+        // subscribe are not registered with the realtime server and would be dropped.
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await presenceChannel.track({
+              displayName: userDetails.displayName,
+              onlineAt: new Date().toISOString(),
             });
           }
         });
@@ -1734,14 +1736,6 @@ export function useRealtimeSetlist(setlistId: string) {
           });
           setPresenceUsers(users);
         })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await presenceChannel.track({
-              displayName: userDetails.displayName,
-              onlineAt: new Date().toISOString(),
-            });
-          }
-        })
         .on('broadcast', { event: 'prayer_request' }, ({ payload }) => {
           if (payload) {
             setPrayerRequests((prev) => {
@@ -1753,6 +1747,16 @@ export function useRealtimeSetlist(setlistId: string) {
         .on('broadcast', { event: 'live_alert' }, ({ payload }) => {
           if (payload) {
             setActiveAlert(payload.activeAlert);
+          }
+        })
+        // .subscribe() must come AFTER all .on() bindings — bindings added after
+        // subscribe are not registered with the realtime server and would be dropped.
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await presenceChannel.track({
+              displayName: userDetails.displayName,
+              onlineAt: new Date().toISOString(),
+            });
           }
         });
 

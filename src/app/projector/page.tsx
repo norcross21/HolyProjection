@@ -81,7 +81,10 @@ function ProjectorContent() {
       });
       activeSlide = allSlides.find((s) => s.id === activeSetlistSlideId) || allSlides[0];
       if (setlist.items.length > 0 && setlist.items[0].presentation) {
-        fontSettings = setlist.items[0].presentation.settings;
+        // Blank mode is controlled at the setlist level (setlist.settings), so it must
+        // override the presentation's own blankMode — otherwise blackout/clear/logo on a
+        // setlist would never take effect on the projector.
+        fontSettings = { ...setlist.items[0].presentation.settings, blankMode: setlist.settings?.blankMode || 'none' };
       }
     }
   } else {
@@ -552,8 +555,8 @@ function ProjectorContent() {
         </button>
       )}
 
-      {/* Persistent branding (logo + lower-third) */}
-      {fontSettings.blankMode !== 'black' && <SlideBranding settings={fontSettings} />}
+      {/* Persistent branding (logo + lower-third) — only over live content, never on a blank/blackout/logo screen */}
+      {(!fontSettings.blankMode || fontSettings.blankMode === 'none') && <SlideBranding settings={fontSettings} />}
 
       {/* Live poll overlay */}
       {activePoll && (
