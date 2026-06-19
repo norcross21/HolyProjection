@@ -113,6 +113,23 @@ function DashboardContent() {
     sendPoll,
   } = useRealtimePresentation(presId || '');
 
+  // Refs that always hold the freshest slides + active slide, so timer/listener
+  // effects can read current values without re-subscribing whenever the slides
+  // array gets a new reference (e.g. during collaborative edits) — which would
+  // otherwise reset a running countdown before it fires.
+  const slidesRef = useRef<typeof presentation.slides>(presentation.slides);
+  const activeSlideIdRef = useRef<string | null>(activeSlideId);
+  const blankModeRef = useRef(presentation.settings.blankMode);
+  slidesRef.current = presentation.slides;
+  activeSlideIdRef.current = activeSlideId;
+  blankModeRef.current = presentation.settings.blankMode;
+  const advanceLive = (dir: 1 | -1 = 1, wrap = true) => {
+    const slides = slidesRef.current;
+    const idx = slides.findIndex((s) => s.id === activeSlideIdRef.current);
+    const target = dir === 1 ? (slides[idx + 1] || (wrap ? slides[0] : undefined)) : slides[idx - 1];
+    if (target) setLiveSlide(target.id);
+  };
+
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [newPresTitle, setNewPresTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -222,38 +239,29 @@ function DashboardContent() {
   }, []);
 
   // Pre-service auto-loop: advance the live slide every loopSecs while on.
+  // Reads slides/active from refs so the interval keeps a steady cadence and isn't
+  // torn down when the slides array reference changes during edits.
   useEffect(() => {
-    if (!looping || presentation.slides.length < 2) return;
-    const id = setInterval(() => {
-      const slides = presentation.slides;
-      const idx = slides.findIndex((s) => s.id === activeSlideId);
-      const next = slides[(idx + 1) % slides.length] || slides[0];
-      if (next) setLiveSlide(next.id);
-    }, Math.max(2, loopSecs) * 1000);
+    if (!looping || slidesRef.current.length < 2) return;
+    const id = setInterval(() => advanceLive(1, true), Math.max(2, loopSecs) * 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [looping, loopSecs, activeSlideId, presentation.slides]);
+  }, [looping, loopSecs]);
 
   // Keyboard live control on the present screen (not while editing/in a field).
   useEffect(() => {
     if (!presId || editingSlideId || designingSlideId) return;
-    const advance = (dir: 1 | -1) => {
-      const slides = presentation.slides;
-      const idx = slides.findIndex((s) => s.id === activeSlideId);
-      const target = dir === 1 ? (slides[idx + 1] || slides[0]) : slides[idx - 1];
-      if (target) setLiveSlide(target.id);
-    };
     const onKey = (e: KeyboardEvent) => {
       const tag = (document.activeElement?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); advance(1); }
-      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); advance(-1); }
-      else if (e.key.toLowerCase() === 'b') { e.preventDefault(); setBlankMode(presentation.settings.blankMode === 'black' ? 'none' : 'black'); }
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); advanceLive(1, true); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); advanceLive(-1, false); }
+      else if (e.key.toLowerCase() === 'b') { e.preventDefault(); setBlankMode(blankModeRef.current === 'black' ? 'none' : 'black'); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presId, editingSlideId, designingSlideId, activeSlideId, presentation.slides, presentation.settings.blankMode]);
+  }, [presId, editingSlideId, designingSlideId]);
 
   // Web MIDI: advance on any note-on (foot pedals / controllers).
   useEffect(() => {
@@ -265,32 +273,23 @@ function DashboardContent() {
     let access: MidiAccess | null = null;
     const onMsg = (e: { data: Uint8Array }) => {
       const status = e.data[0]; const velocity = e.data[2];
-      if ((status & 0xf0) === 0x90 && velocity > 0) {
-        const slides = presentation.slides;
-        const idx = slides.findIndex((s) => s.id === activeSlideId);
-        const next = slides[idx + 1] || slides[0];
-        if (next) setLiveSlide(next.id);
-      }
+      if ((status & 0xf0) === 0x90 && velocity > 0) advanceLive(1, true);
     };
     req().then((a) => { access = a; a.inputs.forEach((i) => { i.onmidimessage = onMsg; }); }).catch(() => { setMidiOn(false); });
     return () => { access?.inputs.forEach((i) => { i.onmidimessage = null; }); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [midiOn, activeSlideId, presentation.slides]);
+  }, [midiOn]);
 
   // Per-slide auto-advance (slide-triggered action). Skipped while the global loop runs.
+  // Keyed on the active slide id + its configured seconds only, so an unrelated edit
+  // elsewhere in the deck can't reset a countdown that's already ticking.
+  const liveAutoAdvanceSecs = presentation.slides.find((s) => s.id === activeSlideId)?.auto_advance_secs || 0;
   useEffect(() => {
-    if (looping) return;
-    const slides = presentation.slides;
-    const idx = slides.findIndex((s) => s.id === activeSlideId);
-    const secs = slides[idx]?.auto_advance_secs || 0;
-    if (idx < 0 || secs <= 0) return;
-    const id = setTimeout(() => {
-      const next = slides[idx + 1];
-      if (next) setLiveSlide(next.id);
-    }, secs * 1000);
+    if (looping || liveAutoAdvanceSecs <= 0) return;
+    const id = setTimeout(() => advanceLive(1, false), liveAutoAdvanceSecs * 1000);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSlideId, presentation.slides, looping]);
+  }, [activeSlideId, liveAutoAdvanceSecs, looping]);
 
   if (!authUser) {
     return (

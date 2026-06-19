@@ -29,10 +29,27 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
   const stageRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: string; mode: 'move' | 'resize'; sx: number; sy: number; ox: number; oy: number; ow: number; oh: number } | null>(null);
 
+  // Tracks the last element state we either sent out or adopted, so realtime echoes
+  // of our own edits don't trigger a reconcile loop.
+  const lastSyncedRef = useRef<string>(JSON.stringify(slide.elements || []));
+
   const commit = useCallback((next: SlideElement[]) => {
     setEls(next);
+    lastSyncedRef.current = JSON.stringify(next);
     onChange(next);
   }, [onChange]);
+
+  // Adopt genuine remote element changes (e.g. lyrics/translation edited in the
+  // Slide Editor, or a collaborator) while the designer is open — but never while
+  // the user is mid-drag, and never for echoes of our own commits.
+  useEffect(() => {
+    if (drag.current) return;
+    const incoming = JSON.stringify(slide.elements || []);
+    if (incoming !== lastSyncedRef.current) {
+      setEls(slide.elements ? [...slide.elements] : []);
+      lastSyncedRef.current = incoming;
+    }
+  }, [slide.elements]);
 
   const update = (id: string, patch: Partial<SlideElement>) => {
     commit(els.map((e) => (e.id === id ? { ...e, ...patch } : e)));

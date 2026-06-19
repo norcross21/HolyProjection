@@ -1109,8 +1109,14 @@ export function useRealtimePresentation(presentationId: string) {
       return;
     }
 
-    for (let i = 0; i < orderedIds.length; i++) {
-      await supabase.from('slides').update({ order_index: i }).eq('id', orderedIds[i]);
+    // Apply all order_index updates concurrently; surface any failure instead of
+    // leaving the running order half-applied silently.
+    const results = await Promise.all(
+      orderedIds.map((id, i) => supabase.from('slides').update({ order_index: i }).eq('id', id))
+    );
+    const failed = results.filter((r) => r.error);
+    if (failed.length) {
+      console.error(`Error reordering slides: ${failed.length}/${orderedIds.length} updates failed`, failed[0].error?.message);
     }
   };
 
