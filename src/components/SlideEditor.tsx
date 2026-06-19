@@ -7,7 +7,7 @@ import MediaLibrary from '@/components/MediaLibrary';
 import { LANGUAGES, dirFor, DEFAULT_TRANSLATION_LANG } from '@/utils/languages';
 import { FONTS } from '@/utils/fonts';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer, Stamp,
+  ArrowLeft, ChevronLeft, ChevronRight, Play, Layers, Sparkles, Languages, Type, Image as ImageIcon, Music, Palette, Scissors, Timer, Stamp, StickyNote,
 } from 'lucide-react';
 import { THEMES } from '@/utils/themes';
 
@@ -25,6 +25,7 @@ interface SlideEditorProps {
   onSetFill: (fill: boolean) => void;
   onSetAudio: (url: string | undefined, loop: boolean) => void;
   onSetAutoAdvance: (secs: number) => void;
+  onSetNotes: (notes: string) => void;
   onSplit: (chunks: string[]) => void;
   onGoLive: () => void;
   onOpenDesigner: () => void;
@@ -265,6 +266,18 @@ export default function SlideEditor(props: SlideEditorProps) {
               </span>
             </label>
             <p className="text-[10px] text-slate-600">0 = off. When live, the presenter view moves to the next slide after this many seconds.</p>
+          </Section>
+
+          <Section icon={StickyNote} title="Presenter notes">
+            <textarea
+              key={slide.id}
+              defaultValue={slide.settings?.notes ?? ''}
+              onBlur={(e) => props.onSetNotes(e.target.value)}
+              rows={3}
+              placeholder="Private cue for the team — e.g. “key change”, “pause for prayer”, “next: announcements”"
+              className="w-full resize-y rounded-xl border border-slate-800 bg-slate-950/60 py-2 px-3 text-xs text-slate-200 placeholder:text-slate-700 focus:border-violet-500 focus:outline-none"
+            />
+            <p className="text-[10px] text-slate-600">Shows only on the stage/confidence monitor — never on the projector or follower.</p>
           </Section>
 
           <Section icon={Palette} title="Theme (whole presentation)">

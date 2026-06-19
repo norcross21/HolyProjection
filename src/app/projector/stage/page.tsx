@@ -6,7 +6,7 @@ import { useRealtimePresentation, useRealtimeSetlist, type Slide } from '@/utils
 import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import CountdownOverlay from '@/components/CountdownOverlay';
-import { Clock, Tv, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Clock, Tv, AlertTriangle, CheckCircle, StickyNote } from 'lucide-react';
 
 function StageDisplayContent() {
   const searchParams = useSearchParams();
@@ -184,6 +184,17 @@ function StageDisplayContent() {
             <div className="text-slate-700 text-3xl">No slide active.</div>
           )}
         </section>
+
+        {/* Presenter notes for the current slide — stage monitor only */}
+        {currentSlide?.settings?.notes?.trim() && (
+          <section className="mt-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-950/20 px-5 py-3.5">
+            <StickyNote className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" />
+            <div>
+              <span className="text-[9px] uppercase font-black tracking-widest text-amber-500/70 block">Presenter note</span>
+              <p className="text-amber-200 font-semibold text-lg md:text-xl leading-snug whitespace-pre-line mt-0.5">{currentSlide.settings.notes}</p>
+            </div>
+          </section>
+        )}
 
         {showNext && <div className="border-t border-slate-900 my-4" />}
 

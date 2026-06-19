@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Presentation } from '@/utils/sync';
 
 /**
@@ -13,18 +13,47 @@ type CountdownSettings = Pick<Presentation['settings'], 'countdownTarget' | 'cou
 export default function CountdownOverlay({ settings }: { settings: CountdownSettings }) {
   const target = settings.countdownTarget ? new Date(settings.countdownTarget).getTime() : 0;
   const [now, setNow] = useState<number>(() => Date.now());
+  const [flash, setFlash] = useState(false);
+  const reachedZeroRef = useRef(false);
 
   useEffect(() => {
     if (!target) return;
     setNow(Date.now());
+    reachedZeroRef.current = Date.now() >= target; // don't flash for an already-finished target on mount
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
   }, [target]);
 
-  if (!target) return null;
-
   const remainingMs = target - now;
   const done = remainingMs <= 0;
+
+  // Flash + chime exactly once, when the timer crosses zero while we're watching it.
+  useEffect(() => {
+    if (!target || !done || reachedZeroRef.current) return;
+    reachedZeroRef.current = true;
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 1100);
+    try {
+      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+      if (Ctx) {
+        const ctx = new Ctx();
+        [880, 1320].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = freq;
+          osc.connect(gain); gain.connect(ctx.destination);
+          const t0 = ctx.currentTime + i * 0.18;
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+          osc.start(t0); osc.stop(t0 + 0.36);
+        });
+      }
+    } catch { /* audio blocked without a gesture — the flash still fires */ }
+    return () => clearTimeout(t);
+  }, [done, target]);
+
+  if (!target) return null;
   const totalSecs = Math.max(0, Math.ceil(remainingMs / 1000));
   const mm = Math.floor(totalSecs / 60);
   const ss = totalSecs % 60;
@@ -48,6 +77,7 @@ export default function CountdownOverlay({ settings }: { settings: CountdownSett
           {mm}:{ss.toString().padStart(2, '0')}
         </div>
       )}
+      {flash && <div className="absolute inset-0 bg-white pointer-events-none animate-flash" />}
     </div>
   );
 }

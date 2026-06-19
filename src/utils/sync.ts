@@ -52,7 +52,7 @@ export interface Slide {
   media_url?: string;
   media_fill?: boolean; // true = media fills the screen at full brightness, text hidden (announcement slide)
   elements?: SlideElement[]; // free-placement overlay elements (Phase 2)
-  settings?: { bgColor?: string }; // per-slide designer settings (jsonb column)
+  settings?: { bgColor?: string; notes?: string }; // per-slide designer settings + presenter notes (jsonb column)
   audio_url?: string; // plays when the slide goes live
   audio_loop?: boolean;
   auto_advance_secs?: number; // >0 = auto-advance to next slide after N seconds when live

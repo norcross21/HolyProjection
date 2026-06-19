@@ -150,6 +150,8 @@ function DashboardContent() {
   };
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
+  const [scriptureRef, setScriptureRef] = useState('');
+  const [scriptureBusy, setScriptureBusy] = useState(false);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
     // Hidden unless this browser has no brand preset and hasn't dismissed it before.
     // The banner also gates on presentations.length (client-only) so there's no SSR mismatch.
@@ -167,6 +169,36 @@ function DashboardContent() {
   const [alertType, setAlertType] = useState<AlertType>('general');
   const [alertPosition, setAlertPosition] = useState<AlertPosition>('bottom');
   const [nurseryNumber, setNurseryNumber] = useState('');
+
+  // Quick scripture lookup: type a reference, fetch from bible-api, append as slides
+  // (3 verses/slide) to the current presentation without leaving the running order.
+  const handleQuickScripture = async () => {
+    const ref = scriptureRef.trim();
+    if (!ref || !presId) return;
+    setScriptureBusy(true);
+    try {
+      const res = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`);
+      const data = await res.json();
+      const verses = (data?.verses || []) as { verse: number; text: string }[];
+      if (!res.ok || verses.length === 0) {
+        alert(data?.error || `Couldn't find “${ref}”. Try e.g. “John 3:16” or “Psalm 23:1-6”.`);
+        return;
+      }
+      const refLine = data.reference || ref;
+      const perSlide = 3;
+      const slides: { content: string }[] = [];
+      for (let i = 0; i < verses.length; i += perSlide) {
+        const text = verses.slice(i, i + perSlide).map((v) => v.text.trim().replace(/\s+/g, ' ')).join(' ');
+        slides.push({ content: `${text}\n\n— ${refLine}` });
+      }
+      await appendSlidesToPresentation(presId, slides);
+      setScriptureRef('');
+    } catch {
+      alert('Scripture lookup failed. Check your connection and try again.');
+    } finally {
+      setScriptureBusy(false);
+    }
+  };
 
   // Hook for Listing & Creating Setlists
   const {
@@ -1077,6 +1109,27 @@ function DashboardContent() {
                 </div>
               </div>
 
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleQuickScripture(); }}
+                className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2"
+              >
+                <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
+                <input
+                  type="text"
+                  value={scriptureRef}
+                  onChange={(e) => setScriptureRef(e.target.value)}
+                  placeholder="Quick scripture — type a reference like “John 3:16” and press Add"
+                  className="flex-1 bg-transparent text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={scriptureBusy || !scriptureRef.trim()}
+                  className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 px-3 py-1 text-[11px] font-bold text-white transition-all"
+                >
+                  {scriptureBusy ? 'Adding…' : 'Add'}
+                </button>
+              </form>
+
               <p className="text-[11px] text-slate-500 -mt-1">Drag thumbnails to reorder. Click a slide to edit it; double-click to open the designer.</p>
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
                 {presentation.slides.map((slide, idx) => {
@@ -1196,12 +1249,23 @@ function DashboardContent() {
           <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
             <span className="block text-xs text-slate-400 font-medium">⏱ Pre-service countdown</span>
             {presentation.settings.countdownTarget ? (
-              <button
-                onClick={() => updateSettings({ countdownTarget: null })}
-                className="w-full rounded-xl bg-red-950/40 border border-red-500/40 py-2 text-[11px] font-bold text-red-300 hover:bg-red-950/60 transition-all"
-              >
-                ✕ Clear countdown (running)
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const base = Math.max(Date.now(), new Date(presentation.settings.countdownTarget as string).getTime());
+                    updateSettings({ countdownTarget: new Date(base + 60000).toISOString() });
+                  }}
+                  className="rounded-xl bg-slate-950/60 border border-slate-800 py-2 px-3 text-[11px] font-bold text-slate-200 hover:border-indigo-500/50 transition-all"
+                >
+                  +1 min
+                </button>
+                <button
+                  onClick={() => updateSettings({ countdownTarget: null })}
+                  className="flex-1 rounded-xl bg-red-950/40 border border-red-500/40 py-2 text-[11px] font-bold text-red-300 hover:bg-red-950/60 transition-all"
+                >
+                  ✕ Clear countdown (running)
+                </button>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <input
@@ -1411,6 +1475,7 @@ function DashboardContent() {
             onSetFill={(fill) => setSlideFill(editingSlide.id, fill)}
             onSetAudio={(url, loop) => setSlideAudio(editingSlide.id, url, loop)}
             onSetAutoAdvance={(secs) => setSlideAutoAdvance(editingSlide.id, secs)}
+            onSetNotes={(notes) => updateSlideSettings(editingSlide.id, { notes })}
             onSplit={(chunks) => {
               updateSlideContent(editingSlide.id, chunks[0], editingSlide.translation, editingSlide.media_type, editingSlide.media_url);
               if (chunks.length > 1) appendSlidesToPresentation(presId!, chunks.slice(1).map((c) => ({ content: c })));
