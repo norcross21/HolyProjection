@@ -37,8 +37,10 @@ import {
   ChevronLeft,
   MonitorPlay,
   Stamp,
-  Printer
+  Printer,
+  Search
 } from 'lucide-react';
+import QuickFind, { type QuickItem } from '@/components/QuickFind';
 
 type ImportedSlideInput = {
   content?: unknown;
@@ -155,6 +157,7 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
   const [scriptureRef, setScriptureRef] = useState('');
   const [scriptureBusy, setScriptureBusy] = useState(false);
+  const [quickFindOpen, setQuickFindOpen] = useState(false);
   const [bulkLang, setBulkLang] = useState<string>('');
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
@@ -304,6 +307,18 @@ function DashboardContent() {
       link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Outfit:wght@450;700;900&family=Lora:ital,wght@0,600;0,700;1,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap';
       document.head.appendChild(link);
     }
+  }, []);
+
+  // Quick Find: ⌘K / Ctrl-K opens the command palette anywhere in the dashboard.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setQuickFindOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Pre-service auto-loop: advance the live slide every loopSecs while on.
@@ -490,12 +505,46 @@ function DashboardContent() {
   const selectedSlide = presentation.slides.find((s) => s.id === selectedSlideId) || presentation.slides[0];
   const effectiveSelectedSlideId = selectedSlide?.id ?? null;
 
+  // Quick Find data — slides when inside a presentation, otherwise the library.
+  const firstLineOf = (s: typeof presentation.slides[number]) => {
+    const text = s.content || s.elements?.find((e) => e.role === 'lyrics')?.text || '';
+    const line = text.split('\n').find((l) => l.trim());
+    return line || (s.media_type && s.media_type !== 'none' ? `[${s.media_type} slide]` : '[blank slide]');
+  };
+  const quickItems: QuickItem[] = presId
+    ? presentation.slides.map((s, i) => ({
+        id: s.id,
+        title: `${i + 1}. ${firstLineOf(s)}`,
+        subtitle: s.translation || undefined,
+        badge: s.id === activeSlideId ? 'LIVE' : undefined,
+      }))
+    : [
+        ...presentations.map((p) => ({ id: `pres:${p.id}`, title: p.title, subtitle: `${p.slides.length} slide${p.slides.length === 1 ? '' : 's'}`, group: 'Presentations' })),
+        ...setlists.map((sl) => ({ id: `setlist:${sl.id}`, title: sl.title, badge: 'Setlist', group: 'Setlists' })),
+      ];
+  const onQuickSelect = (id: string) => {
+    if (presId) { setLiveSlide(id); setSelectedSlideId(id); }
+    else if (id.startsWith('pres:')) router.push(`/dashboard?pres=${id.slice(5)}`);
+    else if (id.startsWith('setlist:')) router.push(`/dashboard/setlist?id=${id.slice(8)}`);
+  };
+  const quickFindEl = (
+    <QuickFind
+      open={quickFindOpen}
+      onClose={() => setQuickFindOpen(false)}
+      onSelect={onQuickSelect}
+      items={quickItems}
+      placeholder={presId ? 'Jump to a slide by its words…' : 'Search presentations & setlists…'}
+      hint={presId ? 'go live' : 'open'}
+    />
+  );
+
   // ----------------------------------------------------
   // Portal View (No presentation selected)
   // ----------------------------------------------------
   if (!presId) {
     return (
       <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col relative overflow-hidden">
+        {quickFindEl}
         {/* Glow effects */}
         <div className="absolute top-0 right-0 h-[600px] w-[600px] rounded-full bg-sky-200/40 blur-[130px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
@@ -513,6 +562,15 @@ function DashboardContent() {
                 <span>Demo Mode</span>
               </div>
             )}
+
+            <button
+              onClick={() => setQuickFindOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-3 py-2 text-xs font-semibold text-stone-500 transition-all"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden sm:inline text-[10px] font-bold text-stone-400 border border-stone-300 rounded px-1">⌘K</kbd>
+            </button>
 
             <div className="flex items-center gap-3 border-l border-stone-200 pl-4">
               <div className="text-right">
@@ -850,6 +908,7 @@ function DashboardContent() {
   // ----------------------------------------------------
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col">
+      {quickFindEl}
       <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-sky-200/40 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
 
@@ -878,6 +937,16 @@ function DashboardContent() {
               <span>Demo Mode</span>
             </div>
           )}
+
+          <button
+            onClick={() => setQuickFindOpen(true)}
+            title="Jump to a slide (⌘K)"
+            className="flex items-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 hover:bg-stone-200 px-4 py-2 text-xs font-bold text-stone-600 transition-all active:scale-[0.98]"
+          >
+            <Search className="h-4 w-4" />
+            <span className="hidden md:inline">Find slide</span>
+            <kbd className="hidden md:inline text-[10px] font-bold text-stone-400 border border-stone-300 rounded px-1">⌘K</kbd>
+          </button>
 
           <button
             onClick={openProjectorWindow}
