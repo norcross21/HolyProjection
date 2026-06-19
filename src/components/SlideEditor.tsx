@@ -87,9 +87,16 @@ export default function SlideEditor(props: SlideEditorProps) {
   const setTranslation = (t: string) => { props.onUpdateContent(slide.content, t, slide.media_type, slide.media_url); syncRole('translation', t); };
   const setMedia = (type: Slide['media_type'], url: string | undefined) => props.onUpdateContent(slide.content, slide.translation, type, url);
 
+  // If the slide's words were placed via the Designer they live in `elements`,
+  // not `content` — fall back to them so the text boxes are never empty/uneditable.
+  const lyricEl = slide.elements?.find((e) => e.role === 'lyrics');
+  const transEl = slide.elements?.find((e) => e.role === 'translation');
+  const contentValue = slide.content || lyricEl?.text || '';
+  const translationValue = slide.translation || transEl?.text || '';
+
   const translateSeq = useRef(0);
   const translate = async (lang?: string) => {
-    if (!slide.content.trim()) return;
+    if (!contentValue.trim()) return;
     const target = lang || translationLang;
     const seq = ++translateSeq.current; // guard: only the latest request may apply its result
     setIsTranslating(true);
@@ -97,7 +104,7 @@ export default function SlideEditor(props: SlideEditorProps) {
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: slide.content, targetLang: target }),
+        body: JSON.stringify({ text: contentValue, targetLang: target }),
       });
       const data = (await res.json()) as TranslateResponse;
       if (seq !== translateSeq.current) return; // a newer translation was requested; drop this stale one
@@ -150,7 +157,7 @@ export default function SlideEditor(props: SlideEditorProps) {
         <aside className="w-full lg:w-[26rem] shrink-0 border-t lg:border-t-0 lg:border-l border-stone-200 bg-white p-4 space-y-4 overflow-y-auto">
           <Section icon={Type} title="Song words / text">
             <textarea
-              value={slide.content}
+              value={contentValue}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Enter the slide text / lyrics…"
               rows={5}
@@ -158,7 +165,7 @@ export default function SlideEditor(props: SlideEditorProps) {
             />
             {(() => {
               // Smart split: by verse/chorus (blank lines) then by length (max 4 lines).
-              const chunks = splitLyricsIntoSlides(slide.content, { maxLinesPerSlide: 4 });
+              const chunks = splitLyricsIntoSlides(contentValue, { maxLinesPerSlide: 4 });
               if (chunks.length < 2) return null;
               return (
                 <button
@@ -175,20 +182,20 @@ export default function SlideEditor(props: SlideEditorProps) {
             <div className="flex items-center gap-2">
               <select
                 value={translationLang}
-                onChange={(e) => { props.onUpdateSettings({ translationLang: e.target.value }); if (slide.content.trim()) translate(e.target.value); }}
+                onChange={(e) => { props.onUpdateSettings({ translationLang: e.target.value }); if (contentValue.trim()) translate(e.target.value); }}
                 disabled={isTranslating}
                 className="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-700 focus:border-teal-400 focus:outline-none disabled:opacity-50"
               >
                 {LANGUAGES.map((l) => <option key={l.name} value={l.name}>{l.name}{l.rtl ? ' (RTL)' : ''}</option>)}
               </select>
-              <button onClick={() => translate()} disabled={isTranslating || !slide.content.trim()} className="flex items-center gap-1.5 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 px-3 py-2 text-xs font-bold text-teal-700 disabled:opacity-50">
+              <button onClick={() => translate()} disabled={isTranslating || !contentValue.trim()} className="flex items-center gap-1.5 rounded-xl bg-teal-50 border border-teal-200 hover:bg-teal-100 px-3 py-2 text-xs font-bold text-teal-700 disabled:opacity-50">
                 {isTranslating ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" /> : <Sparkles className="h-4 w-4" />}
                 AI
               </button>
             </div>
             <textarea
               dir={dirFor(translationLang)}
-              value={slide.translation || ''}
+              value={translationValue}
               onChange={(e) => setTranslation(e.target.value)}
               placeholder="Translation…"
               rows={4}
