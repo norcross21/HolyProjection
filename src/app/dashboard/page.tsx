@@ -136,6 +136,7 @@ function DashboardContent() {
   const [looping, setLooping] = useState(false);
   const [loopSecs, setLoopSecs] = useState(8);
   const [midiOn, setMidiOn] = useState(false);
+  const [countdownMins, setCountdownMins] = useState(5);
   const dragIndexRef = useRef<number | null>(null);
 
   const handleReorderDrop = (toIndex: number) => {
@@ -1190,6 +1191,40 @@ function DashboardContent() {
               <button onClick={() => setBlankMode(presentation.settings.blankMode === 'clear' ? 'none' : 'clear')} className={`rounded-xl py-2 text-[10px] font-bold border transition-all ${presentation.settings.blankMode === 'clear' ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>🔍 Clear text</button>
               <button onClick={() => setBlankMode(presentation.settings.blankMode === 'logo' ? 'none' : 'logo')} className={`rounded-xl py-2 text-[10px] font-bold border col-span-2 transition-all ${presentation.settings.blankMode === 'logo' ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400' : 'bg-slate-950/60 border-slate-900 text-slate-400 hover:border-slate-800'}`}>✨ Show logo</button>
             </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">
+            <span className="block text-xs text-slate-400 font-medium">⏱ Pre-service countdown</span>
+            {presentation.settings.countdownTarget ? (
+              <button
+                onClick={() => updateSettings({ countdownTarget: null })}
+                className="w-full rounded-xl bg-red-950/40 border border-red-500/40 py-2 text-[11px] font-bold text-red-300 hover:bg-red-950/60 transition-all"
+              >
+                ✕ Clear countdown (running)
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min={1} max={120} value={countdownMins}
+                  onChange={(e) => setCountdownMins(Math.min(120, Math.max(1, Number(e.target.value) || 5)))}
+                  className="w-14 rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2 text-[11px] text-slate-200 focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-500">min</span>
+                <button
+                  onClick={() => updateSettings({ countdownTarget: new Date(Date.now() + countdownMins * 60000).toISOString() })}
+                  className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-1.5 text-[11px] font-bold text-white transition-all"
+                >
+                  Start countdown
+                </button>
+              </div>
+            )}
+            <input
+              type="text"
+              defaultValue={presentation.settings.countdownMessage ?? ''}
+              onBlur={(e) => updateSettings({ countdownMessage: e.target.value })}
+              placeholder="Heading (default: “Service begins in”)"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/60 py-1.5 px-2.5 text-[11px] text-slate-200 placeholder:text-slate-600 focus:border-violet-500 focus:outline-none"
+            />
           </section>
 
           <section className="rounded-2xl border border-slate-900 bg-slate-900/20 p-5 backdrop-blur-md space-y-2.5">

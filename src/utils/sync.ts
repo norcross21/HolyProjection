@@ -84,6 +84,9 @@ export interface Presentation {
     brandLogoPos?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
     brandLogoSize?: number; // % of screen height
     brandLowerThird?: string;
+    countdownTarget?: string | null; // ISO timestamp the countdown reaches zero at (absolute, so all screens sync)
+    countdownMessage?: string; // e.g. "Service begins in"
+    countdownEndMessage?: string; // shown when it hits zero, e.g. "Welcome!"
   };
 }
 
@@ -1364,6 +1367,9 @@ export interface Setlist {
   settings: {
     active_slide_id?: string | null;
     blankMode?: 'none' | 'black' | 'clear' | 'logo';
+    countdownTarget?: string | null;
+    countdownMessage?: string;
+    countdownEndMessage?: string;
   };
   items: SetlistItem[];
   created_at?: string;

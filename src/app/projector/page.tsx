@@ -7,6 +7,7 @@ import { dirFor } from '@/utils/languages';
 import SlideElementsLayer from '@/components/SlideElementsLayer';
 import PollView from '@/components/PollView';
 import SlideBranding from '@/components/SlideBranding';
+import CountdownOverlay from '@/components/CountdownOverlay';
 import { Maximize2, Minimize2, Tv, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
 
 type DisplayMode = 'primary' | 'translation' | 'bilingual';
@@ -84,7 +85,14 @@ function ProjectorContent() {
         // Blank mode is controlled at the setlist level (setlist.settings), so it must
         // override the presentation's own blankMode — otherwise blackout/clear/logo on a
         // setlist would never take effect on the projector.
-        fontSettings = { ...setlist.items[0].presentation.settings, blankMode: setlist.settings?.blankMode || 'none' };
+        fontSettings = {
+          ...setlist.items[0].presentation.settings,
+          blankMode: setlist.settings?.blankMode || 'none',
+          // Countdown is controlled at the setlist level too.
+          countdownTarget: setlist.settings?.countdownTarget ?? null,
+          countdownMessage: setlist.settings?.countdownMessage,
+          countdownEndMessage: setlist.settings?.countdownEndMessage,
+        };
       }
     }
   } else {
@@ -557,6 +565,9 @@ function ProjectorContent() {
 
       {/* Persistent branding (logo + lower-third) — only over live content, never on a blank/blackout/logo screen */}
       {(!fontSettings.blankMode || fontSettings.blankMode === 'none') && <SlideBranding settings={fontSettings} />}
+
+      {/* Pre-service countdown (full-screen, synced across all screens via absolute target) */}
+      {fontSettings.blankMode !== 'black' && <CountdownOverlay settings={fontSettings} />}
 
       {/* Live poll overlay */}
       {activePoll && (
