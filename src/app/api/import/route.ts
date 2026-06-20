@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
+// Large books make many Gemini calls — allow the function the full window.
+export const maxDuration = 300;
+
 interface ParsedSlide {
   type?: string;
   content: string;
@@ -62,16 +65,29 @@ function normalizeSongs(input: unknown): ParsedSong[] {
 // Split a big paste into chunks small enough that Gemini reliably returns
 // complete JSON. We break on blank lines (song/section boundaries) and pack
 // paragraphs up to a character budget so individual songs stay intact.
-function chunkText(text: string, maxChars = 6000): string[] {
+function chunkText(text: string, maxChars = 4500): string[] {
   const paragraphs = text.replace(/\r\n/g, '\n').split(/\n[ \t]*\n/);
+
+  // Guarantee no single piece exceeds the budget — a songbook pasted from a PDF
+  // often has NO blank lines, so a "paragraph" can be the whole book. Break any
+  // oversized paragraph at line boundaries.
+  const pieces: string[] = [];
+  for (const p of paragraphs) {
+    if (p.length <= maxChars) { pieces.push(p); continue; }
+    let buf = '';
+    for (const line of p.split('\n')) {
+      if (buf && buf.length + line.length + 1 > maxChars) { pieces.push(buf); buf = ''; }
+      buf += (buf ? '\n' : '') + line;
+    }
+    if (buf) pieces.push(buf);
+  }
+
+  // Pack the (now bounded) pieces back up to the budget.
   const chunks: string[] = [];
   let buf = '';
-  for (const p of paragraphs) {
-    if (buf && buf.length + p.length + 2 > maxChars) {
-      chunks.push(buf);
-      buf = '';
-    }
-    buf += (buf ? '\n\n' : '') + p;
+  for (const piece of pieces) {
+    if (buf && buf.length + piece.length + 2 > maxChars) { chunks.push(buf); buf = ''; }
+    buf += (buf ? '\n\n' : '') + piece;
   }
   if (buf.trim()) chunks.push(buf);
   return chunks;
@@ -97,7 +113,7 @@ async function parseChunk(ai: GoogleGenAI, chunk: string): Promise<ParsedSong[]>
       contents: `${PROMPT_RULES}\n\nSONGBOOK TEXT:\n${chunk}`,
       config: {
         responseMimeType: 'application/json',
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
         responseSchema: {
           type: 'ARRAY',
           items: {
@@ -161,8 +177,8 @@ export async function POST(req: NextRequest) {
     }
 
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-    const chunks = chunkText(text).slice(0, 120); // safety cap on very large books
-    const perChunk = await mapLimit(chunks, 3, (c) => parseChunk(ai, c));
+    const chunks = chunkText(text).slice(0, 200); // safety cap on very large books
+    const perChunk = await mapLimit(chunks, 5, (c) => parseChunk(ai, c));
     let songs = perChunk.flat();
 
     // Merge consecutive fragments that share a title (a song split across a chunk boundary).
