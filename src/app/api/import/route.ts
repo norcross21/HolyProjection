@@ -23,29 +23,125 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Internal Server Error';
 }
 
+// Lines that are copyright / licensing / publisher / contact boilerplate rather
+// than lyrics — stripped from every slide so they never land on the screen.
+const BOILERPLATE = /(all rights reserved|ccli|©|\(c\)\s*\d|copyright|used by permission|words?\s*(&|and)\s*music|administ|publish|reproduced|retrieval system|photocopying|license\s*#|www\.|https?:|\.com\b|\.church\b|\.org\b|\bp\.?o\.?\s*box\b|\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b|\b[A-Z]{2}\s+\d{5}\b|\bblvd\b|\bavenue\b|\bsuite\b)/i;
+
+function cleanSlideContent(content: string): string {
+  return content
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !BOILERPLATE.test(l) && !/^\d+$/.test(l))
+    .join('\n')
+    .trim();
+}
+
 function normalizeSongs(input: unknown): ParsedSong[] {
   if (!Array.isArray(input)) return [];
 
-  return input.map((song, i) => {
-    const songRecord = isRecord(song) ? song : {};
-    const rawSlides = songRecord.slides;
+  return input
+    .map((song, i) => {
+      const songRecord = isRecord(song) ? song : {};
+      const rawSlides = songRecord.slides;
+      const slides = (Array.isArray(rawSlides) ? rawSlides : [])
+        .filter((slide): slide is SlideRecord => isRecord(slide) && typeof slide.content === 'string')
+        .map((slide) => ({
+          type: typeof slide.type === 'string' && slide.type.trim() ? slide.type : 'Verse',
+          content: cleanSlideContent(slide.content),
+          translation: typeof slide.translation === 'string' && slide.translation.trim() ? slide.translation : null,
+        }))
+        .filter((s) => s.content.length > 0); // drop slides that were pure boilerplate
+      return {
+        title: typeof songRecord.title === 'string' && songRecord.title.trim() ? songRecord.title.trim() : `Imported Song #${i + 1}`,
+        slides,
+      };
+    })
+    .filter((song) => song.slides.length > 0); // drop empty songs
+}
 
-    return {
-      title:
-        typeof songRecord.title === 'string' && songRecord.title.trim()
-          ? songRecord.title
-          : `Imported Song #${i + 1}`,
-      slides: Array.isArray(rawSlides)
-        ? rawSlides
-            .filter((slide): slide is SlideRecord => isRecord(slide) && typeof slide.content === 'string')
-            .map((slide) => ({
-              type: typeof slide.type === 'string' && slide.type.trim() ? slide.type : 'Verse',
-              content: slide.content,
-              translation: typeof slide.translation === 'string' && slide.translation.trim() ? slide.translation : null,
-            }))
-        : [],
-    };
+// Split a big paste into chunks small enough that Gemini reliably returns
+// complete JSON. We break on blank lines (song/section boundaries) and pack
+// paragraphs up to a character budget so individual songs stay intact.
+function chunkText(text: string, maxChars = 6000): string[] {
+  const paragraphs = text.replace(/\r\n/g, '\n').split(/\n[ \t]*\n/);
+  const chunks: string[] = [];
+  let buf = '';
+  for (const p of paragraphs) {
+    if (buf && buf.length + p.length + 2 > maxChars) {
+      chunks.push(buf);
+      buf = '';
+    }
+    buf += (buf ? '\n\n' : '') + p;
+  }
+  if (buf.trim()) chunks.push(buf);
+  return chunks;
+}
+
+const PROMPT_RULES = `You are an expert worship-song parser. The input is raw text from a songbook/bulletin that may contain MANY songs.
+
+Return a JSON array of songs. For each song:
+- "title": the song's title (a short heading, often in CAPS or above the lyrics). If a number precedes it, drop the number.
+- "slides": the lyrics broken into slides.
+
+Rules:
+1. SEPARATE every distinct song into its own object. A new song usually starts at a title line after a blank gap.
+2. Break each song into slides by section (Verse 1, Chorus, Verse 2, Bridge, Tag, Ending). Put the section name in "type". If a section is longer than 4 lines, split it across multiple slides.
+3. EXCLUDE all non-lyric text: copyright lines, ©, "All Rights Reserved", CCLI numbers/licenses, "Used by Permission", publisher/administration lines, author credits ("Words and music by…"), church names, addresses, phone numbers, websites, and standalone page numbers. Do NOT create slides for these.
+4. Only set "translation" if the source genuinely contains a second language for that section (e.g. Arabic/Farsi lines beside the English). If there is no real translation, set it to null. NEVER invent or transliterate a translation.
+5. "content" holds the primary (usually English) lyrics only.`;
+
+async function parseChunk(ai: GoogleGenAI, chunk: string): Promise<ParsedSong[]> {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `${PROMPT_RULES}\n\nSONGBOOK TEXT:\n${chunk}`,
+      config: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 8192,
+        responseSchema: {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              title: { type: 'STRING' },
+              slides: {
+                type: 'ARRAY',
+                items: {
+                  type: 'OBJECT',
+                  properties: {
+                    type: { type: 'STRING' },
+                    content: { type: 'STRING' },
+                    translation: { type: 'STRING' },
+                  },
+                  required: ['type', 'content'],
+                },
+              },
+            },
+            required: ['title', 'slides'],
+          },
+        },
+      },
+    });
+    const jsonText = (response.text || '[]').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    return normalizeSongs(JSON.parse(jsonText));
+  } catch (err) {
+    console.warn('Import chunk failed, skipping:', errorMessage(err));
+    return [];
+  }
+}
+
+// Run async tasks with bounded concurrency (keeps us under Gemini rate limits).
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
   });
+  await Promise.all(workers);
+  return out;
 }
 
 export async function POST(req: NextRequest) {
@@ -58,141 +154,72 @@ export async function POST(req: NextRequest) {
     }
 
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    let parsedSongs: unknown = [];
 
     if (!geminiApiKey || geminiApiKey === 'your-gemini-key') {
       console.warn('GEMINI_API_KEY is missing! Using rule-based fallback parser.');
-      parsedSongs = parseSongsMock(text);
-    } else {
-      // Call Gemini 2.5 Flash
-      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      const prompt = `
-You are an expert worship liturgy assistant. Parse the following messy bulk document of songs.
-Identify each song, separate it into individual songs, and break each song down into logical slides (Verse 1, Chorus, Verse 2, Bridge, etc.).
-
-Rules:
-1. Split long sections into separate slides if they exceed 4-5 lines of text.
-2. If the text is bilingual (e.g. English lines followed by Arabic lines, or English verse followed by Arabic verse), separate them. Put the primary language (English) in 'content', and the secondary language (Arabic/Farsi) in 'translation'.
-3. If there is no translation, leave 'translation' empty or null.
-4. Return a structured JSON array matching the schema.
-
-Messy Songs Text:
-${text}
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'ARRAY',
-            description: 'List of parsed songs',
-            items: {
-              type: 'OBJECT',
-              properties: {
-                title: { type: 'STRING', description: 'Title of the song' },
-                slides: {
-                  type: 'ARRAY',
-                  description: 'Slides for the song',
-                  items: {
-                    type: 'OBJECT',
-                    properties: {
-                      type: { type: 'STRING', description: 'Type of slide, e.g. Verse 1, Chorus, Bridge' },
-                      content: { type: 'STRING', description: 'Primary English lyrics' },
-                      translation: { type: 'STRING', description: 'Translation of lyrics if available, otherwise blank' }
-                    },
-                    required: ['type', 'content']
-                  }
-                }
-              },
-              required: ['title', 'slides']
-            }
-          }
-        }
-      });
-
-      // The model usually returns clean JSON, but guard against fences / truncation.
-      const jsonText = (response.text || '[]')
-        .trim()
-        .replace(/^```(?:json)?/i, '')
-        .replace(/```$/, '')
-        .trim();
-
-      try {
-        parsedSongs = JSON.parse(jsonText);
-      } catch {
-        console.warn('Gemini returned non-JSON output; falling back to rule-based parser.');
-        parsedSongs = parseSongsMock(text);
-      }
+      return NextResponse.json({ success: true, mode: 'demo', data: normalizeSongs(parseSongsMock(text)) });
     }
 
-    // Normalize so the client can rely on the shape (slides is always an array).
-    const normalized = normalizeSongs(parsedSongs);
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+    const chunks = chunkText(text).slice(0, 120); // safety cap on very large books
+    const perChunk = await mapLimit(chunks, 3, (c) => parseChunk(ai, c));
+    let songs = perChunk.flat();
 
-    // Parsing only — the authenticated browser client performs the inserts so
-    // they run under the user's session and satisfy row-level security.
-    return NextResponse.json({ success: true, data: normalized });
+    // Merge consecutive fragments that share a title (a song split across a chunk boundary).
+    const merged: ParsedSong[] = [];
+    for (const song of songs) {
+      const prev = merged[merged.length - 1];
+      if (prev && prev.title.toLowerCase() === song.title.toLowerCase()) {
+        prev.slides.push(...song.slides);
+      } else {
+        merged.push(song);
+      }
+    }
+    songs = merged;
+
+    // If every chunk failed (e.g. transient outage), fall back to the rule parser
+    // so the user still gets *something* rather than an empty result.
+    if (songs.length === 0) {
+      return NextResponse.json({ success: true, mode: 'fallback', data: normalizeSongs(parseSongsMock(text)) });
+    }
+
+    return NextResponse.json({ success: true, mode: 'ai', data: songs });
   } catch (err: unknown) {
     console.error('Error in import route:', errorMessage(err));
     return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
-// Simple rule-based mock parser for offline/no-API key situations
+// Rule-based fallback parser for offline / no-API-key situations. Splits on blank
+// gaps, uses the first line as a title, groups ~4 lines per slide, strips
+// boilerplate, and does NOT invent translations.
 function parseSongsMock(text: string): ParsedSong[] {
-  // Split text by triple newlines or common splitters
-  const rawSections = text.split(/\n\s*\n\s*\n/);
+  const rawSections = text.replace(/\r\n/g, '\n').split(/\n\s*\n\s*\n/);
   const songs: ParsedSong[] = [];
 
   rawSections.forEach((section, songIdx) => {
-    const lines = section.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = section.split('\n').map((l) => l.trim()).filter((l) => l.length > 0 && !BOILERPLATE.test(l) && !/^\d+$/.test(l));
     if (lines.length === 0) return;
 
-    // Use first line as title, or a default
     let title = lines[0];
     let contentLines = lines.slice(1);
-
     if (title.toLowerCase().startsWith('title:')) {
       title = title.substring(6).trim();
-    } else if (title.length > 50) {
+    } else if (title.length > 60) {
       title = `Imported Song #${songIdx + 1}`;
       contentLines = lines;
     }
 
-    // Split content lines into slide groups (group every 4 lines)
     const slides: ParsedSlide[] = [];
-    let currentSlideText: string[] = [];
-    let slideIdx = 1;
+    let current: string[] = [];
+    let idx = 1;
+    const flush = () => {
+      if (current.length) { slides.push({ type: `Verse ${idx++}`, content: current.join('\n'), translation: null }); current = []; }
+    };
+    contentLines.forEach((line) => { current.push(line); if (current.length >= 4) flush(); });
+    flush();
 
-    contentLines.forEach((line) => {
-      currentSlideText.push(line);
-      if (currentSlideText.length >= 4) {
-        slides.push({
-          type: `Verse ${slideIdx++}`,
-          content: currentSlideText.join('\n'),
-          translation: 'الترجمة التجريبية لهذا المقطع...'
-        });
-        currentSlideText = [];
-      }
-    });
-
-    if (currentSlideText.length > 0) {
-      slides.push({
-        type: `Verse ${slideIdx}`,
-        content: currentSlideText.join('\n'),
-        translation: 'الترجمة التجريبية لهذا المقطع...'
-      });
-    }
-
-    songs.push({
-      title: title || `Imported Song #${songIdx + 1}`,
-      slides: slides.length > 0 ? slides : [{
-        type: 'Verse 1',
-        content: 'No lyrics parsed.',
-        translation: 'لا توجد كلمات.'
-      }]
-    });
+    if (slides.length) songs.push({ title: title || `Imported Song #${songIdx + 1}`, slides });
   });
 
   return songs;
