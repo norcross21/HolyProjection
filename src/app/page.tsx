@@ -1,11 +1,35 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, Tv, ArrowRight, ShieldCheck, Layers, RefreshCw } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { resolveAuth } from '@/utils/auth';
 
 export default function Home() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  // If already signed in, skip the marketing page and go straight to the portal.
+  useEffect(() => {
+    let active = true;
+    resolveAuth()
+      .then((identity) => {
+        if (!active) return;
+        if (identity) router.replace('/dashboard');
+        else setChecking(false);
+      })
+      .catch(() => active && setChecking(false));
+    return () => { active = false; };
+  }, [router]);
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col bg-stone-50 text-stone-900 font-sans overflow-hidden">

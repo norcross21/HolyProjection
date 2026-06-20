@@ -160,7 +160,7 @@ function DashboardContent() {
     reorderSlides(ids);
   };
   const [isLegacyDragging, setIsLegacyDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('presentations');
+  const [activeTab, setActiveTab] = useState<'presentations' | 'setlists'>('setlists');
   const [scriptureRef, setScriptureRef] = useState('');
   const [scriptureBusy, setScriptureBusy] = useState(false);
   const [quickFindOpen, setQuickFindOpen] = useState(false);
@@ -689,22 +689,12 @@ function DashboardContent() {
               <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-stone-900 to-stone-600 bg-clip-text text-transparent">
                 Worship Portal
               </h2>
-              <p className="text-stone-500 text-sm mt-1">Manage individual song presentations or plan full service setlists.</p>
+              <p className="text-stone-500 text-sm mt-1">Build service presentations from your reusable song library.</p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               {/* Tab Toggles */}
               <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-stone-200">
-                <button
-                  onClick={() => setActiveTab('presentations')}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
-                    activeTab === 'presentations'
-                      ? 'bg-teal-600 text-white shadow-md'
-                      : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  Songs / Readings
-                </button>
                 <button
                   onClick={() => setActiveTab('setlists')}
                   className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
@@ -713,7 +703,17 @@ function DashboardContent() {
                       : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
-                  Service Setlists
+                  Presentations
+                </button>
+                <button
+                  onClick={() => setActiveTab('presentations')}
+                  className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${
+                    activeTab === 'presentations'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  Song Library
                 </button>
               </div>
 
@@ -764,17 +764,17 @@ function DashboardContent() {
               <>
                 {/* Left Column: Create & Import */}
                 <div className="md:col-span-1 flex flex-col gap-6">
-                  {/* Create Presentation Form Card */}
+                  {/* Create Song Form Card */}
                   <section className="rounded-2xl border border-stone-200 bg-white p-6 backdrop-blur-xl ring-1 ring-black/5 shadow-xl">
                     <div className="flex items-center gap-2 mb-4">
                       <Plus className="h-5 w-5 text-teal-600" />
-                      <h3 className="font-bold text-stone-900 text-base">New Presentation</h3>
+                      <h3 className="font-bold text-stone-900 text-base">New Song</h3>
                     </div>
-                    
+
                     <form onSubmit={handleCreatePres} className="space-y-4">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-                          Title / Song Name
+                          Song name
                         </label>
                         <input
                           type="text"
@@ -794,7 +794,7 @@ function DashboardContent() {
                         {isCreating ? (
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         ) : (
-                          <span>Create Presentation</span>
+                          <span>Create Song</span>
                         )}
                       </button>
                     </form>
@@ -989,23 +989,24 @@ function DashboardContent() {
                   <section className="rounded-2xl border border-stone-200 bg-white p-6 backdrop-blur-xl ring-1 ring-black/5 shadow-xl">
                     <div className="flex items-center gap-2 mb-4">
                       <Plus className="h-5 w-5 text-sky-600" />
-                      <h3 className="font-bold text-stone-900 text-base">New Service Setlist</h3>
+                      <h3 className="font-bold text-stone-900 text-base">New Presentation</h3>
                     </div>
-                    
+
                     <form onSubmit={handleCreateSetlist} className="space-y-4">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-                          Setlist Title / Event Date
+                          Presentation / service name
                         </label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Sunday Morning - June 14"
+                          placeholder="e.g. Sunday Morning — 14 June"
                           value={newSetlistTitle}
                           onChange={(e) => setNewSetlistTitle(e.target.value)}
                           className="w-full rounded-xl border border-stone-200 bg-white py-3 px-4 text-sm text-stone-900 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-300 transition-all"
                         />
                       </div>
+                      <p className="text-[11px] text-stone-500 -mt-1">Create it, then add songs from your library.</p>
 
                       <button
                         type="submit"
@@ -1015,7 +1016,7 @@ function DashboardContent() {
                         {isCreating ? (
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         ) : (
-                          <span>Create Setlist Planner</span>
+                          <span>Create Presentation</span>
                         )}
                       </button>
                     </form>
@@ -1030,7 +1031,7 @@ function DashboardContent() {
                     </div>
                   ) : setlists.length === 0 ? (
                     <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-16 text-center text-stone-500 text-sm">
-                      No service setlists created yet. Use the sidebar to create your first setlist!
+                      No presentations yet. Create one on the left, then add songs from your Song Library.
                     </div>
                   ) : (
                     setlists.map((slist) => (
@@ -1046,7 +1047,7 @@ function DashboardContent() {
                           <div className="flex items-center gap-1 shrink-0">
                             <button
                               onClick={(e) => handleDeleteSetlist(e, slist.id, slist.title)}
-                              title="Delete setlist"
+                              title="Delete presentation"
                               className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1054,10 +1055,10 @@ function DashboardContent() {
                             <ChevronRight className="h-4 w-4 text-stone-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-3 text-xs text-stone-500">
-                          <span className="bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
-                            Setlist
+                          <span className="bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-full font-semibold">
+                            Presentation
                           </span>
                           <span className="font-medium text-stone-500">
                             {new Date(slist.created_at || '').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
