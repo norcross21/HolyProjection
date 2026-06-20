@@ -18,6 +18,7 @@ interface ImportedSong {
 
 interface ImportResult {
   error?: string;
+  mode?: 'ai' | 'demo' | 'fallback';
   data?: ImportedSong[];
 }
 
@@ -40,6 +41,7 @@ export default function ImportPage() {
   const [importedSongs, setImportedSongs] = useState<SavedImport[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [importMode, setImportMode] = useState<'ai' | 'demo' | 'fallback'>('ai');
   const [appendTo] = useState<string | null>(() =>
     typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('append')
   );
@@ -88,15 +90,14 @@ export default function ImportPage() {
       if (songs.length === 0) {
         throw new Error('No songs could be parsed from that text.');
       }
+      setImportMode(result.mode || 'ai');
 
-      // Insert here, in the browser, so the writes run under the user's
-      // authenticated session and satisfy Supabase row-level security
-      // (the server route uses the anon key and would be blocked).
-      if (appendTo) {
-        // Append all parsed slides into the current presentation.
-        const allSlides = songs.flatMap((song) =>
-          (song.slides || []).map((s) => ({ content: s.content, translation: s.translation || undefined }))
-        );
+      // Inserts run in the browser (under the user's session) to satisfy RLS.
+      // A SINGLE song while building a presentation appends into it; anything
+      // with multiple songs becomes one separate song file per song — that's
+      // what you want for a song library.
+      if (appendTo && songs.length === 1) {
+        const allSlides = (songs[0].slides || []).map((s) => ({ content: s.content, translation: s.translation || undefined }));
         const count = await appendSlidesToPresentation(appendTo, allSlides);
         if (count === 0) {
           throw new Error('Parsing succeeded but saving failed. Check that you are signed in and that database write access is enabled.');
@@ -170,7 +171,7 @@ export default function ImportPage() {
             Bulk AI Importer
           </h2>
           <p className="text-stone-500 text-sm mt-1">
-            Paste a massive document of worship songs. Our AI (Gemini 2.5 Flash) will split multiple songs, format them into individual slides, and map bilingual translations automatically.
+            Paste a whole sheet of worship songs. The AI (Gemini 2.5 Flash) splits it into <strong className="text-stone-700">one separate song file per song</strong>, each broken into verses &amp; choruses — copyright/CCLI lines removed. For very large books, paste a dozen or so songs at a time.
           </p>
         </div>
 
@@ -187,9 +188,16 @@ export default function ImportPage() {
               <CheckCircle2 className="h-8 w-8 text-emerald-600 shrink-0" />
               <div>
                 <h3 className="font-bold text-lg text-stone-900">Import Successful!</h3>
-                <p className="text-xs text-stone-500">Your songs have been structured and saved.</p>
+                <p className="text-xs text-stone-500">{importedSongs.length} song{importedSongs.length === 1 ? '' : 's'} added to your library as separate files.</p>
               </div>
             </div>
+
+            {importMode !== 'ai' && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2.5">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>This ran on the offline rule-based parser (AI was unavailable — likely a temporary rate limit). Results may be rougher; re-run later for the full AI split.</span>
+              </div>
+            )}
 
             <div className="border-t border-stone-200/80 my-4 pt-4 space-y-3">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-500">Imported Songs List</h4>
@@ -225,10 +233,10 @@ export default function ImportPage() {
                 Import More Songs
               </button>
               <button
-                onClick={() => router.push(appendTo ? `/dashboard?pres=${appendTo}` : '/dashboard')}
+                onClick={() => router.push('/dashboard')}
                 className="flex-1 py-3.5 bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 text-sm font-bold text-white rounded-xl shadow-lg shadow-teal-500/15 active:scale-[0.98] transition-all"
               >
-                Go to Dashboard
+                View my song library
               </button>
             </div>
           </div>
@@ -251,14 +259,10 @@ export default function ImportPage() {
                 />
               </div>
 
-              {!process.env.GEMINI_API_KEY && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700 flex items-start gap-2.5">
-                  <AlertTriangle className="h-4.5 w-4.5 text-amber-600 shrink-0" />
-                  <span>
-                    No <code className="bg-stone-50 px-1 py-0.5 rounded text-amber-250">GEMINI_API_KEY</code> detected in environment variables. The importer will run using the offline rule-based parser fallback. To enable full AI parsing, configure `GEMINI_API_KEY` on Vercel or in `.env.local`.
-                  </span>
-                </div>
-              )}
+              <p className="text-[11px] text-stone-500 flex items-start gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-teal-600 shrink-0 mt-0.5" />
+                Each song in your document becomes its own file in the library, split into verses &amp; choruses. Copyright, CCLI and address lines are removed automatically.
+              </p>
             </div>
 
             <button
