@@ -500,6 +500,20 @@ export function usePresentationsPortal() {
     }
   };
 
+  // Rename a presentation (song title) from the portal.
+  const renamePresentation = async (id: string, title: string) => {
+    const clean = title.trim();
+    if (!clean) return;
+    setPresentations((prev) => prev.map((p) => (p.id === id ? { ...p, title: clean } : p)));
+    if (!IS_SUPABASE_CONFIGURED) {
+      const list = (JSON.parse(localStorage.getItem('holyproj_all_pres') || '[]') as Presentation[]).map((p) => (p.id === id ? { ...p, title: clean } : p));
+      localStorage.setItem('holyproj_all_pres', JSON.stringify(list));
+      return;
+    }
+    const { error } = await supabase.from('presentations').update({ title: clean }).eq('id', id);
+    if (error) console.error('Error renaming presentation:', error.message);
+  };
+
   // Merge into a presentation's settings jsonb from the portal (e.g. tags),
   // updating local state optimistically.
   const updatePresentationSettings = async (id: string, partial: Partial<Presentation['settings']>) => {
@@ -529,6 +543,7 @@ export function usePresentationsPortal() {
     deletePresentation,
     duplicatePresentation,
     updatePresentationSettings,
+    renamePresentation,
   };
 }
 

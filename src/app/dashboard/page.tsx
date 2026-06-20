@@ -39,7 +39,8 @@ import {
   Stamp,
   Printer,
   Search,
-  Tag
+  Tag,
+  Pencil
 } from 'lucide-react';
 import QuickFind, { type QuickItem } from '@/components/QuickFind';
 
@@ -85,6 +86,7 @@ function DashboardContent() {
     deletePresentation,
     duplicatePresentation,
     updatePresentationSettings,
+    renamePresentation,
   } = usePresentationsPortal();
 
   // Hook for Active Presentation Sync (Only runs if presId is set)
@@ -165,6 +167,8 @@ function DashboardContent() {
   const [recents, setRecents] = useState<{ id: string; title: string }[]>([]);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [librarySort, setLibrarySort] = useState<'recent' | 'az'>('recent');
 
   // Library tags: edit (prompt-based) and the set of all tags in use.
   const editTags = async (e: React.MouseEvent, presId: string, current: string[]) => {
@@ -174,6 +178,11 @@ function DashboardContent() {
     const tags = Array.from(new Set(input.split(',').map((t) => t.trim()).filter(Boolean)));
     await updatePresentationSettings(presId, { tags });
   };
+  const renameSong = async (e: React.MouseEvent, id: string, current: string) => {
+    e.stopPropagation();
+    const name = prompt('Song title:', current);
+    if (name && name.trim() && name.trim() !== current) await renamePresentation(id, name.trim());
+  };
   const handleDuplicate = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setDuplicatingId(id);
@@ -182,7 +191,17 @@ function DashboardContent() {
     if (newId) router.push(`/dashboard?pres=${newId}`);
   };
   const allTags = Array.from(new Set(presentations.flatMap((p) => p.settings?.tags || []))).sort();
-  const visiblePresentations = tagFilter ? presentations.filter((p) => (p.settings?.tags || []).includes(tagFilter)) : presentations;
+  const visiblePresentations = (() => {
+    const q = librarySearch.trim().toLowerCase();
+    let list = presentations;
+    if (tagFilter) list = list.filter((p) => (p.settings?.tags || []).includes(tagFilter));
+    if (q) list = list.filter((p) => {
+      if (p.title.toLowerCase().includes(q)) return true;
+      return p.slides.some((s) => (s.content || '').toLowerCase().includes(q));
+    });
+    if (librarySort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    return list;
+  })();
   const [bulkLang, setBulkLang] = useState<string>('');
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [brandNudgeDismissed, setBrandNudgeDismissed] = useState<boolean>(() => {
@@ -826,22 +845,51 @@ function DashboardContent() {
                   </section>
                 </div>
 
-                {/* Presentations list */}
+                {/* Song library */}
                 <div className="md:col-span-2 space-y-4">
-                  {allTags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Filter</span>
-                      <button
-                        onClick={() => setTagFilter(null)}
-                        className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${!tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
-                      >All</button>
-                      {allTags.map((t) => (
+                  {presentations.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative flex-1 min-w-[180px]">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                          <input
+                            value={librarySearch}
+                            onChange={(e) => setLibrarySearch(e.target.value)}
+                            placeholder="Search your songs by title or lyrics…"
+                            className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-xs text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none"
+                          />
+                        </div>
                         <button
-                          key={t}
-                          onClick={() => setTagFilter(t === tagFilter ? null : t)}
-                          className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${t === tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
-                        >{t}</button>
-                      ))}
+                          onClick={() => setLibrarySort((s) => (s === 'az' ? 'recent' : 'az'))}
+                          className="rounded-xl border border-stone-200 bg-white hover:bg-stone-100 px-3 py-2 text-[11px] font-bold text-stone-600 transition-all"
+                          title="Toggle sort order"
+                        >
+                          {librarySort === 'az' ? 'A–Z' : 'Recent'}
+                        </button>
+                        <button
+                          onClick={() => router.push('/dashboard/import')}
+                          className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-teal-600 hover:from-sky-400 hover:to-teal-500 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition-all active:scale-[0.98]"
+                        >
+                          <Plus className="h-3.5 w-3.5" />Add songs
+                        </button>
+                      </div>
+                      {allTags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Tags</span>
+                          <button
+                            onClick={() => setTagFilter(null)}
+                            className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${!tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
+                          >All</button>
+                          {allTags.map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setTagFilter(t === tagFilter ? null : t)}
+                              className={`rounded-full px-3 py-1 text-[11px] font-bold border transition-all ${t === tagFilter ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'}`}
+                            >{t}</button>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-stone-400 font-medium">{visiblePresentations.length} of {presentations.length} song{presentations.length === 1 ? '' : 's'}</p>
                     </div>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -855,7 +903,7 @@ function DashboardContent() {
                     </div>
                   ) : visiblePresentations.length === 0 ? (
                     <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-12 text-center text-stone-500 text-sm">
-                      No presentations tagged “{tagFilter}”.
+                      No songs match {librarySearch.trim() ? `“${librarySearch.trim()}”` : `the tag “${tagFilter}”`}.
                     </div>
                   ) : (
                     visiblePresentations.map((pres) => (
@@ -875,6 +923,13 @@ function DashboardContent() {
                             </h4>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => renameSong(e, pres.id, pres.title)}
+                              title="Rename song"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={(e) => editTags(e, pres.id, pres.settings?.tags || [])}
                               title="Edit tags"
