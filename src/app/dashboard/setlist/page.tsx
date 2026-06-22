@@ -550,6 +550,17 @@ function SetlistContent() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  router.push(`/dashboard?pres=${item.presentation_id}&edit=${slide.id}`);
+                                }}
+                                title="Edit this slide"
+                                className="flex items-center justify-center rounded-lg h-6 w-6 bg-stone-100 border border-stone-200 text-stone-500 hover:text-teal-600 hover:bg-stone-200 transition-all"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setLiveSlide(slide.id);
                                 }}
                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[10px] font-bold transition-all ${

@@ -75,6 +75,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const presId = searchParams.get('pres');
   const goSlideParam = searchParams.get('go');
+  const editSlideParam = searchParams.get('edit');
 
   // Hook for Listing & Creating Presentations
   const {
@@ -394,6 +395,19 @@ function DashboardContent() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presId, goSlideParam, presentation.slides]);
+
+  // Honour a ?edit=<slideId> deep-link (from the planner's per-slide edit button):
+  // open that slide straight in the editor, then strip the param.
+  useEffect(() => {
+    if (!presId || !editSlideParam) return;
+    if (!presentation.slides.some((s) => s.id === editSlideParam)) return;
+    queueMicrotask(() => {
+      setSelectedSlideId(editSlideParam);
+      setEditingSlideId(editSlideParam);
+      router.replace(`/dashboard?pres=${presId}`);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presId, editSlideParam, presentation.slides]);
 
   // Pre-service auto-loop: advance the live slide every loopSecs while on.
   // Reads slides/active from refs so the interval keeps a steady cadence and isn't
