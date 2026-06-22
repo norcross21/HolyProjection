@@ -25,7 +25,8 @@ import {
   ExternalLink,
   Smartphone,
   MessageSquare,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 
 type AlertType = 'general' | 'nursery' | 'warning';
@@ -252,8 +253,8 @@ function SetlistContent() {
           {/* Order Queue */}
           <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex flex-col max-h-[50%]">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-4 flex justify-between items-center">
-              <span>Service Songs Queue</span>
-              <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded-full text-stone-500">{setlist.items.length} items</span>
+              <span>Presentation items</span>
+              <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded-full text-stone-500">{setlist.items.length} blocks</span>
             </h2>
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
@@ -263,11 +264,18 @@ function SetlistContent() {
                   className="flex items-center justify-between p-3 rounded-xl bg-white border border-stone-200 hover:border-stone-300 transition-all"
                 >
                   <div className="overflow-hidden mr-3">
-                    <span className="text-[10px] font-bold text-stone-500 block uppercase">Song {idx + 1}</span>
+                    <span className="text-[10px] font-bold text-stone-500 block uppercase">{idx + 1} · {item.presentation?.slides?.length ?? 0} slides</span>
                     <p className="text-sm font-bold text-stone-800 truncate">{item.presentation?.title || 'Loading...'}</p>
                   </div>
 
                   <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => router.push(`/dashboard?pres=${item.presentation_id}`)}
+                      title="Edit this block's slides"
+                      className="p-1.5 rounded-lg bg-stone-100 text-stone-500 hover:text-teal-600"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
                     <button
                       onClick={() => handleMoveUp(idx)}
                       disabled={idx === 0}
@@ -294,7 +302,7 @@ function SetlistContent() {
 
               {setlist.items.length === 0 && (
                 <div className="text-center py-10 text-stone-400 text-xs border border-dashed border-stone-200 rounded-xl">
-                  No songs in this setlist. Add some songs below!
+                  No blocks yet. Add songs or readings below to build this presentation.
                 </div>
               )}
             </div>
@@ -302,10 +310,10 @@ function SetlistContent() {
 
           {/* Add songs area */}
           <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
                 <Plus className="h-4 w-4 text-teal-600" />
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Add Songs to Setlist</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-700">Add songs &amp; readings</h2>
               </div>
               <button
                 onClick={() => setQuickAddOpen(true)}
@@ -315,6 +323,11 @@ function SetlistContent() {
                 <kbd className="hidden sm:inline text-[10px] font-bold text-stone-400 border border-stone-300 rounded px-1">⌘K</kbd>
               </button>
             </div>
+            <p className="text-[11px] text-stone-500 mb-3">
+              Pick from your Song Library, or{' '}
+              <button onClick={() => router.push('/dashboard/liturgy')} className="font-bold text-sky-600 hover:underline">import a scripture reading</button>
+              {' '}to add it to your library first.
+            </p>
 
             <QuickFind
               open={quickAddOpen}
