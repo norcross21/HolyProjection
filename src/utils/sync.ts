@@ -138,6 +138,17 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+// Some AI imports stored the literal string "null"/"none" in the translation
+// field (a JSON-schema STRING field can't hold real null). Treat those as no
+// translation everywhere so they never render on screen.
+const NULLISH_TEXT = /^(null|none|n\/?a|undefined|-)$/i;
+function sanitizeSlides(slides: Slide[] | null | undefined): Slide[] {
+  return (slides || []).map((s) => {
+    const t = typeof s.translation === 'string' ? s.translation.trim() : s.translation;
+    return { ...s, translation: typeof t === 'string' && t && !NULLISH_TEXT.test(t) ? t : undefined };
+  });
+}
+
 // Initial Mock/Default Presentation Data
 export const DEFAULT_PRESENTATION: Presentation = {
   id: 'demo-presentation-1',
@@ -280,7 +291,7 @@ export function usePresentationsPortal() {
             id: pres.id,
             title: pres.title,
             settings: pres.settings,
-            slides: slides || [],
+            slides: sanitizeSlides(slides),
           });
         }
         setPresentations(loaded);
@@ -696,7 +707,7 @@ export function useRealtimePresentation(presentationId: string) {
             id: presData.id,
             title: presData.title,
             settings: presData.settings,
-            slides: slidesData || [],
+            slides: sanitizeSlides(slidesData),
           };
           setPresentation(loaded);
 
@@ -765,7 +776,7 @@ export function useRealtimePresentation(presentationId: string) {
               .order('order_index', { ascending: true })
               .then(({ data }) => {
                 if (data) {
-                  setPresentation((prev) => ({ ...prev, slides: data }));
+                  setPresentation((prev) => ({ ...prev, slides: sanitizeSlides(data) }));
                 }
               });
           }
@@ -1680,7 +1691,7 @@ export function useRealtimeSetlist(setlistId: string) {
               id: row.presentations.id,
               title: row.presentations.title,
               settings: row.presentations.settings,
-              slides: row.presentations.slides || []
+              slides: sanitizeSlides(row.presentations.slides)
             } : undefined
           };
         });

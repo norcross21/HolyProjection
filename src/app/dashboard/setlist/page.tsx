@@ -152,7 +152,7 @@ function SetlistContent() {
   const activeSlide = allSlidesWithMeta.find((s) => s.id === activeSlideId);
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans text-stone-900 flex flex-col">
+    <div className="h-screen bg-stone-50 font-sans text-stone-900 flex flex-col overflow-hidden">
       <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-sky-200/40 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-teal-200/40 blur-[120px] pointer-events-none" />
 
@@ -245,10 +245,10 @@ function SetlistContent() {
       </header>
 
       {/* Workspace Grid */}
-      <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden max-h-[calc(100vh-73px)]">
+      <div className="flex-1 min-h-0 p-6 grid grid-cols-12 gap-6 overflow-hidden">
         
         {/* Left column: Setlist Items & Song Search */}
-        <aside className="col-span-4 flex flex-col gap-6 overflow-y-auto pr-2">
+        <aside className="col-span-4 min-h-0 flex flex-col gap-6 overflow-y-auto pr-2">
           
           {/* Order Queue */}
           <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md flex flex-col max-h-[50%]">
@@ -499,7 +499,7 @@ function SetlistContent() {
         </aside>
 
         {/* Center Panel: Unified Slides queue scroll */}
-        <section className="col-span-5 flex flex-col gap-4 overflow-y-auto pr-2">
+        <section className="col-span-5 min-h-0 flex flex-col gap-4 overflow-y-auto pr-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">Unified Presentation Flow</h2>
             <span className="text-xs text-stone-500">{allSlidesWithMeta.length} total slides</span>
@@ -591,7 +591,7 @@ function SetlistContent() {
         </section>
 
         {/* Right Panel: Settings, Collaborators & Live Preview */}
-        <aside className="col-span-3 flex flex-col gap-6 overflow-y-auto">
+        <aside className="col-span-3 min-h-0 flex flex-col gap-6 overflow-y-auto">
           
           {/* Live Preview Box */}
           <section className="rounded-2xl border border-stone-200 bg-white p-5 backdrop-blur-md">

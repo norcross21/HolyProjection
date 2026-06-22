@@ -51,7 +51,7 @@ function normalizeSongs(input: unknown): ParsedSong[] {
         .map((slide) => ({
           type: typeof slide.type === 'string' && slide.type.trim() ? slide.type : 'Verse',
           content: cleanSlideContent(slide.content),
-          translation: typeof slide.translation === 'string' && slide.translation.trim() ? slide.translation : null,
+          translation: typeof slide.translation === 'string' && slide.translation.trim() && !/^(null|none|n\/?a|undefined|-)$/i.test(slide.translation.trim()) ? slide.translation : null,
         }))
         .filter((s) => s.content.length > 0); // drop slides that were pure boilerplate
       return {
