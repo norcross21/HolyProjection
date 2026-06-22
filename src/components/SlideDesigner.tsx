@@ -51,6 +51,27 @@ export default function SlideDesigner({ slide, settings, onChange, onBgChange, o
     }
   }, [slide.elements]);
 
+  // If the slide's words live in `content` (imported/legacy) with no placed
+  // elements yet, seed movable text boxes from them so the designer isn't empty.
+  // Seeded locally — only persisted once the user actually moves/edits something.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current) return;
+    seededRef.current = true;
+    if ((slide.elements?.length ?? 0) > 0) return;
+    if (!slide.content?.trim() && !slide.translation?.trim()) return;
+    const seed: SlideElement[] = [];
+    let z = 0;
+    if (slide.content?.trim()) {
+      seed.push({ id: uid(), type: 'text', role: 'lyrics', x: 8, y: slide.translation?.trim() ? 22 : 38, w: 84, h: 28, z: ++z, text: slide.content, color: '#ffffff', fontSize: 8, align: 'center', bold: true, fontFamily: settings.fontFamily });
+    }
+    if (slide.translation?.trim()) {
+      seed.push({ id: uid(), type: 'text', role: 'translation', x: 8, y: 56, w: 84, h: 24, z: ++z, text: slide.translation, color: '#a5b4fc', fontSize: 7, align: 'center', bold: false, fontFamily: settings.fontFamily });
+    }
+    if (seed.length) queueMicrotask(() => setEls(seed));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const update = (id: string, patch: Partial<SlideElement>) => {
     commit(els.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   };

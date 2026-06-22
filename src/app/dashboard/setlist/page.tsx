@@ -617,9 +617,9 @@ function SetlistContent() {
             >
               {activeSlide ? (
                 <div className="w-full space-y-1">
-                  <p className="text-[8px] font-bold text-stone-900 leading-normal truncate">{activeSlide.content.split('\n')[0]}</p>
+                  <p className="text-[9px] font-bold text-white leading-snug whitespace-pre-line">{activeSlide.content}</p>
                   {activeSlide.translation && (
-                    <p dir={dirFor(setlist.items[0]?.presentation?.settings?.translationLang)} className="text-[8px] font-bold text-sky-600 leading-normal font-serif truncate">{activeSlide.translation.split('\n')[0]}</p>
+                    <p dir={dirFor(setlist.items[0]?.presentation?.settings?.translationLang)} className="text-[9px] font-bold text-sky-300 leading-snug font-serif whitespace-pre-line">{activeSlide.translation}</p>
                   )}
                 </div>
               ) : (
