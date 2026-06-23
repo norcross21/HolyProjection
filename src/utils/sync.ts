@@ -1592,6 +1592,64 @@ export function useSetlistsPortal() {
     }
   };
 
+  const renameSetlist = async (id: string, title: string) => {
+    const clean = title.trim();
+    if (!clean) return;
+    setSetlists((prev) => prev.map((s) => (s.id === id ? { ...s, title: clean } : s)));
+    if (!IS_SUPABASE_CONFIGURED) {
+      const list = (JSON.parse(localStorage.getItem('holyproj_all_setlists') || '[]') as Setlist[]).map((s) => (s.id === id ? { ...s, title: clean } : s));
+      localStorage.setItem('holyproj_all_setlists', JSON.stringify(list));
+      return;
+    }
+    const { error } = await supabase.from('setlists').update({ title: clean }).eq('id', id);
+    if (error) console.error('Error renaming setlist:', error.message);
+  };
+
+  // Duplicate a presentation (setlist) with all its song/reading blocks, so a
+  // church can copy last week's order and tweak it.
+  const duplicateSetlist = async (id: string) => {
+    const src = setlists.find((s) => s.id === id);
+    const newTitle = `${src?.title || 'Service'} (copy)`;
+
+    if (!IS_SUPABASE_CONFIGURED) {
+      const list = JSON.parse(localStorage.getItem('holyproj_all_setlists') || '[]') as Setlist[];
+      const source = list.find((s) => s.id === id);
+      const copy: Setlist = { id: `demo-setlist-${Date.now()}`, title: newTitle, settings: { ...(source?.settings || {}) }, items: (source?.items || []).map((it, i) => ({ ...it, id: `it-${Date.now()}-${i}` })), created_at: new Date().toISOString() };
+      const updated = [copy, ...list];
+      localStorage.setItem('holyproj_all_setlists', JSON.stringify(updated));
+      setSetlists(updated);
+      return copy.id;
+    }
+
+    try {
+      const { data: userSession } = await supabase.auth.getSession();
+      const userId = userSession?.session?.user?.id || null;
+      const { data: srcRow } = await supabase.from('setlists').select('settings').eq('id', id).single();
+      const { data: newList, error: createErr } = await supabase
+        .from('setlists')
+        .insert({ title: newTitle, created_by: userId, settings: srcRow?.settings || {} })
+        .select()
+        .single();
+      if (createErr) throw createErr;
+
+      const { data: items } = await supabase
+        .from('setlist_items')
+        .select('presentation_id, order_index')
+        .eq('setlist_id', id)
+        .order('order_index', { ascending: true });
+      if (items && items.length) {
+        const rows = items.map((it) => ({ setlist_id: newList.id, presentation_id: it.presentation_id, order_index: it.order_index }));
+        const { error: itemsErr } = await supabase.from('setlist_items').insert(rows);
+        if (itemsErr) throw itemsErr;
+      }
+      await fetchSetlists();
+      return newList.id as string;
+    } catch (err) {
+      console.error('Error duplicating setlist:', errorMessage(err));
+      return null;
+    }
+  };
+
   useEffect(() => {
     void Promise.resolve().then(fetchSetlists);
   }, []);
@@ -1602,7 +1660,9 @@ export function useSetlistsPortal() {
     isDemoMode,
     refresh: fetchSetlists,
     createNewSetlist,
-    deleteSetlist
+    deleteSetlist,
+    renameSetlist,
+    duplicateSetlist,
   };
 }
 

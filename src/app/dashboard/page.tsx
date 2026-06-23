@@ -327,7 +327,9 @@ function DashboardContent() {
     setlists,
     loading: setlistsLoading,
     createNewSetlist,
-    deleteSetlist
+    deleteSetlist,
+    renameSetlist,
+    duplicateSetlist,
   } = useSetlistsPortal();
 
   useEffect(() => {
@@ -496,9 +498,21 @@ function DashboardContent() {
 
   const handleDeleteSetlist = async (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation();
-    if (!confirm(`Delete setlist "${title}"?`)) return;
+    if (!confirm(`Delete presentation "${title}"?`)) return;
     const ok = await deleteSetlist(id);
     if (!ok) alert('Could not delete. Make sure you are signed in and that delete is enabled in the database.');
+  };
+  const handleRenameSetlist = async (e: React.MouseEvent, id: string, current: string) => {
+    e.stopPropagation();
+    const name = prompt('Presentation name:', current);
+    if (name && name.trim() && name.trim() !== current) await renameSetlist(id, name.trim());
+  };
+  const handleDuplicateSetlist = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDuplicatingId(id);
+    const newId = await duplicateSetlist(id);
+    setDuplicatingId(null);
+    if (newId) router.push(`/dashboard/setlist?id=${newId}`);
   };
 
   const handleCreateSetlist = async (e: React.FormEvent) => {
@@ -1059,6 +1073,21 @@ function DashboardContent() {
                             {slist.title}
                           </h4>
                           <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => handleRenameSetlist(e, slist.id, slist.title)}
+                              title="Rename presentation"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDuplicateSetlist(e, slist.id)}
+                              disabled={duplicatingId === slist.id}
+                              title="Duplicate presentation"
+                              className="rounded-lg p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-100"
+                            >
+                              {duplicatingId === slist.id ? <span className="block h-4 w-4 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" /> : <Copy className="h-4 w-4" />}
+                            </button>
                             <button
                               onClick={(e) => handleDeleteSetlist(e, slist.id, slist.title)}
                               title="Delete presentation"
