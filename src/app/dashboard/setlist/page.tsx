@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRealtimeSetlist, usePresentationsPortal } from '@/utils/sync';
 import QuickFind, { type QuickItem } from '@/components/QuickFind';
@@ -73,12 +73,37 @@ function SetlistContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
+  // Refs the keyboard handler reads at keypress time (kept fresh during render,
+  // below), so a presenter can drive the whole service from a clicker.
+  const flowIdsRef = useRef<string[]>([]);
+  const activeIdRef = useRef<string | null>(null);
+  const blankRef = useRef<string | undefined>(undefined);
+  const quickAddRef = useRef(false);
+
+  // Keep the keyboard handler's refs fresh after each render (mutating refs is
+  // not allowed during render, so do it here).
+  useEffect(() => {
+    flowIdsRef.current = (setlist?.items || []).flatMap((it) => (it.presentation?.slides || []).map((s) => s.id));
+    activeIdRef.current = activeSlideId;
+    blankRef.current = setlist?.settings?.blankMode;
+    quickAddRef.current = quickAddOpen;
+  });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setQuickAddOpen((v) => !v); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setQuickAddOpen((v) => !v); return; }
+      if (e.metaKey || e.ctrlKey || e.altKey || quickAddRef.current) return;
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      const ids = flowIdsRef.current;
+      const idx = ids.indexOf(activeIdRef.current ?? '');
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); const n = ids[idx + 1] ?? ids[0]; if (n) setLiveSlide(n); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); const p = ids[idx - 1]; if (p) setLiveSlide(p); }
+      else if (e.key.toLowerCase() === 'b') { e.preventDefault(); setBlankMode(blankRef.current === 'black' ? 'none' : 'black'); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -502,7 +527,10 @@ function SetlistContent() {
         <section className="col-span-5 min-h-0 flex flex-col gap-4 overflow-y-auto pr-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">Unified Presentation Flow</h2>
-            <span className="text-xs text-stone-500">{allSlidesWithMeta.length} total slides</span>
+            <div className="flex items-center gap-3">
+              <span className="hidden md:inline text-[10px] text-stone-400 font-medium">Keys: ← → / space · B = blank</span>
+              <span className="text-xs text-stone-500">{allSlidesWithMeta.length} total slides</span>
+            </div>
           </div>
 
           <div className="space-y-6 pb-20">
