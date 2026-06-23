@@ -170,6 +170,8 @@ function DashboardContent() {
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [librarySearch, setLibrarySearch] = useState('');
   const [librarySort, setLibrarySort] = useState<'recent' | 'az'>('recent');
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceSort, setServiceSort] = useState<'recent' | 'az'>('recent');
 
   // Library tags: edit (prompt-based) and the set of all tags in use.
   const editTags = async (e: React.MouseEvent, presId: string, current: string[]) => {
@@ -331,6 +333,13 @@ function DashboardContent() {
     renameSetlist,
     duplicateSetlist,
   } = useSetlistsPortal();
+
+  const visibleSetlists = (() => {
+    const q = serviceSearch.trim().toLowerCase();
+    let list = q ? setlists.filter((s) => s.title.toLowerCase().includes(q)) : setlists;
+    if (serviceSort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    return list; // 'recent' keeps the default created-at-desc order
+  })();
 
   useEffect(() => {
     // Require a real session in cloud mode; localStorage profile only in demo mode
@@ -1052,7 +1061,29 @@ function DashboardContent() {
                 </div>
 
                 {/* Setlists list */}
-                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="md:col-span-2 space-y-4">
+                  {setlists.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative flex-1 min-w-[180px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                        <input
+                          value={serviceSearch}
+                          onChange={(e) => setServiceSearch(e.target.value)}
+                          placeholder="Search your presentations…"
+                          className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-xs text-stone-800 placeholder:text-stone-400 focus:border-teal-400 focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setServiceSort((s) => (s === 'az' ? 'recent' : 'az'))}
+                        className="rounded-xl border border-stone-200 bg-white hover:bg-stone-100 px-3 py-2 text-[11px] font-bold text-stone-600 transition-all"
+                        title="Toggle sort order"
+                      >
+                        {serviceSort === 'az' ? 'A–Z' : 'Recent'}
+                      </button>
+                      <span className="text-[11px] text-stone-400 font-medium">{visibleSetlists.length} of {setlists.length}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {setlistsLoading ? (
                     <div className="col-span-2 py-20 flex justify-center">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-400 border-t-transparent" />
@@ -1061,8 +1092,12 @@ function DashboardContent() {
                     <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-16 text-center text-stone-500 text-sm">
                       No presentations yet. Create one on the left, then add songs from your Song Library.
                     </div>
+                  ) : visibleSetlists.length === 0 ? (
+                    <div className="col-span-2 border border-dashed border-stone-200 rounded-2xl py-12 text-center text-stone-500 text-sm">
+                      No presentations match “{serviceSearch.trim()}”.
+                    </div>
                   ) : (
-                    setlists.map((slist) => (
+                    visibleSetlists.map((slist) => (
                       <div
                         key={slist.id}
                         onClick={() => router.push(`/dashboard/setlist?id=${slist.id}`)}
@@ -1110,6 +1145,7 @@ function DashboardContent() {
                       </div>
                     ))
                   )}
+                  </div>
                 </div>
               </>
             )}
