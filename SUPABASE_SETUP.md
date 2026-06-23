@@ -1,5 +1,10 @@
 # Supabase Setup Instructions for HolyProjection
 
+HolyProjection can run in two modes:
+
+- **Offline demo mode**: no Supabase variables are set; the app stores data in `localStorage`.
+- **Cloud mode**: Supabase Auth, Postgres, Realtime, and Storage are enabled.
+
 ## Environment Variables Required
 
 Create a `.env.local` file in the root directory with the following variables:
@@ -47,17 +52,21 @@ supabase db push
 
 ## Database Schema Overview
 
-The schema includes the following tables:
+The schema in `supabase/migrations/001_initial_schema.sql` matches the tables used by the current app:
 
 - **profiles** - User profiles linked to auth.users
-- **projects** - User projects with settings
-- **lyrics** - Song lyrics with timing data
-- **themes** - Custom themes (colors, fonts)
-- **backgrounds** - Background configurations
-- **screens** - Screen layouts for presentations
-- **render_jobs** - Video rendering job queue
+- **presentations** - Songs, readings, and other presentation blocks
+- **slides** - Ordered slide content, translations, media, notes, audio, and designer elements
+- **setlists** - Service plans / running orders
+- **setlist_items** - Ordered presentation blocks inside a service plan
+- **active_projection** - The currently live slide for each presentation
+- **templates** - Saved slide designs
 
-All tables have Row Level Security (RLS) policies to ensure users can only access their own data.
+The migration also creates the public Supabase Storage bucket:
+
+- **presentation-media** - Uploaded images, videos, and audio used by slides
+
+All tables have Row Level Security (RLS) enabled. Live projector, stage, and follow screens are allowed to read with the public anon key, while writes are limited to authenticated presenters who own the parent presentation or setlist.
 
 ## Vercel Deployment
 
@@ -74,9 +83,10 @@ After setting up Supabase:
 
 Once configured, the app will automatically detect Supabase and enable:
 - User authentication
-- Project syncing
-- Cloud storage for lyrics, themes, and backgrounds
-- Render job management
+- Presentation and service-plan syncing
+- Realtime projector, stage, remote, and follow screens
+- Cloud storage for slide images, videos, and audio
+- Shared saved slide templates
 
 If Supabase is not configured, the app runs in demo mode with local storage only.
 
