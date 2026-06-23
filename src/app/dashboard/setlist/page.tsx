@@ -72,6 +72,7 @@ function SetlistContent() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   // Refs the keyboard handler reads at keypress time (kept fresh during render,
   // below), so a presenter can drive the whole service from a clicker.
@@ -128,6 +129,16 @@ function SetlistContent() {
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
+  };
+
+  // Drag-and-drop reorder of the presentation's blocks.
+  const handleDropOnIndex = (target: number) => {
+    if (dragIndex === null || dragIndex === target) { setDragIndex(null); return; }
+    const ids = setlist.items.map((i) => i.id);
+    const [moved] = ids.splice(dragIndex, 1);
+    ids.splice(target, 0, moved);
+    reorderSetlistItems(ids);
+    setDragIndex(null);
   };
 
   const handleMoveUp = (index: number) => {
@@ -284,9 +295,14 @@ function SetlistContent() {
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
               {setlist.items.map((item, idx) => (
-                <div 
-                  key={item.id} 
-                  className="flex items-center justify-between p-3 rounded-xl bg-white border border-stone-200 hover:border-stone-300 transition-all"
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => setDragIndex(idx)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDropOnIndex(idx)}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={`flex items-center justify-between p-3 rounded-xl bg-white border transition-all cursor-grab active:cursor-grabbing ${dragIndex === idx ? 'border-teal-400 opacity-50' : 'border-stone-200 hover:border-stone-300'}`}
                 >
                   <div className="overflow-hidden mr-3">
                     <span className="text-[10px] font-bold text-stone-500 block uppercase">{idx + 1} · {item.presentation?.slides?.length ?? 0} slides</span>
